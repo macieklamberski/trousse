@@ -1,0 +1,43 @@
+{
+  "name": "trousse",
+  "description": "Personal toolbox of shared TypeScript utilities: type guards, coercions, matching and array helpers.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/macieklamberski/trousse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/macieklamberski/trousse/issues"
+  },
+  "license": "MIT",
+  "author": "Maciej Lamberski",
+  "sideEffects": false,
+  "keywords": [
+    "utils",
+    "helpers",
+    "typescript",
+    "guards",
+    "coerce",
+    "predicates",
+    "toolbox"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "lefthook install",
+    "build": "tsdown src/index.ts --format esm --dts --clean --unbundle --no-fixed-extension",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "kvalita": "^1.15.0",
+    "tsdown": "^0.22.2"
+  }
+}
