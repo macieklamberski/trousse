@@ -60,6 +60,10 @@ describe('isSubdomainOf', () => {
     expect(isSubdomainOf('https://sub.example.com/path', ['other.com', 'example.com'])).toBe(true)
   })
 
+  it('should match domain patterns case-insensitively', () => {
+    expect(isSubdomainOf('https://sub.example.com/path', 'EXAMPLE.com')).toBe(true)
+  })
+
   it('should not match the bare domain', () => {
     expect(isSubdomainOf('https://example.com/path', 'example.com')).toBe(false)
   })

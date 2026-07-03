@@ -1,18 +1,18 @@
-import { isNonEmptyString, isValidDate } from './is.js'
+import { isBoolean, isNonEmptyString, isNullish, isNumber, isString, isValidDate } from './is.js'
 import type { Nullish } from './types.js'
 
 export const coerceString = (value: unknown): string | undefined => {
-  if (typeof value === 'string') {
+  if (isString(value)) {
     return value
   }
 
-  if (typeof value === 'number') {
+  if (isNumber(value)) {
     return String(value)
   }
 }
 
 export const coerceNumber = (value: unknown): number | undefined => {
-  if (typeof value === 'number') {
+  if (isNumber(value)) {
     return Number.isNaN(value) ? undefined : value
   }
 
@@ -27,7 +27,7 @@ const trueRegex = /^\p{White_Space}*true\p{White_Space}*$/iu
 const falseRegex = /^\p{White_Space}*false\p{White_Space}*$/iu
 
 export const coerceBoolean = (value: unknown): boolean | undefined => {
-  if (typeof value === 'boolean') {
+  if (isBoolean(value)) {
     return value
   }
 
@@ -47,7 +47,7 @@ export const coerceDate = (value: unknown): Date | undefined => {
     return value
   }
 
-  if (typeof value === 'number' || isNonEmptyString(value)) {
+  if (isNumber(value) || isNonEmptyString(value)) {
     const date = new Date(value)
 
     return Number.isNaN(date.getTime()) ? undefined : date
@@ -59,7 +59,7 @@ export const coerceSingular = <T>(value: T | Array<T>): T => {
 }
 
 export const coerceArray = <T>(value: Nullish<T | Array<T>>): Array<T> => {
-  if (value == null) {
+  if (isNullish(value)) {
     return []
   }
 

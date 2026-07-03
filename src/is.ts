@@ -30,18 +30,13 @@ export const isObject = (value: unknown): value is object => {
 // Narrow to a plain object created via an object literal or the Object constructor. Rejects
 // class instances, built-ins like Date or Map, and prototype-less objects (Object.create(null)).
 export const isPlainObject = (value: unknown): value is Record<string, unknown> => {
-  return (
-    value != null &&
-    typeof value === 'object' &&
-    !Array.isArray(value) &&
-    value.constructor === Object
-  )
+  return isObject(value) && value.constructor === Object
 }
 
 const whitespaceOnlyRegex = /^\p{White_Space}*$/u
 
 export const isNonEmptyString = (value: unknown): value is string => {
-  return typeof value === 'string' && value !== '' && !whitespaceOnlyRegex.test(value)
+  return isString(value) && value !== '' && !whitespaceOnlyRegex.test(value)
 }
 
 export const isValidDate = (value: unknown): value is Date => {

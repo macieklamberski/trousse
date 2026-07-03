@@ -1,9 +1,11 @@
+import { isPresent } from './is.js'
+
 export const omitEmpty = <T>(array: Array<T | null | undefined>): Array<T> => {
   const result: Array<T> = []
 
   for (const item of array) {
-    if (item != null && item !== '') {
-      result.push(item as T)
+    if (isPresent(item) && item !== '') {
+      result.push(item)
     }
   }
 
