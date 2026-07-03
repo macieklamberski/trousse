@@ -1,26 +1,42 @@
 import { endsWithAnyOf, isAnyOf } from './matching.js'
 
-export const isHostOf = (url: string | URL, hosts: string | Array<string>): boolean => {
+export const parseUrl = (value: string | URL, base?: string | URL): URL | undefined => {
+  if (value instanceof URL && base === undefined) {
+    return value
+  }
+
   try {
-    const hostname = (url instanceof URL ? url : new URL(url)).hostname
-    const list = Array.isArray(hosts) ? hosts : [hosts]
-
-    return isAnyOf(hostname, list)
+    return new URL(value, base)
   } catch {}
+}
 
-  return false
+export const getPathSegments = (value: string | URL): Array<string> => {
+  return parseUrl(value)?.pathname.split('/').filter(Boolean) ?? []
+}
+
+export const isHostOf = (url: string | URL, hosts: string | Array<string>): boolean => {
+  const hostname = parseUrl(url)?.hostname
+
+  if (!hostname) {
+    return false
+  }
+
+  const list = Array.isArray(hosts) ? hosts : [hosts]
+
+  return isAnyOf(hostname, list)
 }
 
 export const isSubdomainOf = (url: string | URL, domains: string | Array<string>): boolean => {
-  try {
-    const hostname = (url instanceof URL ? url : new URL(url)).hostname
-    const list = Array.isArray(domains) ? domains : [domains]
+  const hostname = parseUrl(url)?.hostname
 
-    return endsWithAnyOf(
-      hostname,
-      list.map((domain) => `.${domain}`),
-    )
-  } catch {}
+  if (!hostname) {
+    return false
+  }
 
-  return false
+  const list = Array.isArray(domains) ? domains : [domains]
+
+  return endsWithAnyOf(
+    hostname,
+    list.map((domain) => `.${domain}`),
+  )
 }

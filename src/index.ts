@@ -27,5 +27,6 @@ export {
   isAnyOf,
   startsWithAnyOf,
 } from './matching.js'
+export { sleep } from './timers.js'
 export type { MaybePromise, Nullish, Pattern } from './types.js'
-export { isHostOf, isSubdomainOf } from './urls.js'
+export { getPathSegments, isHostOf, isSubdomainOf, parseUrl } from './urls.js'
