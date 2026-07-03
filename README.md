@@ -8,7 +8,7 @@ Personal toolbox of shared TypeScript utilities used across my projects: type gu
 bun add trousse
 ```
 
-In published packages, prefer adding it as a dev dependency and bundling it at build time (tsdown/rolldown `noExternal: ['trousse']`) so it adds no runtime dependency.
+In published packages, prefer adding it as a dev dependency — tsdown bundles imported dev dependencies at build time by default, so it adds no runtime dependency.
 
 ## API
 
