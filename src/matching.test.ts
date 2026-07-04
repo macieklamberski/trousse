@@ -510,4 +510,26 @@ describe('anyWordMatchesAnyOf', () => {
 
     expect(anyWordMatchesAnyOf(value, patterns)).toBe(false)
   })
+
+  it('should handle mixed string and RegExp patterns', () => {
+    const value = 'sponsored episode notes'
+    // biome-ignore lint/performance/useTopLevelRegex: Test-specific pattern.
+    const patterns = [/^ad(vert)?s?$/, 'sponsored']
+
+    expect(anyWordMatchesAnyOf(value, patterns)).toBe(true)
+  })
+
+  it('should trim patterns before comparing', () => {
+    const value = 'alternate feed'
+    const patterns = ['  FEED  ']
+
+    expect(anyWordMatchesAnyOf(value, patterns)).toBe(true)
+  })
+
+  it('should handle leading and trailing whitespace in value', () => {
+    const value = '  alternate feed  '
+    const patterns = ['feed']
+
+    expect(anyWordMatchesAnyOf(value, patterns)).toBe(true)
+  })
 })

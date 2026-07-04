@@ -59,7 +59,34 @@ export const endsWithAnyOf = (value: string, patterns: Array<Pattern>): boolean 
 }
 
 export const anyWordMatchesAnyOf = (value: string, patterns: Array<Pattern>): boolean => {
+  // Lower and trim the patterns once up front — doing it inside the word loop (as isAnyOf
+  // would) repeats the work and its allocations for every word times every pattern.
+  const stringPatterns: Array<string> = []
+  const regexPatterns: Array<RegExp> = []
+
+  for (const pattern of patterns) {
+    if (pattern instanceof RegExp) {
+      regexPatterns.push(pattern)
+    } else {
+      stringPatterns.push(pattern.toLowerCase().trim())
+    }
+  }
+
   const words = value.toLowerCase().split(whitespaceRegex)
 
-  return words.some((word) => isAnyOf(word, patterns))
+  for (const word of words) {
+    for (const stringPattern of stringPatterns) {
+      if (word === stringPattern) {
+        return true
+      }
+    }
+
+    for (const regexPattern of regexPatterns) {
+      if (regexPattern.test(word)) {
+        return true
+      }
+    }
+  }
+
+  return false
 }
