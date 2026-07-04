@@ -31,6 +31,12 @@ describe('isJsonLike', () => {
 
       expect(isJsonLike(value)).toBe(true)
     })
+
+    it('should identify JSON object with unicode whitespace', () => {
+      expect(isJsonLike('\u00a0{"a":1}\u00a0')).toBe(true)
+      expect(isJsonLike('\u3000{"a":1}\u2028')).toBe(true)
+      expect(isJsonLike('\ufeff{"a":1}\ufeff')).toBe(true)
+    })
   })
 
   describe('valid JSON arrays', () => {
@@ -126,6 +132,15 @@ describe('isJsonLike', () => {
     it('should reject too short string', () => {
       expect(isJsonLike('{')).toBe(false)
       expect(isJsonLike('[')).toBe(false)
+    })
+
+    it('should reject NEL-wrapped object, as NEL is not regex whitespace', () => {
+      expect(isJsonLike('\u0085{"a":1}')).toBe(false)
+    })
+
+    it('should reject brace-and-whitespace-only strings', () => {
+      expect(isJsonLike(' { ')).toBe(false)
+      expect(isJsonLike(' ] ')).toBe(false)
     })
   })
 })
