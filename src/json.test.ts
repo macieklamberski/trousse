@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 import { isJsonLike, isParseableJson } from './json.js'
 
+const singleWhitespaceRegex = /^\s$/
+
 describe('isJsonLike', () => {
   describe('valid JSON objects', () => {
     it('should identify simple JSON object', () => {
@@ -141,6 +143,22 @@ describe('isJsonLike', () => {
     it('should reject brace-and-whitespace-only strings', () => {
       expect(isJsonLike(' { ')).toBe(false)
       expect(isJsonLike(' ] ')).toBe(false)
+    })
+  })
+
+  describe('whitespace handling', () => {
+    // isJsonLike scans characters manually instead of testing regexes, so its internal
+    // whitespace check must match the \s set the regexes used. Wrapping a code point
+    // around a JSON literal returns true only when that code point counts as whitespace,
+    // so comparing against /^\s$/ for all 65536 code points proves the two sets are
+    // identical and can never silently drift apart.
+    it('should treat exactly the regex \\s set as whitespace, for all code points', () => {
+      for (let code = 0; code <= 0xffff; code++) {
+        const char = String.fromCharCode(code)
+        const wrapped = `${char}{"a":1}${char}`
+
+        expect(isJsonLike(wrapped)).toBe(singleWhitespaceRegex.test(char))
+      }
     })
   })
 })
