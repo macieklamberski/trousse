@@ -296,6 +296,22 @@ describe('isNonEmptyString', () => {
     expect(isNonEmptyString('null')).toBe(true)
   })
 
+  it('should return true for strings starting with non-ASCII characters', () => {
+    expect(isNonEmptyString('żółć')).toBe(true)
+    expect(isNonEmptyString('日本語')).toBe(true)
+    expect(isNonEmptyString('→')).toBe(true)
+    expect(isNonEmptyString('🎉')).toBe(true)
+  })
+
+  it('should return true for strings with leading whitespace and content', () => {
+    expect(isNonEmptyString(' x')).toBe(true)
+    expect(isNonEmptyString('\u00a0x')).toBe(true)
+  })
+
+  it('should return true for BOM-only string, which is not Unicode White_Space', () => {
+    expect(isNonEmptyString('\ufeff')).toBe(true)
+  })
+
   it('should handle edge cases', () => {
     // biome-ignore lint/style/useConsistentBuiltinInstantiation: It's for testing purposes.
     const stringObject = new String('hello')
@@ -311,6 +327,9 @@ describe('isNonEmptyString', () => {
   it('should return false for whitespace-only strings', () => {
     expect(isNonEmptyString('   ')).toBe(false)
     expect(isNonEmptyString('\t\n')).toBe(false)
+    // NEL (U+0085) is Unicode White_Space even though String#trim does not remove it.
+    expect(isNonEmptyString('\u0085')).toBe(false)
+    expect(isNonEmptyString('\u00a0\u2028\u3000')).toBe(false)
     expect(isNonEmptyString(' ')).toBe(false)
   })
 

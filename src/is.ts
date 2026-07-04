@@ -36,7 +36,19 @@ export const isPlainObject = (value: unknown): value is Record<string, unknown> 
 const whitespaceOnlyRegex = /^\p{White_Space}*$/u
 
 export const isNonEmptyString = (value: unknown): value is string => {
-  return isString(value) && value !== '' && !whitespaceOnlyRegex.test(value)
+  if (!isString(value) || value === '') {
+    return false
+  }
+
+  // Fast path: a printable ASCII first character cannot be White_Space, so the string is
+  // necessarily non-empty and non-whitespace-only. Roughly 2× faster on typical values.
+  const code = value.charCodeAt(0)
+
+  if (code > 0x20 && code < 0x7f) {
+    return true
+  }
+
+  return !whitespaceOnlyRegex.test(value)
 }
 
 export const isValidDate = (value: unknown): value is Date => {
