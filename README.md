@@ -4,7 +4,7 @@
 [![npm version](https://img.shields.io/npm/v/trousse.svg)](https://www.npmjs.com/package/trousse)
 [![license](https://img.shields.io/npm/l/trousse.svg)](https://github.com/macieklamberski/trousse/blob/main/LICENSE)
 
-Personal toolbox of shared TypeScript utilities used across my projects: type guards, coercions, matching and array helpers.
+Personal toolbox of shared TypeScript utilities used across my projects: type guards, coercions, matching, array and locale interpolation helpers.
 
 ## Installation
 
