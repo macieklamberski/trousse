@@ -1,6 +1,6 @@
 {
   "name": "trousse",
-  "description": "Personal toolbox of shared TypeScript utilities: type guards, coercions, matching and array helpers.",
+  "description": "Personal toolbox of shared TypeScript utilities: type guards, coercions, matching, array and locale interpolation helpers.",
   "repository": {
     "type": "git",
     "url": "https://github.com/macieklamberski/trousse.git"
