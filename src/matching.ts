@@ -4,7 +4,7 @@ const whitespaceRegex = /\s+/
 
 export const isAnyOf = (
   value: string,
-  patterns: Array<Pattern>,
+  patterns: ReadonlyArray<Pattern>,
   parser?: (value: string) => string,
 ): boolean => {
   const parsedValue = parser ? parser(value) : value?.toLowerCase()?.trim()
@@ -20,7 +20,7 @@ export const isAnyOf = (
 
 export const includesAnyOf = (
   value: string,
-  patterns: Array<Pattern>,
+  patterns: ReadonlyArray<Pattern>,
   parser?: (value: string) => string,
 ): boolean => {
   const parsedValue = parser ? parser(value) : value?.toLowerCase()
@@ -34,7 +34,7 @@ export const includesAnyOf = (
   })
 }
 
-export const startsWithAnyOf = (value: string, patterns: Array<Pattern>): boolean => {
+export const startsWithAnyOf = (value: string, patterns: ReadonlyArray<Pattern>): boolean => {
   const lowerValue = value.toLowerCase()
 
   return patterns.some((pattern) => {
@@ -46,7 +46,7 @@ export const startsWithAnyOf = (value: string, patterns: Array<Pattern>): boolea
   })
 }
 
-export const endsWithAnyOf = (value: string, patterns: Array<Pattern>): boolean => {
+export const endsWithAnyOf = (value: string, patterns: ReadonlyArray<Pattern>): boolean => {
   const lowerValue = value.toLowerCase()
 
   return patterns.some((pattern) => {
@@ -58,7 +58,7 @@ export const endsWithAnyOf = (value: string, patterns: Array<Pattern>): boolean 
   })
 }
 
-export const anyWordMatchesAnyOf = (value: string, patterns: Array<Pattern>): boolean => {
+export const anyWordMatchesAnyOf = (value: string, patterns: ReadonlyArray<Pattern>): boolean => {
   // Lower and trim the patterns once up front — doing it inside the word loop (as isAnyOf
   // would) repeats the work and its allocations for every word times every pattern.
   const stringPatterns: Array<string> = []

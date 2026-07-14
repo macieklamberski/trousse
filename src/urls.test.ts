@@ -90,6 +90,12 @@ describe('isHostOf', () => {
     expect(isHostOf('https://example.com/path', ['other.com', 'example.com'])).toBe(true)
   })
 
+  it('should accept a readonly array of hosts', () => {
+    const hosts: ReadonlyArray<string> = ['other.com', 'example.com']
+
+    expect(isHostOf('https://example.com/path', hosts)).toBe(true)
+  })
+
   it('should not match subdomains', () => {
     expect(isHostOf('https://sub.example.com/path', 'example.com')).toBe(false)
   })
@@ -118,6 +124,12 @@ describe('isSubdomainOf', () => {
 
   it('should match domains given as an array', () => {
     expect(isSubdomainOf('https://sub.example.com/path', ['other.com', 'example.com'])).toBe(true)
+  })
+
+  it('should accept a readonly array of domains', () => {
+    const domains: ReadonlyArray<string> = ['other.com', 'example.com']
+
+    expect(isSubdomainOf('https://sub.example.com/path', domains)).toBe(true)
   })
 
   it('should match domain patterns case-insensitively', () => {
