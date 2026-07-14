@@ -14,26 +14,29 @@ export const getPathSegments = (value: string | URL): Array<string> => {
   return parseUrl(value)?.pathname.split('/').filter(Boolean) ?? []
 }
 
-export const isHostOf = (url: string | URL, hosts: string | Array<string>): boolean => {
+export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string>): boolean => {
   const hostname = parseUrl(url)?.hostname
 
   if (!hostname) {
     return false
   }
 
-  const list = Array.isArray(hosts) ? hosts : [hosts]
+  const list = typeof hosts === 'string' ? [hosts] : hosts
 
   return isAnyOf(hostname, list)
 }
 
-export const isSubdomainOf = (url: string | URL, domains: string | Array<string>): boolean => {
+export const isSubdomainOf = (
+  url: string | URL,
+  domains: string | ReadonlyArray<string>,
+): boolean => {
   const hostname = parseUrl(url)?.hostname
 
   if (!hostname) {
     return false
   }
 
-  const list = Array.isArray(domains) ? domains : [domains]
+  const list = typeof domains === 'string' ? [domains] : domains
 
   return endsWithAnyOf(
     hostname,
