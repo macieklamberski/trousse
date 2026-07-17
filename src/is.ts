@@ -54,3 +54,9 @@ export const isNonEmptyString = (value: unknown): value is string => {
 export const isValidDate = (value: unknown): value is Date => {
   return value instanceof Date && !Number.isNaN(value.getTime())
 }
+
+// A type guard rather than a boolean check so a `string | undefined` variable
+// narrows to `string` at the call site once the date is known to parse.
+export const isParseableDate = (value: unknown): value is string => {
+  return isNonEmptyString(value) && !Number.isNaN(new Date(value).getTime())
+}

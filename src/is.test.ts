@@ -6,6 +6,7 @@ import {
   isNullish,
   isNumber,
   isObject,
+  isParseableDate,
   isPlainObject,
   isPresent,
   isString,
@@ -371,6 +372,27 @@ describe('isNonEmptyString', () => {
 
   it('should return false for BigInt', () => {
     expect(isNonEmptyString(BigInt(123))).toBe(false)
+  })
+})
+
+describe('isParseableDate', () => {
+  it('should return true for parseable date strings', () => {
+    expect(isParseableDate('2026-01-01')).toBe(true)
+    expect(isParseableDate('2023-10-08T10:00:31.798Z')).toBe(true)
+    expect(isParseableDate('Jan 5, 2026')).toBe(true)
+  })
+
+  it('should return false for unparseable strings', () => {
+    expect(isParseableDate('not a date')).toBe(false)
+    expect(isParseableDate('')).toBe(false)
+    expect(isParseableDate('   ')).toBe(false)
+  })
+
+  it('should return false for non-string values', () => {
+    expect(isParseableDate(new Date())).toBe(false)
+    expect(isParseableDate(1704067200000)).toBe(false)
+    expect(isParseableDate(null)).toBe(false)
+    expect(isParseableDate(undefined)).toBe(false)
   })
 })
 

@@ -14,6 +14,7 @@ export {
   isNullish,
   isNumber,
   isObject,
+  isParseableDate,
   isPlainObject,
   isPresent,
   isString,
