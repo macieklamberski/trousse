@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import {
   anyWordMatchesAnyOf,
   endsWithAnyOf,
+  escapeRegex,
   includesAnyOf,
   isAnyOf,
   startsWithAnyOf,
@@ -531,5 +532,39 @@ describe('anyWordMatchesAnyOf', () => {
     const patterns = ['feed']
 
     expect(anyWordMatchesAnyOf(value, patterns)).toBe(true)
+  })
+})
+
+describe('escapeRegex', () => {
+  it('should escape every regex metacharacter', () => {
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: The metacharacters are the subject here, not a placeholder.
+    const value = '.*+?^${}()|[]\\-'
+    const expected = '\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\\\-'
+
+    expect(escapeRegex(value)).toBe(expected)
+  })
+
+  it('should leave a value with no metacharacters unchanged', () => {
+    const value = 'utm_source'
+
+    expect(escapeRegex(value)).toBe(value)
+  })
+
+  it('should return a source that matches the literal it escaped', () => {
+    const value = 'pixel.gif?a=1'
+
+    expect(new RegExp(`^${escapeRegex(value)}$`).test(value)).toBe(true)
+    expect(new RegExp(`^${escapeRegex(value)}$`).test('pixelXgif?a=1')).toBe(false)
+  })
+
+  it('should stay safe to interpolate into a character class', () => {
+    const value = 'a-z'
+
+    expect(new RegExp(`^[${escapeRegex(value)}]+$`).test('a-z')).toBe(true)
+    expect(new RegExp(`^[${escapeRegex(value)}]+$`).test('m')).toBe(false)
+  })
+
+  it('should return an empty string for an empty value', () => {
+    expect(escapeRegex('')).toBe('')
   })
 })

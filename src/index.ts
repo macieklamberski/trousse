@@ -24,6 +24,7 @@ export { escapeHtml, t, tx } from './locales.js'
 export {
   anyWordMatchesAnyOf,
   endsWithAnyOf,
+  escapeRegex,
   includesAnyOf,
   isAnyOf,
   startsWithAnyOf,
