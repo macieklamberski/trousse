@@ -1,6 +1,15 @@
 import type { Pattern } from './types.js'
 
 const whitespaceRegex = /\s+/
+// `-` is only special inside a character class, but escaping it always is free and keeps the
+// result safe to interpolate into one. It sits last so it reads as a literal, not a range.
+const regexMetaCharsRegex = /[.*+?^${}()|[\]\\-]/g
+
+// Escapes a literal so it can be interpolated into a regex source string, for the common case
+// of building one pattern out of a list of plain strings.
+export const escapeRegex = (value: string): string => {
+  return value.replace(regexMetaCharsRegex, '\\$&')
+}
 
 export const isAnyOf = (
   value: string,
