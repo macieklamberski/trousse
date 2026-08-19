@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { omit, pick } from './objects.js'
+import { omit, pick, trimObject } from './objects.js'
 
 describe('pick', () => {
   it('should keep only the listed keys', () => {
@@ -119,5 +119,83 @@ describe('omit', () => {
     const keys = ['title', 'author'] as const
 
     expect(omit(value, keys)).toEqual({ id: 1 })
+  })
+})
+
+describe('trimObject', () => {
+  it('should return the same object when every field passes', () => {
+    const value = { id: 1, title: 'Post', author: 'Ada' }
+
+    expect(trimObject(value)).toBe(value)
+  })
+
+  it('should drop the fields that are null or undefined', () => {
+    const value = { id: 1, title: 'Post', author: null, updatedAt: undefined }
+    const expected = { id: 1, title: 'Post' }
+
+    expect(trimObject(value)).toEqual(expected)
+  })
+
+  it('should keep empty strings, zeros and false by default', () => {
+    const value = { count: 0, label: '', flag: false, author: null }
+    const expected = { count: 0, label: '', flag: false }
+
+    expect(trimObject(value)).toEqual(expected)
+  })
+
+  it('should drop the fields a custom predicate rejects', () => {
+    const value = { id: 1, label: '', count: 0, title: 'Post' }
+    const expected = { id: 1, title: 'Post' }
+
+    expect(trimObject(value, Boolean)).toEqual(expected)
+  })
+
+  it('should return undefined when no field passes', () => {
+    const value = { author: null, updatedAt: undefined }
+
+    expect(trimObject(value)).toBeUndefined()
+  })
+
+  it('should return undefined for an empty object', () => {
+    expect(trimObject({})).toBeUndefined()
+  })
+
+  // Symbol keys are not enumerable with for..in, so a rebuilt object loses them.
+  it('should drop symbol keys when the object is rebuilt', () => {
+    const key = Symbol('internal')
+    const value = { id: 1, author: undefined, [key]: 'symbol value' }
+    const expected = { id: 1 }
+
+    expect(trimObject(value)).toEqual(expected)
+  })
+
+  // Only top-level fields are trimmed; nested objects and arrays pass through by reference,
+  // absent inner values and all.
+  it('should leave nested values untrimmed', () => {
+    const author = { name: 'Ada', email: undefined }
+    const value = { author, publisher: undefined, tags: ['news', undefined, 'tech'] }
+    const result = trimObject(value)
+
+    expect(result?.author).toBe(author)
+    expect(result?.tags).toEqual(['news', undefined, 'tech'])
+  })
+
+  it('should read getters into plain values', () => {
+    const value = {
+      get id() {
+        return 1
+      },
+      author: undefined,
+    }
+    const expected = { id: 1 }
+
+    expect(trimObject(value)).toEqual(expected)
+  })
+
+  it('should leave the source object untouched', () => {
+    const value = { id: 1, author: null }
+    trimObject(value)
+
+    expect(value).toEqual({ id: 1, author: null })
   })
 })
