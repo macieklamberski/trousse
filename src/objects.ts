@@ -1,3 +1,6 @@
+import { isPresent } from './is.js'
+import type { AnyOf } from './types.js'
+
 // Keys the object does not have are skipped rather than set to undefined, so picking from a
 // value with optional fields yields only the ones actually present.
 export const pick = <T extends object, K extends keyof T>(
@@ -26,4 +29,49 @@ export const omit = <T extends object, K extends keyof T>(
   }
 
   return result as Omit<T, K>
+}
+
+// Drops the fields whose value fails the keep predicate, by default the null and undefined ones.
+// Returns undefined when nothing survives, and the input object itself when everything does, so
+// the fully-present case allocates nothing.
+export const trimObject = <T extends Record<string, unknown>>(
+  object: T,
+  keep: (value: unknown) => boolean = isPresent,
+): AnyOf<T> | undefined => {
+  let hasKept = false
+  let hasDropped = false
+
+  // biome-ignore lint/suspicious/noForIn: Plain object; avoids per-call Object.keys allocation.
+  for (const key in object) {
+    if (keep(object[key])) {
+      hasKept = true
+    } else {
+      hasDropped = true
+    }
+
+    if (hasKept && hasDropped) {
+      break
+    }
+  }
+
+  if (!hasKept) {
+    return
+  }
+
+  if (!hasDropped) {
+    return object as AnyOf<T>
+  }
+
+  const result: Partial<T> = {}
+
+  // biome-ignore lint/suspicious/noForIn: Plain object; avoids per-call Object.keys allocation.
+  for (const key in object) {
+    const value = object[key]
+
+    if (keep(value)) {
+      result[key] = value
+    }
+  }
+
+  return result as AnyOf<T>
 }
