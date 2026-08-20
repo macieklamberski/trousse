@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'bun:test'
-import { getPathSegments, isHostOf, isSubdomainOf, parseUrl } from './urls.js'
+import {
+  decodeUrlComponent,
+  getPathSegments,
+  isDomainOf,
+  isHostOf,
+  isSubdomainOf,
+  parseUrl,
+} from './urls.js'
 
 describe('parseUrl', () => {
   it('should parse a valid URL string', () => {
@@ -146,5 +153,73 @@ describe('isSubdomainOf', () => {
 
   it('should return false for invalid URLs', () => {
     expect(isSubdomainOf('not a url', 'example.com')).toBe(false)
+  })
+})
+
+describe('isDomainOf', () => {
+  it('should match the bare domain', () => {
+    expect(isDomainOf('https://example.com/path', 'example.com')).toBe(true)
+  })
+
+  it('should match a subdomain', () => {
+    expect(isDomainOf('https://www.example.com/path', 'example.com')).toBe(true)
+  })
+
+  it('should match a nested subdomain', () => {
+    expect(isDomainOf('https://player.cdn.example.com/path', 'example.com')).toBe(true)
+  })
+
+  it('should match a URL instance', () => {
+    const value = new URL('https://www.example.com/path')
+
+    expect(isDomainOf(value, 'example.com')).toBe(true)
+  })
+
+  it('should match domains given as an array', () => {
+    expect(isDomainOf('https://www.example.com/path', ['other.com', 'example.com'])).toBe(true)
+  })
+
+  it('should accept a readonly array of domains', () => {
+    const domains: ReadonlyArray<string> = ['other.com', 'example.com']
+
+    expect(isDomainOf('https://example.com/path', domains)).toBe(true)
+  })
+
+  it('should match domain patterns case-insensitively', () => {
+    expect(isDomainOf('https://www.example.com/path', 'EXAMPLE.com')).toBe(true)
+  })
+
+  it('should not match a different domain sharing a suffix', () => {
+    expect(isDomainOf('https://notexample.com/path', 'example.com')).toBe(false)
+  })
+
+  it('should not match an unrelated domain', () => {
+    expect(isDomainOf('https://other.com/path', 'example.com')).toBe(false)
+  })
+
+  it('should return false for invalid URLs', () => {
+    expect(isDomainOf('not a url', 'example.com')).toBe(false)
+  })
+})
+
+describe('decodeUrlComponent', () => {
+  it('should decode a percent-encoded value', () => {
+    expect(decodeUrlComponent('caf%C3%A9%20noir')).toBe('café noir')
+  })
+
+  it('should return a value with nothing to decode unchanged', () => {
+    expect(decodeUrlComponent('plain-value')).toBe('plain-value')
+  })
+
+  it('should return undefined for a malformed escape', () => {
+    expect(decodeUrlComponent('%zz')).toBeUndefined()
+  })
+
+  it('should return undefined for a truncated escape', () => {
+    expect(decodeUrlComponent('half%E0')).toBeUndefined()
+  })
+
+  it('should return an empty string unchanged', () => {
+    expect(decodeUrlComponent('')).toBe('')
   })
 })
