@@ -30,18 +30,16 @@ describe('omitEmpty', () => {
     expect(omitEmpty(value)).toEqual(expected)
   })
 
-  it('should return empty array when all values are empty', () => {
+  it('should return undefined when all values are empty', () => {
     const value = [undefined, null, '']
-    const expected: Array<string> = []
 
-    expect(omitEmpty(value)).toEqual(expected)
+    expect(omitEmpty(value)).toBeUndefined()
   })
 
-  it('should return empty array for empty input', () => {
+  it('should return undefined for empty input', () => {
     const value: Array<string | undefined> = []
-    const expected: Array<string> = []
 
-    expect(omitEmpty(value)).toEqual(expected)
+    expect(omitEmpty(value)).toBeUndefined()
   })
 
   it('should preserve all values when none are empty', () => {
