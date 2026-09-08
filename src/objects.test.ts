@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test'
-import { omit, pick, trimObject } from './objects.js'
+import { omit, pick, toMap, trimObject } from './objects.js'
+
+type CiteKind = 'bookmark' | 'repost'
 
 describe('pick', () => {
   it('should keep only the listed keys', () => {
@@ -197,5 +199,58 @@ describe('trimObject', () => {
     trimObject(value)
 
     expect(value).toEqual({ id: 1, author: null })
+  })
+})
+
+describe('toMap', () => {
+  it('should turn every field into an entry', () => {
+    const value = { album: 400, song: 252 }
+    const expected = new Map([
+      ['album', 400],
+      ['song', 252],
+    ])
+
+    expect(toMap(value)).toEqual(expected)
+  })
+
+  it('should accept an explicit value type', () => {
+    const value = toMap<CiteKind>({ 'bookmark-of': 'bookmark', 'repost-of': 'repost' })
+    const expected = new Map<string, CiteKind>([
+      ['bookmark-of', 'bookmark'],
+      ['repost-of', 'repost'],
+    ])
+
+    expect(value).toEqual(expected)
+  })
+
+  it('should keep a field whose value is undefined', () => {
+    const value = toMap({ album: 450, song: 175, 'music-video': undefined })
+
+    expect(value.has('music-video')).toBe(true)
+    expect(value.get('music-video')).toBeUndefined()
+  })
+
+  it('should not resolve a key that lives on the object prototype', () => {
+    const value = toMap({ album: 400 })
+
+    expect(value.has('constructor')).toBe(false)
+    expect(value.get('constructor')).toBeUndefined()
+  })
+
+  it('should keep a key that is not a valid identifier', () => {
+    const value = toMap({ 'application/rss+xml': 'rss' })
+    const expected = new Map([['application/rss+xml', 'rss']])
+
+    expect(value).toEqual(expected)
+  })
+
+  it('should preserve the order of the fields', () => {
+    const value = toMap({ album: 400, song: 252, podcast: 180 })
+
+    expect([...value.keys()]).toEqual(['album', 'song', 'podcast'])
+  })
+
+  it('should return an empty map for an empty object', () => {
+    expect(toMap({}).size).toBe(0)
   })
 })
