@@ -29,7 +29,7 @@ export {
   isAnyOf,
   startsWithAnyOf,
 } from './matching.js'
-export { omit, pick, trimObject } from './objects.js'
+export { omit, pick, toMap, trimObject } from './objects.js'
 export { sleep } from './timers.js'
 export type {
   AnyOf,
