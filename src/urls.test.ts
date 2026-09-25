@@ -230,6 +230,10 @@ describe('getSubdomain', () => {
     expect(getSubdomain(new URL('https://alice.podbean.com/'), 'podbean.com')).toBe('alice')
   })
 
+  it('should lowercase the hostname of a URL with another scheme', () => {
+    expect(getSubdomain('javascript://FOO.EXBLOG.JP/', 'exblog.jp')).toBe('foo')
+  })
+
   it('should return undefined for the bare domain', () => {
     expect(getSubdomain('https://podbean.com/', 'podbean.com')).toBeUndefined()
   })

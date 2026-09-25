@@ -63,13 +63,14 @@ export const isHostOrSubdomainOf = (
   return isHostOf(url, domains) || isSubdomainOf(url, domains)
 }
 
-// The labels in front of the first domain the hostname is a subdomain of, lowercased as URL
-// hostnames are: `alice` for `alice.podbean.com`, `a.b` for `a.b.example.com`.
+// The labels in front of the first domain the hostname is a subdomain of, lowercased: `alice` for
+// `alice.podbean.com`, `a.b` for `a.b.example.com`. A URL of another scheme keeps the case of its
+// hostname, so it is lowercased here, as `isSubdomainOf` compares.
 export const getSubdomain = (
   url: string | URL,
   domains: string | ReadonlyArray<string>,
 ): string | undefined => {
-  const hostname = parseUrl(url)?.hostname
+  const hostname = parseUrl(url)?.hostname.toLowerCase()
 
   if (!hostname) {
     return
