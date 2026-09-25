@@ -40,4 +40,13 @@ export type {
   PartialNullish,
   Pattern,
 } from './types.js'
-export { getPathSegments, isHostOf, isSubdomainOf, parseUrl } from './urls.js'
+export {
+  decodeSegment,
+  getPathSegments,
+  getSubdomain,
+  isHostOf,
+  isHostOrSubdomainOf,
+  isHttpUrl,
+  isSubdomainOf,
+  parseUrl,
+} from './urls.js'
