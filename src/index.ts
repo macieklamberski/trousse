@@ -25,6 +25,7 @@ export {
   anyWordMatchesAnyOf,
   endsWithAnyOf,
   escapeRegex,
+  getAnyOf,
   includesAnyOf,
   isAnyOf,
   startsWithAnyOf,

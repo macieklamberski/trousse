@@ -13,18 +13,30 @@ export const escapeRegex = (value: string): string => {
 
 export const isAnyOf = (
   value: string,
-  patterns: ReadonlyArray<Pattern>,
+  patterns: Pattern | ReadonlyArray<Pattern>,
   parser?: (value: string) => string,
 ): boolean => {
   const parsedValue = parser ? parser(value) : value?.toLowerCase()?.trim()
+  const list = typeof patterns === 'string' || patterns instanceof RegExp ? [patterns] : patterns
 
-  return patterns.some((pattern) => {
+  return list.some((pattern) => {
     if (pattern instanceof RegExp) {
       return pattern.test(parsedValue)
     }
 
     return parsedValue === pattern.toLowerCase().trim()
   })
+}
+
+// Returns the list entry the value matches, so a caller can emit the entry's own spelling.
+export const getAnyOf = <T extends string>(
+  value: string,
+  patterns: ReadonlyArray<T>,
+  parser?: (value: string) => string,
+): T | undefined => {
+  const parsedValue = parser ? parser(value) : value?.toLowerCase()?.trim()
+
+  return patterns.find((pattern) => parsedValue === pattern.toLowerCase().trim())
 }
 
 export const includesAnyOf = (
