@@ -81,7 +81,6 @@ describe('isAnyOf', () => {
     const value = undefined
     const patterns = ['application/rss+xml']
 
-    // @ts-expect-error: This is for testing purposes.
     expect(isAnyOf(value, patterns)).toBe(false)
   })
 
@@ -143,6 +142,15 @@ describe('isAnyOf', () => {
 
     expect(isAnyOf(value, patterns)).toBe(false)
   })
+
+  it('should return false for an undefined value against a RegExp pattern', () => {
+    const value = undefined
+    // biome-ignore lint/performance/useTopLevelRegex: Test-specific pattern.
+    const patternRegex = /undefined/
+
+    expect(isAnyOf(value, patternRegex)).toBe(false)
+  })
+
   it('should return true when value matches a single string pattern', () => {
     const value = 'APPLICATION/RSS+XML'
     const pattern = 'application/rss+xml'
@@ -195,11 +203,32 @@ describe('getAnyOf', () => {
     expect(getAnyOf(value, patterns, normalizeMimeType)).toBe('application/rss+xml')
   })
 
+  it('should return the entry when value has surrounding whitespace', () => {
+    const value = '  Top '
+    const patterns = ['hot', 'top']
+
+    expect(getAnyOf(value, patterns)).toBe('top')
+  })
+
+  it('should return the first entry when several match', () => {
+    const value = 'top'
+    const patterns = ['TOP', 'top']
+
+    expect(getAnyOf(value, patterns)).toBe('TOP')
+  })
+
+  it('should not call the parser for an undefined value', () => {
+    const value = undefined
+    const patterns = ['hot']
+    const parser = (input: string) => input.trim()
+
+    expect(getAnyOf(value, patterns, parser)).toBeUndefined()
+  })
+
   it('should handle undefined value', () => {
     const value = undefined
     const patterns = ['hot']
 
-    // @ts-expect-error: This is for testing purposes.
     expect(getAnyOf(value, patterns)).toBeUndefined()
   })
 })
@@ -265,7 +294,6 @@ describe('includesAnyOf', () => {
     const value = undefined
     const patterns = ['application/rss+xml']
 
-    // @ts-expect-error: This is for testing purposes.
     expect(includesAnyOf(value, patterns)).toBe(false)
   })
 

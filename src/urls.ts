@@ -23,9 +23,7 @@ export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string
     return false
   }
 
-  const list = typeof hosts === 'string' ? [hosts] : hosts
-
-  return isAnyOf(hostname, list)
+  return isAnyOf(hostname, hosts)
 }
 
 export const isSubdomainOf = (
