@@ -7,7 +7,7 @@ export const pick = <T extends object, K extends keyof T>(
   object: T,
   keys: ReadonlyArray<K>,
 ): Pick<T, K> => {
-  const result = {} as Pick<T, K>
+  const result: Partial<Pick<T, K>> = {}
 
   for (const key of keys) {
     if (key in object) {
@@ -15,7 +15,7 @@ export const pick = <T extends object, K extends keyof T>(
     }
   }
 
-  return result
+  return result as Pick<T, K>
 }
 
 export const omit = <T extends object, K extends keyof T>(

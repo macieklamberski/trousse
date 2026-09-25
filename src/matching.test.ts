@@ -552,9 +552,10 @@ describe('escapeRegex', () => {
 
   it('should return a source that matches the literal it escaped', () => {
     const value = 'pixel.gif?a=1'
+    const escapedRegex = new RegExp(`^${escapeRegex(value)}$`)
 
-    expect(new RegExp(`^${escapeRegex(value)}$`).test(value)).toBe(true)
-    expect(new RegExp(`^${escapeRegex(value)}$`).test('pixelXgif?a=1')).toBe(false)
+    expect(escapedRegex.test(value)).toBe(true)
+    expect(escapedRegex.test('pixelXgif?a=1')).toBe(false)
   })
 
   it('should stay safe to interpolate into a character class', () => {
