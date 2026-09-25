@@ -3,6 +3,7 @@ import {
   anyWordMatchesAnyOf,
   endsWithAnyOf,
   escapeRegex,
+  getAnyOf,
   includesAnyOf,
   isAnyOf,
   startsWithAnyOf,
@@ -141,6 +142,65 @@ describe('isAnyOf', () => {
     const patterns = [/^application\/rss/]
 
     expect(isAnyOf(value, patterns)).toBe(false)
+  })
+  it('should return true when value matches a single string pattern', () => {
+    const value = 'APPLICATION/RSS+XML'
+    const pattern = 'application/rss+xml'
+
+    expect(isAnyOf(value, pattern)).toBe(true)
+  })
+
+  it('should return false when value does not match a single string pattern', () => {
+    const value = 'text/html'
+    const pattern = 'application/rss+xml'
+
+    expect(isAnyOf(value, pattern)).toBe(false)
+  })
+
+  it('should return true when value matches a single RegExp pattern', () => {
+    const value = 'application/rss+xml'
+    // biome-ignore lint/performance/useTopLevelRegex: Test-specific pattern.
+    const patternRegex = /^application\/rss/
+
+    expect(isAnyOf(value, patternRegex)).toBe(true)
+  })
+})
+
+describe('getAnyOf', () => {
+  it('should return the entry the value matches', () => {
+    const value = 'Top'
+    const patterns = ['hot', 'top']
+
+    expect(getAnyOf(value, patterns)).toBe('top')
+  })
+
+  it('should return the entry in its own spelling', () => {
+    const value = 'active'
+    const patterns = ['Active', 'Hot']
+
+    expect(getAnyOf(value, patterns)).toBe('Active')
+  })
+
+  it('should return undefined when value does not match any entry', () => {
+    const value = 'new'
+    const patterns = ['hot', 'top']
+
+    expect(getAnyOf(value, patterns)).toBeUndefined()
+  })
+
+  it('should return the entry when using custom parser', () => {
+    const value = 'application/rss+xml; charset=utf-8'
+    const patterns = ['application/rss+xml']
+
+    expect(getAnyOf(value, patterns, normalizeMimeType)).toBe('application/rss+xml')
+  })
+
+  it('should handle undefined value', () => {
+    const value = undefined
+    const patterns = ['hot']
+
+    // @ts-expect-error: This is for testing purposes.
+    expect(getAnyOf(value, patterns)).toBeUndefined()
   })
 })
 
