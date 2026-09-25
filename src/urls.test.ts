@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'bun:test'
-import { getPathSegments, isHostOf, isSubdomainOf, parseUrl } from './urls.js'
+import {
+  decodeSegment,
+  getPathSegments,
+  getSubdomain,
+  isHostOf,
+  isHostOrSubdomainOf,
+  isHttpUrl,
+  isSubdomainOf,
+  parseUrl,
+} from './urls.js'
 
 describe('parseUrl', () => {
   it('should parse a valid URL string', () => {
@@ -146,5 +155,113 @@ describe('isSubdomainOf', () => {
 
   it('should return false for invalid URLs', () => {
     expect(isSubdomainOf('not a url', 'example.com')).toBe(false)
+  })
+})
+
+describe('isHttpUrl', () => {
+  it('should return true for http and https URLs', () => {
+    expect(isHttpUrl('https://example.com/feed.xml')).toBe(true)
+    expect(isHttpUrl('http://example.com/feed.xml')).toBe(true)
+  })
+
+  it('should return true for a URL instance', () => {
+    expect(isHttpUrl(new URL('https://example.com'))).toBe(true)
+  })
+
+  it('should match the scheme case-insensitively', () => {
+    expect(isHttpUrl('HTTPS://example.com')).toBe(true)
+  })
+
+  it('should return false for other schemes', () => {
+    expect(isHttpUrl('javascript:subscribe()')).toBe(false)
+    expect(isHttpUrl('mailto:rss@example.com')).toBe(false)
+    expect(isHttpUrl('file:///Users/alice/feed.xml')).toBe(false)
+    expect(isHttpUrl('ftp://example.com/feed.xml')).toBe(false)
+  })
+
+  it('should return false for relative and invalid URLs', () => {
+    expect(isHttpUrl('/feed.xml')).toBe(false)
+    expect(isHttpUrl('not a url')).toBe(false)
+  })
+})
+
+describe('isHostOrSubdomainOf', () => {
+  it('should match the bare domain', () => {
+    expect(isHostOrSubdomainOf('https://medium.com/@alice', 'medium.com')).toBe(true)
+  })
+
+  it('should match a subdomain', () => {
+    expect(isHostOrSubdomainOf('https://alice.medium.com/', 'medium.com')).toBe(true)
+  })
+
+  it('should match domains given as an array', () => {
+    expect(isHostOrSubdomainOf('https://alice.itch.io/', ['medium.com', 'itch.io'])).toBe(true)
+  })
+
+  it('should not match a different domain sharing a suffix', () => {
+    expect(isHostOrSubdomainOf('https://notmedium.com/', 'medium.com')).toBe(false)
+  })
+
+  it('should return false for invalid URLs', () => {
+    expect(isHostOrSubdomainOf('not a url', 'medium.com')).toBe(false)
+  })
+})
+
+describe('getSubdomain', () => {
+  it('should return the label in front of the domain', () => {
+    expect(getSubdomain('https://alice.podbean.com/e/episode', 'podbean.com')).toBe('alice')
+  })
+
+  it('should return every label in front of the domain', () => {
+    expect(getSubdomain('https://a.b.example.com/', 'example.com')).toBe('a.b')
+  })
+
+  it('should return the lowercased label', () => {
+    expect(getSubdomain('https://Alice.Podbean.com/', 'PODBEAN.com')).toBe('alice')
+  })
+
+  it('should use the first domain in a list that matches', () => {
+    expect(getSubdomain('https://alice.blog.fc2.com/', ['fc2.com', 'blog.fc2.com'])).toBe(
+      'alice.blog',
+    )
+  })
+
+  it('should accept a URL instance', () => {
+    expect(getSubdomain(new URL('https://alice.podbean.com/'), 'podbean.com')).toBe('alice')
+  })
+
+  it('should return undefined for the bare domain', () => {
+    expect(getSubdomain('https://podbean.com/', 'podbean.com')).toBeUndefined()
+  })
+
+  it('should return undefined for another domain sharing a suffix', () => {
+    expect(getSubdomain('https://notpodbean.com/', 'podbean.com')).toBeUndefined()
+  })
+
+  it('should return undefined for invalid URLs', () => {
+    expect(getSubdomain('not a url', 'podbean.com')).toBeUndefined()
+  })
+})
+
+describe('decodeSegment', () => {
+  it('should decode a percent-encoded segment', () => {
+    expect(decodeSegment('caf%C3%A9')).toBe('café')
+  })
+
+  it('should decode an encoded slash', () => {
+    expect(decodeSegment('a%2Fb')).toBe('a/b')
+  })
+
+  it('should return a plain segment unchanged', () => {
+    expect(decodeSegment('photography')).toBe('photography')
+  })
+
+  it('should return undefined for a malformed escape', () => {
+    expect(decodeSegment('100%')).toBeUndefined()
+    expect(decodeSegment('%E0%A4%A')).toBeUndefined()
+  })
+
+  it('should return undefined for undefined', () => {
+    expect(decodeSegment(undefined)).toBeUndefined()
   })
 })
