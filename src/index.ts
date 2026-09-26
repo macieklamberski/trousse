@@ -18,7 +18,7 @@ export {
   installerExtensions,
   subtitleExtensions,
   videoExtensions,
-} from './extensions.js'
+} from './files.js'
 export {
   isBoolean,
   isFunction,
