@@ -8,6 +8,18 @@ export {
   coerceString,
 } from './coercions.js'
 export {
+  archiveExtensions,
+  audioExtensions,
+  codeExtensions,
+  documentExtensions,
+  flashExtensions,
+  fontExtensions,
+  imageExtensions,
+  installerExtensions,
+  subtitleExtensions,
+  videoExtensions,
+} from './extensions.js'
+export {
   isBoolean,
   isFunction,
   isNonEmptyString,
