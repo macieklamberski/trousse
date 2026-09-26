@@ -1,4 +1,3 @@
-// File extensions by kind, lowercase and without the leading dot.
 export const audioExtensions = [
   'aac',
   'aif',
