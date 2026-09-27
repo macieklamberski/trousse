@@ -373,8 +373,12 @@ export const upgradeProtocol = (url: string, protocol: 'http' | 'https' = 'https
 // Resolves a URL by converting feed protocols, resolving relative URLs, and ensuring it's a valid
 // HTTP(S) URL.
 export const resolveUrl = (url: string, base?: string): string | undefined => {
+  // The URL parser strips surrounding spaces itself, but the repair steps below match from the
+  // start of the string, so a leading space would stop them.
+  const trimmedUrl = url.trim()
+
   // Fragment-only URLs can only be resolved against a base URL.
-  if (url.startsWith('#') && !base) {
+  if (trimmedUrl.startsWith('#') && !base) {
     return
   }
 
@@ -384,7 +388,7 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
   // URLs in XML/HTML are often entity-encoded (e.g., &amp; for &). Strict decoding only expands
   // entities with a trailing semicolon, so a query parameter whose name matches an entity (e.g.
   // `?id=1&copy=2`) is left intact instead of being mangled into `?id=1©=2`.
-  resolvedUrl = url.includes('&') ? decodeHTMLStrict(url) : url
+  resolvedUrl = trimmedUrl.includes('&') ? decodeHTMLStrict(trimmedUrl) : trimmedUrl
 
   // Step 2: Convert feed-related protocols.
   resolvedUrl = resolveFeedProtocol(resolvedUrl)

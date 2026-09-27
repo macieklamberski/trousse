@@ -1115,6 +1115,20 @@ describe('upgradeProtocol', () => {
 })
 
 describe('resolveUrl', () => {
+  const leadingSpaceCases = [
+    [' htp://example.com/feed', 'http://example.com/feed'],
+    [' feed://example.com/feed', 'https://example.com/feed'],
+    [' example.com/feed', 'https://example.com/feed'],
+    ['\thttp:example.com/feed', 'http://example.com/feed'],
+  ]
+
+  it.each(leadingSpaceCases)(
+    'should resolve a URL with surrounding spaces (%s)',
+    (value, expected) => {
+      expect(resolveUrl(`${value} `)).toBe(expected)
+    },
+  )
+
   it('should resolve a relative path whose first segment looks like a protocol', () => {
     const value = '/hp/support'
     const base = 'https://example.com/'
