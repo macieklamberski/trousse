@@ -751,6 +751,35 @@ describe('fixMalformedProtocol', () => {
     },
   )
 
+  const protocolLikePathUrls: Array<string> = [
+    '/hp/support',
+    '/tp/feed.xml',
+    '/http/feed.xml',
+    'tps/x.xml',
+    'hh/x.xml',
+    '/tps/tps/feed',
+  ]
+
+  it.each(protocolLikePathUrls)(
+    'should not mistake a relative path segment for a protocol (%s)',
+    (value) => {
+      expect(fixMalformedProtocol(value)).toBe(value)
+    },
+  )
+
+  const protocolLikePortHostUrls: Array<string> = [
+    'http://tps:8080/feed',
+    'http://php:8080/feed',
+    'http://sh:8080/feed',
+  ]
+
+  it.each(protocolLikePortHostUrls)(
+    'should not mistake a host with a port for a doubled protocol (%s)',
+    (value) => {
+      expect(fixMalformedProtocol(value)).toBe(value)
+    },
+  )
+
   const nonHttpUrls: Array<string> = [
     'ftp://example.com/file',
     'mailto:user@example.com',
@@ -1032,6 +1061,14 @@ describe('upgradeProtocol', () => {
 })
 
 describe('resolveUrl', () => {
+  it('should resolve a relative path whose first segment looks like a protocol', () => {
+    const value = '/hp/support'
+    const base = 'https://example.com/'
+    const expected = 'https://example.com/hp/support'
+
+    expect(resolveUrl(value, base)).toBe(expected)
+  })
+
   describe('HTML entity decoding', () => {
     it('should decode &amp; to &', () => {
       const value = 'https://example.com/feed?a=1&amp;b=2'

@@ -141,17 +141,22 @@ const validUrlRegex = /^https?:\/\/(?:www\.|[a-vx-z0-9])/i
 // hostname. A run of dots alone is a label boundary, so the host `tp.media` is not `tp://media`.
 const schemeSeparator = String.raw`\.*[:\s=\\/][:\s=.\\/]*`
 
+// After the leading scheme a lone `/` is a path separator, not a typo, so the relative path
+// `/hp/support` is not `hp://support`. That separator needs a colon or at least two characters.
+const leadingSchemeSeparator = String.raw`\.*(?::[:\s=.\\/]*|[\s=\\/][:\s=.\\/]+)`
+
 // Doubled/nested protocol pattern - captures the INNER protocol which takes precedence.
-// Matches: http:http://, https:https://, http://https//, htp://ttps://, etc.
+// Matches: http:http://, https:https://, http://https//, htp://ttps://, etc. An inner match
+// followed by `:` and a digit is a host with a port, as in `http://tps:8080`, so it is skipped.
 const doubledProtocolRegex = new RegExp(
-  String.raw`^\/?[htps]{2,7}${schemeSeparator}([htps]{2,7})${schemeSeparator}[.,:/]*(www[./]+)?`,
+  String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d)${schemeSeparator}[.,:/]*(www[./]+)?`,
   'i',
 )
 
 // Single malformed protocol pattern - for typos, wrong separators, etc. Must start with h (or /h)
 // to be HTTP-like. Allows colons within letters (http:s//).
 const singleMalformedRegex = new RegExp(
-  String.raw`^\/?(?:h[htps():]{1,10}|t{1,2}ps?)${schemeSeparator}[.,:/]*(www[./]+)?`,
+  String.raw`^\/?(?:h[htps():]{1,10}|t{1,2}ps?)${leadingSchemeSeparator}[.,:/]*(www[./]+)?`,
   'i',
 )
 
