@@ -174,12 +174,13 @@ const singleMalformedRegex = new RegExp(
 // - Misplaced www: https:www.// → https://www
 // - Missing www dot: https://www/ → https://www
 export const fixMalformedProtocol = (url: string): string => {
+  const doubledMatch = doubledProtocolRegex.exec(url)
+
   // Fast path: valid URL without doubled protocol.
-  if (validUrlRegex.test(url) && !doubledProtocolRegex.test(url)) {
+  if (!doubledMatch && validUrlRegex.test(url)) {
     return url
   }
 
-  const doubledMatch = doubledProtocolRegex.exec(url)
   if (doubledMatch) {
     const inner = doubledMatch[1]
     const www = doubledMatch[2]
@@ -347,13 +348,11 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
     return
   }
 
-  let resolvedUrl: string | undefined
-
   // Step 1: Decode HTML entities to recover the intended URL.
   // URLs in XML/HTML are often entity-encoded (e.g., &amp; for &). Strict decoding only expands
   // entities with a trailing semicolon, so a query parameter whose name matches an entity (e.g.
   // `?id=1&copy=2`) is left intact instead of being mangled into `?id=1©=2`.
-  resolvedUrl = url.includes('&') ? decodeHTMLStrict(url) : url
+  let resolvedUrl = url.includes('&') ? decodeHTMLStrict(url) : url
 
   // Step 2: Convert feed-related protocols.
   resolvedUrl = resolveFeedProtocol(resolvedUrl)
