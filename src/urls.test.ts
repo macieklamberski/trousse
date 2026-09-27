@@ -2432,6 +2432,11 @@ describe('getRegistrableDomain', () => {
     expect(getRegistrableDomain('https://[2606:4700::1111]/feed')).toBe('[2606:4700::1111]')
   })
 
+  it('should drop the trailing dot of a fully qualified host', () => {
+    expect(getRegistrableDomain('https://www.example.com./feed')).toBe('example.com')
+    expect(getRegistrableDomain('https://example.com./feed')).toBe('example.com')
+  })
+
   it('should return a single-label host unchanged', () => {
     expect(getRegistrableDomain('http://localhost/feed')).toBe('localhost')
   })

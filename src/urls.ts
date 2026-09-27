@@ -594,10 +594,12 @@ export const getRegistrableDomain = (url: string | URL): string | undefined => {
     return hostname
   }
 
-  const parts = hostname.split('.')
+  // A fully qualified `example.com.` ends in an empty label, which would shift the slice.
+  const trimmedHostname = hostname.endsWith('.') ? hostname.slice(0, -1) : hostname
+  const parts = trimmedHostname.split('.')
 
   if (parts.length <= 2) {
-    return hostname
+    return trimmedHostname
   }
 
   const [secondLevel, topLevel] = parts.slice(-2)
