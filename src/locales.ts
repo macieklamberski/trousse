@@ -3,16 +3,21 @@ const escapableRegex = /[&<>"']/g
 
 // Single-pass HTML escape of the five significant characters. Cheaper and lighter than a chained
 // `replaceAll` (one scan instead of five), and the set is fixed by the spec so it never goes stale.
-const htmlEscapes: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;',
-}
-
 export const escapeHtml = (value: string): string => {
-  return value.replace(escapableRegex, (char) => htmlEscapes[char])
+  return value.replace(escapableRegex, (char) => {
+    switch (char) {
+      case '&':
+        return '&amp;'
+      case '<':
+        return '&lt;'
+      case '>':
+        return '&gt;'
+      case '"':
+        return '&quot;'
+      default:
+        return '&#39;'
+    }
+  })
 }
 
 // Interpolates `{{key}}` placeholders in a locale string with the given params. A placeholder

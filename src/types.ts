@@ -11,7 +11,9 @@ export type IsPlainObject<T> =
       : T extends Date
         ? false
         : T extends object
-          ? true
+          ? T extends null
+            ? false
+            : true
           : false
 
 // Strips the named keys at every level, recursing through arrays and plain objects while leaving

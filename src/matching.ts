@@ -113,8 +113,16 @@ export const anyWordMatchesAnyOf = (value: string, patterns: ReadonlyArray<Patte
   const words = value.toLowerCase().split(whitespaceRegex)
 
   for (const word of words) {
-    if (stringPatterns.includes(word) || regexPatterns.some((regex) => regex.test(word))) {
-      return true
+    for (const stringPattern of stringPatterns) {
+      if (word === stringPattern) {
+        return true
+      }
+    }
+
+    for (const regexPattern of regexPatterns) {
+      if (regexPattern.test(word)) {
+        return true
+      }
     }
   }
 
