@@ -67,6 +67,18 @@ describe('parseUrl', () => {
   it('should return undefined for a relative URL without a base', () => {
     expect(parseUrl('/feed.xml')).toBeUndefined()
   })
+
+  it('should fall back to the constructor when URL.parse is missing', () => {
+    const nativeParse = URL.parse
+    Object.defineProperty(URL, 'parse', { value: undefined, configurable: true })
+
+    try {
+      expect(parseUrl('https://example.com/path')?.hostname).toBe('example.com')
+      expect(parseUrl('not a url')).toBeUndefined()
+    } finally {
+      Object.defineProperty(URL, 'parse', { value: nativeParse, configurable: true })
+    }
+  })
 })
 
 describe('getPathSegments', () => {
@@ -97,6 +109,19 @@ describe('getPathSegments', () => {
 })
 
 describe('isHostOf', () => {
+  it('should match a host written in Unicode', () => {
+    expect(isHostOf('https://bücher.de/feed', 'bücher.de')).toBe(true)
+    expect(isHostOf('https://bücher.de/feed', ['example.com', 'bücher.de'])).toBe(true)
+  })
+
+  it('should not match a Unicode pattern that is not a valid host', () => {
+    expect(isHostOf('https://bücher.de/feed', 'bü cher.de')).toBe(false)
+  })
+
+  it('should match a fully qualified host with a trailing dot', () => {
+    expect(isHostOf('https://example.com./feed', 'example.com')).toBe(true)
+  })
+
   it('should match the exact hostname for a string input', () => {
     expect(isHostOf('https://example.com/path', 'example.com')).toBe(true)
   })
@@ -141,6 +166,14 @@ describe('isHostOf', () => {
 })
 
 describe('isSubdomainOf', () => {
+  it('should match a subdomain of a domain written in Unicode', () => {
+    expect(isSubdomainOf('https://shop.bücher.de/feed', 'bücher.de')).toBe(true)
+  })
+
+  it('should match a fully qualified subdomain with a trailing dot', () => {
+    expect(isSubdomainOf('https://sub.example.com./feed', 'example.com')).toBe(true)
+  })
+
   it('should match subdomains for a string input', () => {
     expect(isSubdomainOf('https://sub.example.com/path', 'example.com')).toBe(true)
   })
@@ -234,6 +267,14 @@ describe('isHostOrSubdomainOf', () => {
 })
 
 describe('getSubdomain', () => {
+  it('should return the label in front of a domain written in Unicode', () => {
+    expect(getSubdomain('https://shop.bücher.de/feed', 'bücher.de')).toBe('shop')
+  })
+
+  it('should return the label of a fully qualified host with a trailing dot', () => {
+    expect(getSubdomain('https://alice.podbean.com./feed', 'podbean.com')).toBe('alice')
+  })
+
   it('should return the label in front of the domain', () => {
     expect(getSubdomain('https://alice.podbean.com/e/episode', 'podbean.com')).toBe('alice')
   })
@@ -751,6 +792,35 @@ describe('fixMalformedProtocol', () => {
     },
   )
 
+  const protocolLikePathUrls: Array<string> = [
+    '/hp/support',
+    '/tp/feed.xml',
+    '/http/feed.xml',
+    'tps/x.xml',
+    'hh/x.xml',
+    '/tps/tps/feed',
+  ]
+
+  it.each(protocolLikePathUrls)(
+    'should not mistake a relative path segment for a protocol (%s)',
+    (value) => {
+      expect(fixMalformedProtocol(value)).toBe(value)
+    },
+  )
+
+  const protocolLikePortHostUrls: Array<string> = [
+    'http://tps:8080/feed',
+    'http://php:8080/feed',
+    'http://sh:8080/feed',
+  ]
+
+  it.each(protocolLikePortHostUrls)(
+    'should not mistake a host with a port for a doubled protocol (%s)',
+    (value) => {
+      expect(fixMalformedProtocol(value)).toBe(value)
+    },
+  )
+
   const nonHttpUrls: Array<string> = [
     'ftp://example.com/file',
     'mailto:user@example.com',
@@ -783,6 +853,19 @@ describe('fixMalformedProtocol', () => {
 })
 
 describe('addMissingProtocol', () => {
+  it('should add protocol to a bare IPv6 host', () => {
+    const value = '[::1]:8080/feed'
+    const expected = 'https://[::1]:8080/feed'
+
+    expect(addMissingProtocol(value)).toBe(expected)
+  })
+
+  it('should leave an invalid bracketed host unchanged', () => {
+    const value = '[not-ipv6]/feed'
+
+    expect(addMissingProtocol(value)).toBe(value)
+  })
+
   describe('protocol-relative URLs', () => {
     const values = [
       { value: '//example.com/feed', expected: 'https://example.com/feed' },
@@ -1032,6 +1115,28 @@ describe('upgradeProtocol', () => {
 })
 
 describe('resolveUrl', () => {
+  const leadingSpaceCases = [
+    [' htp://example.com/feed', 'http://example.com/feed'],
+    [' feed://example.com/feed', 'https://example.com/feed'],
+    [' example.com/feed', 'https://example.com/feed'],
+    ['\thttp:example.com/feed', 'http://example.com/feed'],
+  ]
+
+  it.each(leadingSpaceCases)(
+    'should resolve a URL with surrounding spaces (%s)',
+    (value, expected) => {
+      expect(resolveUrl(`${value} `)).toBe(expected)
+    },
+  )
+
+  it('should resolve a relative path whose first segment looks like a protocol', () => {
+    const value = '/hp/support'
+    const base = 'https://example.com/'
+    const expected = 'https://example.com/hp/support'
+
+    expect(resolveUrl(value, base)).toBe(expected)
+  })
+
   describe('HTML entity decoding', () => {
     it('should decode &amp; to &', () => {
       const value = 'https://example.com/feed?a=1&amp;b=2'
@@ -1849,6 +1954,15 @@ describe('normalizeUrl', () => {
       expect(normalizeUrl(value, options)).toBe(expected)
     })
 
+    it('should accept a readonly array of stripped params', () => {
+      const value = 'https://example.com/feed?custom=1&keep=2'
+      const stripQueryParams = ['custom'] as const
+      const options = { ...defaultOptions, stripQueryParams }
+      const expected = 'example.com/feed?keep=2'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
     it('should strip uppercase tracking parameters', () => {
       const value = 'https://example.com/feed?UTM_SOURCE=twitter&FBCLID=abc&id=123'
       const options = { ...defaultOptions, stripQueryParams: ['utm_source', 'fbclid'] }
@@ -1947,6 +2061,14 @@ describe('normalizeUrl', () => {
       const value = 'https://example.com/feed?'
       const options = { ...defaultOptions, sortQueryParams: false }
       const expected = 'example.com/feed'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should remove empty query string followed by a fragment', () => {
+      const value = 'https://example.com/feed?#top'
+      const options = { ...defaultOptions, stripHash: false }
+      const expected = 'example.com/feed#top'
 
       expect(normalizeUrl(value, options)).toBe(expected)
     })
@@ -2073,16 +2195,23 @@ describe('normalizeUrl', () => {
     })
 
     it('should normalize unicode in pathname by default', () => {
-      const value = 'https://example.com/caf\u00e9'
+      const value = 'https://example.com/cafe\u0301'
       const expected = 'example.com/caf%C3%A9'
 
       expect(normalizeUrl(value, defaultOptions)).toBe(expected)
     })
 
+    it('should normalize unicode in query by default', () => {
+      const value = 'https://example.com/feed?q=cafe\u0301'
+      const expected = 'example.com/feed?q=caf%C3%A9'
+
+      expect(normalizeUrl(value, defaultOptions)).toBe(expected)
+    })
+
     it('should skip unicode normalization when normalizeUnicode is false', () => {
-      const value = 'https://example.com/caf\u00e9'
+      const value = 'https://example.com/cafe\u0301'
       const options = { ...defaultOptions, normalizeUnicode: false }
-      const expected = 'example.com/caf%C3%A9'
+      const expected = 'example.com/cafe%CC%81'
 
       expect(normalizeUrl(value, options)).toBe(expected)
     })
@@ -2372,6 +2501,11 @@ describe('getRegistrableDomain', () => {
   it('should return an IP address unchanged', () => {
     expect(getRegistrableDomain('https://146.75.121.140/feed')).toBe('146.75.121.140')
     expect(getRegistrableDomain('https://[2606:4700::1111]/feed')).toBe('[2606:4700::1111]')
+  })
+
+  it('should drop the trailing dot of a fully qualified host', () => {
+    expect(getRegistrableDomain('https://www.example.com./feed')).toBe('example.com')
+    expect(getRegistrableDomain('https://example.com./feed')).toBe('example.com')
   })
 
   it('should return a single-label host unchanged', () => {

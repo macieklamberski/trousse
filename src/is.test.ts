@@ -235,6 +235,10 @@ describe('isPlainObject', () => {
     expect(isPlainObject({ toString: () => 'custom' })).toBe(true)
   })
 
+  it('should return true for an object with its own constructor key', () => {
+    expect(isPlainObject(JSON.parse('{"constructor":"x"}'))).toBe(true)
+  })
+
   it('should return false for arrays', () => {
     expect(isPlainObject([])).toBe(false)
     expect(isPlainObject([1, 2, 3])).toBe(false)

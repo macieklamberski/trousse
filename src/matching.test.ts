@@ -42,6 +42,14 @@ describe('isAnyOf', () => {
     expect(isAnyOf(value, patterns, normalizeMimeType)).toBe(true)
   })
 
+  it('should compare patterns as written when using custom parser', () => {
+    const value = ' Foo '
+    const patterns = ['Foo']
+    const parser = (input: string) => input.trim()
+
+    expect(isAnyOf(value, patterns, parser)).toBe(true)
+  })
+
   it('should return false when value only partially matches', () => {
     const value = 'application/rss+xml; charset=utf-8'
     const patterns = ['application/rss+xml']
@@ -203,6 +211,14 @@ describe('getAnyOf', () => {
     expect(getAnyOf(value, patterns, normalizeMimeType)).toBe('application/rss+xml')
   })
 
+  it('should compare patterns as written when using custom parser', () => {
+    const value = ' Foo '
+    const patterns = ['Foo']
+    const parser = (input: string) => input.trim()
+
+    expect(getAnyOf(value, patterns, parser)).toBe('Foo')
+  })
+
   it('should return the entry when value has surrounding whitespace', () => {
     const value = '  Top '
     const patterns = ['hot', 'top']
@@ -267,6 +283,14 @@ describe('includesAnyOf', () => {
     const patterns = ['application/rss+xml']
 
     expect(includesAnyOf(value, patterns, normalizeMimeType)).toBe(true)
+  })
+
+  it('should compare patterns as written when using custom parser', () => {
+    const value = 'My Foo Feed'
+    const patterns = ['Foo']
+    const parser = (input: string) => input.trim()
+
+    expect(includesAnyOf(value, patterns, parser)).toBe(true)
   })
 
   it('should return false when value does not include any pattern', () => {
@@ -627,9 +651,33 @@ describe('escapeRegex', () => {
   it('should escape every regex metacharacter', () => {
     // biome-ignore lint/suspicious/noTemplateCurlyInString: The metacharacters are the subject here, not a placeholder.
     const value = '.*+?^${}()|[]\\-'
-    const expected = '\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\\\-'
+    const expected = '\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\\\x2d'
 
     expect(escapeRegex(value)).toBe(expected)
+  })
+
+  it('should stay valid inside and outside a character class under every flag', () => {
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: The metacharacters are the subject here, not a placeholder.
+    const value = '.*+?^${}()|[]\\/-&&!!##%%,,::;;<<==>>@@``~~'
+
+    for (const flags of ['', 'u', 'v']) {
+      const literalRegex = new RegExp(`^${escapeRegex(value)}$`, flags)
+      const classRegex = new RegExp(`^[${escapeRegex(value)}]+$`, flags)
+
+      expect(literalRegex.test(value)).toBe(true)
+      expect(classRegex.test(value)).toBe(true)
+      expect(classRegex.test('a')).toBe(false)
+    }
+  })
+
+  it('should stay valid under the u and v flags', () => {
+    const value = 'a-b'
+
+    const unicodeRegex = new RegExp(`^${escapeRegex(value)}$`, 'u')
+    const unicodeSetsRegex = new RegExp(`^${escapeRegex(value)}$`, 'v')
+
+    expect(unicodeRegex.test(value)).toBe(true)
+    expect(unicodeSetsRegex.test(value)).toBe(true)
   })
 
   it('should leave a value with no metacharacters unchanged', () => {

@@ -2,16 +2,25 @@ import { isNullish } from './is.js'
 import type { Pattern } from './types.js'
 
 const whitespaceRegex = /\s+/
-// `-` is only special inside a character class, but escaping it always is free and keeps the
-// result safe to interpolate into one. It sits last so it reads as a literal, not a range.
-const regexMetaCharsRegex = /[.*+?^${}()|[\]\\-]/g
+// A backslash before `-` or a punctuator the `v` flag reserves when doubled (`&&`, `==`) is a
+// syntax error under `u`, so those take a hex escape. Syntax characters and `/` take a backslash.
+const regexSyntaxCharsRegex = /[.*+?^${}()|[\]\\/]/
+const regexEscapableCharsRegex = /[.*+?^${}()|[\]\\/&!#%,:;<=>@`~-]/g
 
 // Escapes a literal so it can be interpolated into a regex source string, for the common case
-// of building one pattern out of a list of plain strings.
+// of building one pattern out of a list of plain strings. The result stays valid inside and
+// outside a character class under every flag.
 export const escapeRegex = (value: string): string => {
-  return value.replace(regexMetaCharsRegex, '\\$&')
+  return value.replace(regexEscapableCharsRegex, (char) => {
+    if (regexSyntaxCharsRegex.test(char)) {
+      return `\\${char}`
+    }
+
+    return `\\x${char.charCodeAt(0).toString(16)}`
+  })
 }
 
+// A custom parser owns normalization, so the patterns are compared as written when one is given.
 export const isAnyOf = (
   value: string | undefined,
   patterns: Pattern | ReadonlyArray<Pattern>,
@@ -29,7 +38,7 @@ export const isAnyOf = (
       return pattern.test(parsedValue)
     }
 
-    return parsedValue === pattern.toLowerCase().trim()
+    return parsedValue === (parser ? pattern : pattern.toLowerCase().trim())
   })
 }
 
@@ -45,7 +54,9 @@ export const getAnyOf = <T extends string>(
 
   const parsedValue = parser ? parser(value) : value.toLowerCase().trim()
 
-  return patterns.find((pattern) => parsedValue === pattern.toLowerCase().trim())
+  return patterns.find((pattern) => {
+    return parsedValue === (parser ? pattern : pattern.toLowerCase().trim())
+  })
 }
 
 export const includesAnyOf = (
@@ -64,7 +75,7 @@ export const includesAnyOf = (
       return pattern.test(parsedValue)
     }
 
-    return pattern && parsedValue.includes(pattern.toLowerCase())
+    return pattern && parsedValue.includes(parser ? pattern : pattern.toLowerCase())
   })
 }
 

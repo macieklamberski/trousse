@@ -9,6 +9,12 @@ export const parseUrl = (value: string | URL, base?: string | URL): URL | undefi
     return value
   }
 
+  // URL.parse returns null for invalid input, which skips the cost of a thrown error. Node 18 and
+  // 20 lack it, so the constructor stays as the fallback.
+  if (URL.parse) {
+    return URL.parse(value, base) ?? undefined
+  }
+
   try {
     return new URL(value, base)
   } catch {}
@@ -18,21 +24,46 @@ export const getPathSegments = (value: string | URL): Array<string> => {
   return parseUrl(value)?.pathname.split('/').filter(Boolean) ?? []
 }
 
-export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string>): boolean => {
+// A fully qualified `example.com.` ends in a dot that no domain pattern carries.
+const getHostname = (url: string | URL): string | undefined => {
   const hostname = parseUrl(url)?.hostname
+
+  if (!hostname) {
+    return
+  }
+
+  return hostname.endsWith('.') ? hostname.slice(0, -1) : hostname
+}
+
+const nonAsciiRegex = /[\u0080-\uffff]/
+
+// URL.hostname holds an internationalized domain in punycode, so a domain pattern written in
+// Unicode, like `bücher.de`, goes through the same conversion before it is compared.
+const toAsciiDomain = (domain: string): string => {
+  if (!nonAsciiRegex.test(domain)) {
+    return domain
+  }
+
+  return parseUrl(`http://${domain}`)?.hostname ?? domain
+}
+
+export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string>): boolean => {
+  const hostname = getHostname(url)
 
   if (!hostname) {
     return false
   }
 
-  return isAnyOf(hostname, hosts)
+  const list = typeof hosts === 'string' ? [hosts] : hosts
+
+  return isAnyOf(hostname, list.map(toAsciiDomain))
 }
 
 export const isSubdomainOf = (
   url: string | URL,
   domains: string | ReadonlyArray<string>,
 ): boolean => {
-  const hostname = parseUrl(url)?.hostname
+  const hostname = getHostname(url)
 
   if (!hostname) {
     return false
@@ -42,7 +73,7 @@ export const isSubdomainOf = (
 
   return endsWithAnyOf(
     hostname,
-    list.map((domain) => `.${domain}`),
+    list.map((domain) => `.${toAsciiDomain(domain)}`),
   )
 }
 
@@ -70,7 +101,7 @@ export const getSubdomain = (
   url: string | URL,
   domains: string | ReadonlyArray<string>,
 ): string | undefined => {
-  const hostname = parseUrl(url)?.hostname.toLowerCase()
+  const hostname = getHostname(url)?.toLowerCase()
 
   if (!hostname) {
     return
@@ -79,7 +110,7 @@ export const getSubdomain = (
   const list = typeof domains === 'string' ? [domains] : domains
 
   for (const domain of list) {
-    const suffix = `.${domain.toLowerCase()}`
+    const suffix = `.${toAsciiDomain(domain).toLowerCase()}`
 
     if (hostname.endsWith(suffix) && hostname.length > suffix.length) {
       return hostname.slice(0, -suffix.length)
@@ -99,9 +130,10 @@ export const decodeSegment = (segment: string | undefined): string | undefined =
   } catch {}
 }
 
-const strippedParamsCache = new WeakMap<Array<string>, Set<string>>()
+// Keyed by the array itself, so an array changed after its first use keeps its old set.
+const strippedParamsCache = new WeakMap<ReadonlyArray<string>, Set<string>>()
 
-const getStrippedParamsSet = (params: Array<string>): Set<string> => {
+const getStrippedParamsSet = (params: ReadonlyArray<string>): Set<string> => {
   let cached = strippedParamsCache.get(params)
 
   if (!cached) {
@@ -141,17 +173,22 @@ const validUrlRegex = /^https?:\/\/(?:www\.|[a-vx-z0-9])/i
 // hostname. A run of dots alone is a label boundary, so the host `tp.media` is not `tp://media`.
 const schemeSeparator = String.raw`\.*[:\s=\\/][:\s=.\\/]*`
 
+// After the leading scheme a lone `/` is a path separator, not a typo, so the relative path
+// `/hp/support` is not `hp://support`. That separator needs a colon or at least two characters.
+const leadingSchemeSeparator = String.raw`\.*(?::[:\s=.\\/]*|[\s=\\/][:\s=.\\/]+)`
+
 // Doubled/nested protocol pattern - captures the INNER protocol which takes precedence.
-// Matches: http:http://, https:https://, http://https//, htp://ttps://, etc.
+// Matches: http:http://, https:https://, http://https//, htp://ttps://, etc. An inner match
+// followed by `:` and a digit is a host with a port, as in `http://tps:8080`, so it is skipped.
 const doubledProtocolRegex = new RegExp(
-  String.raw`^\/?[htps]{2,7}${schemeSeparator}([htps]{2,7})${schemeSeparator}[.,:/]*(www[./]+)?`,
+  String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d)${schemeSeparator}[.,:/]*(www[./]+)?`,
   'i',
 )
 
 // Single malformed protocol pattern - for typos, wrong separators, etc. Must start with h (or /h)
 // to be HTTP-like. Allows colons within letters (http:s//).
 const singleMalformedRegex = new RegExp(
-  String.raw`^\/?(?:h[htps():]{1,10}|t{1,2}ps?)${schemeSeparator}[.,:/]*(www[./]+)?`,
+  String.raw`^\/?(?:h[htps():]{1,10}|t{1,2}ps?)${leadingSchemeSeparator}[.,:/]*(www[./]+)?`,
   'i',
 )
 
@@ -258,6 +295,11 @@ export const resolveFeedProtocol = (url: string, protocol: 'http' | 'https' = 'h
 // - example.com/feed → https://example.com/feed
 // - /path/to/feed → /path/to/feed (unchanged, relative path)
 export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'https'): string => {
+  // A bracketed IPv6 host holds colons, which the scheme check below would read as a scheme.
+  if (url.startsWith('[')) {
+    return parseUrl(`${protocol}://${url}`) ? `${protocol}://${url}` : url
+  }
+
   // Skip if URL already has a real protocol. No registered IANA scheme contains a dot or slash, so
   // "example.com:8080" won't false-positive as a scheme.
   const colonIndex = url.indexOf(':')
@@ -331,8 +373,12 @@ export const upgradeProtocol = (url: string, protocol: 'http' | 'https' = 'https
 // Resolves a URL by converting feed protocols, resolving relative URLs, and ensuring it's a valid
 // HTTP(S) URL.
 export const resolveUrl = (url: string, base?: string): string | undefined => {
+  // The URL parser strips surrounding spaces itself, but the repair steps below match from the
+  // start of the string, so a leading space would stop them.
+  const trimmedUrl = url.trim()
+
   // Fragment-only URLs can only be resolved against a base URL.
-  if (url.startsWith('#') && !base) {
+  if (trimmedUrl.startsWith('#') && !base) {
     return
   }
 
@@ -342,7 +388,7 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
   // URLs in XML/HTML are often entity-encoded (e.g., &amp; for &). Strict decoding only expands
   // entities with a trailing semicolon, so a query parameter whose name matches an entity (e.g.
   // `?id=1&copy=2`) is left intact instead of being mangled into `?id=1©=2`.
-  resolvedUrl = url.includes('&') ? decodeHTMLStrict(url) : url
+  resolvedUrl = trimmedUrl.includes('&') ? decodeHTMLStrict(trimmedUrl) : trimmedUrl
 
   // Step 2: Convert feed-related protocols.
   resolvedUrl = resolveFeedProtocol(resolvedUrl)
@@ -400,8 +446,8 @@ const decodeAndNormalizeEncoding = (value: string): string => {
   })
 }
 
-// Applies the form-urlencoded rules for a key by hand. `new URLSearchParams(pair)` gives the same
-// answer, but costs about 0.23µs more per pair for building a whole parser around one string.
+// Applies the form-urlencoded rules for a key by hand. `new URLSearchParams(pair)` turns a
+// malformed escape like `%E0` into U+FFFD, which would sort distinct malformed keys as one.
 const decodeQueryKey = (pair: string): string => {
   const key = pair.split('=')[0].replace(plusRegex, ' ')
 
@@ -429,7 +475,7 @@ const compareQueryPairs = (a: string, b: string): number => {
 }
 
 // Lowercases the literal characters of a pair while leaving percent escapes alone, so the raw
-// encoding survives. Escapes keep their uppercase hex, which normalizeEncoding expects.
+// encoding survives, hex case included.
 const lowercaseQueryPair = (pair: string): string => {
   return pair.replace(percentEscapeOrLettersRegex, (match) => {
     return match.startsWith('%') ? match : match.toLowerCase()
@@ -438,13 +484,9 @@ const lowercaseQueryPair = (pair: string): string => {
 
 export const normalizeUrl = (url: string, options: NormalizeOptions): string => {
   try {
-    const parsed = new URL(url)
-
-    // Unicode normalization.
-    if (options.normalizeUnicode) {
-      parsed.hostname = parsed.hostname.normalize('NFC')
-      parsed.pathname = parsed.pathname.normalize('NFC')
-    }
+    // The parser percent-encodes the path, query and fragment and already applies NFC to the host,
+    // so NFC only has an effect on the raw string.
+    const parsed = new URL(options.normalizeUnicode ? url.normalize('NFC') : url)
 
     // Strip authentication.
     if (options.stripAuthentication) {
@@ -522,7 +564,7 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
     }
 
     // Remove empty query string.
-    if (options.stripEmptyQuery && parsed.href.endsWith('?')) {
+    if (options.stripEmptyQuery && parsed.search === '') {
       parsed.search = ''
     }
 
@@ -574,7 +616,7 @@ const genericSecondLevels = [
 // The name a site owner registered, plus its public suffix, so every subdomain of a hosting
 // platform resolves to one name. Never returns more labels than the host it came from.
 export const getRegistrableDomain = (url: string | URL): string | undefined => {
-  const hostname = parseUrl(url)?.hostname
+  const hostname = getHostname(url)
 
   if (!hostname) {
     return

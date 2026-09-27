@@ -36,9 +36,12 @@ describe('t', () => {
     expect(t('No placeholders here', {})).toBe('No placeholders here')
   })
 
-  it.todo('should handle placeholder with no matching param', () => {
-    // A placeholder whose key is absent from params currently interpolates the literal text
-    // "undefined", the test should pin down the intended behavior for this case.
+  it('should keep a placeholder with no matching param', () => {
+    expect(t('Hi {{name}}', {})).toBe('Hi {{name}}')
+  })
+
+  it('should not read inherited properties as params', () => {
+    expect(t('{{constructor}}', {})).toBe('{{constructor}}')
   })
 })
 
@@ -47,6 +50,10 @@ describe('tx', () => {
     expect(tx('Delete <strong>{{name}}</strong>?', { name: '<img src=x onerror=alert(1)>' })).toBe(
       'Delete <strong>&lt;img src=x onerror=alert(1)&gt;</strong>?',
     )
+  })
+
+  it('should keep a placeholder with no matching param', () => {
+    expect(tx('<b>{{name}}</b>', {})).toBe('<b>{{name}}</b>')
   })
 
   it('should escape all HTML-significant characters in params', () => {
