@@ -13,5 +13,3 @@ npm add trousse
 ```
 
 In published packages, prefer adding it as a dev dependency and bundling it at build time so it adds no runtime dependency.
-
-`resolveUrl` decodes HTML entities with `entities`, the one runtime dependency of trousse. A package that bundles trousse and calls `resolveUrl` should list `entities` in its own dependencies, or the bundler inlines a copy of it.
