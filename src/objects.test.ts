@@ -65,6 +65,14 @@ describe('pick', () => {
 
     expect(pick(value, keys)).toEqual({ id: 1, title: 'Post' })
   })
+
+  it('should keep an own __proto__ key as data', () => {
+    const value = JSON.parse('{"__proto__":{"x":1},"a":1}')
+    const result = pick(value, ['__proto__'])
+
+    expect(Object.keys(result)).toEqual(['__proto__'])
+    expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
+  })
 })
 
 describe('omit', () => {
@@ -199,6 +207,14 @@ describe('trimObject', () => {
     trimObject(value)
 
     expect(value).toEqual({ id: 1, author: null })
+  })
+
+  it('should keep an own __proto__ key as data', () => {
+    const value = JSON.parse('{"__proto__":{"x":1},"a":null,"b":1}')
+    const result = trimObject(value)
+
+    expect(Object.keys(result ?? {})).toEqual(['__proto__', 'b'])
+    expect(Object.getPrototypeOf(result)).toBe(Object.prototype)
   })
 })
 

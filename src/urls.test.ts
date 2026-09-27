@@ -163,6 +163,11 @@ describe('isHostOf', () => {
   it('should return false for invalid URLs', () => {
     expect(isHostOf('not a url', 'example.com')).toBe(false)
   })
+
+  it('should match a pattern with a trailing dot', () => {
+    expect(isHostOf('https://example.com./feed', 'example.com.')).toBe(true)
+    expect(isHostOf('https://example.com/feed', 'example.com.')).toBe(true)
+  })
 })
 
 describe('isSubdomainOf', () => {
@@ -214,6 +219,11 @@ describe('isSubdomainOf', () => {
 
   it('should return false for invalid URLs', () => {
     expect(isSubdomainOf('not a url', 'example.com')).toBe(false)
+  })
+
+  it('should match a pattern with surrounding spaces or a trailing dot', () => {
+    expect(isSubdomainOf('https://a.example.com/feed', ' example.com ')).toBe(true)
+    expect(isSubdomainOf('https://a.example.com/feed', 'example.com.')).toBe(true)
   })
 })
 
@@ -311,6 +321,11 @@ describe('getSubdomain', () => {
 
   it('should return undefined for invalid URLs', () => {
     expect(getSubdomain('not a url', 'podbean.com')).toBeUndefined()
+  })
+
+  it('should read a pattern with surrounding spaces or a trailing dot', () => {
+    expect(getSubdomain('https://a.example.com/feed', ' example.com ')).toBe('a')
+    expect(getSubdomain('https://a.example.com/feed', 'example.com.')).toBe('a')
   })
 })
 
@@ -1038,6 +1053,20 @@ describe('addMissingProtocol', () => {
       expect(addMissingProtocol('\texample.com')).toBe('\texample.com')
       expect(addMissingProtocol('\nexample.com')).toBe('\nexample.com')
     })
+
+    it('should not prefix a query or a fragment', () => {
+      expect(addMissingProtocol('?page=a.b')).toBe('?page=a.b')
+      expect(addMissingProtocol('#sec.1')).toBe('#sec.1')
+    })
+
+    it('should not read a host starting with localhost as localhost', () => {
+      expect(addMissingProtocol('localhosting/feed')).toBe('localhosting/feed')
+    })
+
+    it('should handle localhost in any case', () => {
+      expect(addMissingProtocol('LOCALHOST:3000')).toBe('https://LOCALHOST:3000')
+      expect(addMissingProtocol('LocalHost/feed')).toBe('https://LocalHost/feed')
+    })
   })
 })
 
@@ -1459,6 +1488,27 @@ describe('resolveUrl', () => {
       const base = 'not a valid base'
 
       expect(resolveUrl(value, base)).toBeUndefined()
+    })
+
+    it('should resolve an absolute URL when the base is invalid', () => {
+      const value = 'https://example.com/a'
+      const expected = 'https://example.com/a'
+
+      expect(resolveUrl(value, 'not a valid base')).toBe(expected)
+      expect(resolveUrl(value, '/blog/')).toBe(expected)
+    })
+
+    it('should keep a path that starts with a protocol on the base host', () => {
+      const value = '/http://other.com/x'
+      const base = 'https://example.com/'
+      const expected = 'https://example.com/http://other.com/x'
+
+      expect(resolveUrl(value, base)).toBe(expected)
+    })
+
+    it('should return undefined for an empty or blank URL with base', () => {
+      expect(resolveUrl('', 'https://example.com/post')).toBeUndefined()
+      expect(resolveUrl('   ', 'https://example.com/post')).toBeUndefined()
     })
 
     it('should handle double-encoded characters', () => {
@@ -2438,6 +2488,10 @@ describe('stripWww', () => {
   it('should strip only the first www label', () => {
     expect(stripWww('www.www.example.com')).toBe('www.example.com')
   })
+
+  it('should keep www when only the top-level domain would remain', () => {
+    expect(stripWww('www.com')).toBe('www.com')
+  })
 })
 
 describe('isIpAddress', () => {
@@ -2518,5 +2572,9 @@ describe('getRegistrableDomain', () => {
 
   it('should return undefined for an unparseable URL', () => {
     expect(getRegistrableDomain('not a url')).toBeUndefined()
+  })
+
+  it('should lowercase the host of a non-HTTP URL', () => {
+    expect(getRegistrableDomain('foo://WWW.Example.COM/')).toBe('example.com')
   })
 })

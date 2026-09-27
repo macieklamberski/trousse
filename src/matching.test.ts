@@ -180,6 +180,13 @@ describe('isAnyOf', () => {
 
     expect(isAnyOf(value, patternRegex)).toBe(true)
   })
+
+  it('should match a global regex on every call', () => {
+    const patterns = [/feed/g]
+
+    expect(isAnyOf('feed', patterns)).toBe(true)
+    expect(isAnyOf('feed', patterns)).toBe(true)
+  })
 })
 
 describe('getAnyOf', () => {
@@ -384,6 +391,13 @@ describe('includesAnyOf', () => {
 
     expect(includesAnyOf(value, patterns)).toBe(true)
   })
+
+  it('should match a global regex on every call', () => {
+    const patterns = [/feed/g]
+
+    expect(includesAnyOf('rss feed', patterns)).toBe(true)
+    expect(includesAnyOf('rss feed', patterns)).toBe(true)
+  })
 })
 
 describe('startsWithAnyOf', () => {
@@ -463,6 +477,13 @@ describe('startsWithAnyOf', () => {
 
     expect(startsWithAnyOf(value, patterns)).toBe(true)
   })
+
+  it('should match a global regex on every call', () => {
+    const patterns = [/feed/g]
+
+    expect(startsWithAnyOf('feed.xml', patterns)).toBe(true)
+    expect(startsWithAnyOf('feed.xml', patterns)).toBe(true)
+  })
 })
 
 describe('endsWithAnyOf', () => {
@@ -541,6 +562,13 @@ describe('endsWithAnyOf', () => {
     const patterns = ['.html', /\/rss\//]
 
     expect(endsWithAnyOf(value, patterns)).toBe(true)
+  })
+
+  it('should match a global regex on every call', () => {
+    const patterns = [/feed/g]
+
+    expect(endsWithAnyOf('main.feed', patterns)).toBe(true)
+    expect(endsWithAnyOf('main.feed', patterns)).toBe(true)
   })
 })
 
@@ -644,6 +672,18 @@ describe('anyWordMatchesAnyOf', () => {
     const patterns = ['feed']
 
     expect(anyWordMatchesAnyOf(value, patterns)).toBe(true)
+  })
+
+  it('should match a global regex on every call', () => {
+    const patterns = [/feed/g]
+
+    expect(anyWordMatchesAnyOf('feed', patterns)).toBe(true)
+    expect(anyWordMatchesAnyOf('feed', patterns)).toBe(true)
+  })
+
+  it('should not match a blank pattern against leading whitespace', () => {
+    expect(anyWordMatchesAnyOf(' hello', ['  '])).toBe(false)
+    expect(anyWordMatchesAnyOf(' hello', [''])).toBe(false)
   })
 })
 
