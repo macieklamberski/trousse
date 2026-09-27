@@ -180,14 +180,14 @@ const leadingSchemeSeparator = String.raw`\.*(?::[:\s=.\\/]*|[\s=\\/][:\s=.\\/]+
 // Doubled/nested protocol pattern - captures the INNER protocol which takes precedence.
 // Matches: http:http://, https:https://, http://https//, htp://ttps://, etc. An inner match
 // followed by `:` and a digit is a host with a port, as in `http://tps:8080`, so it is skipped.
-const doubledProtocolRegex = new RegExp(
+const doubledProtocolRegex = /* @__PURE__ */ new RegExp(
   String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d)${schemeSeparator}[.,:/]*(www[./]+)?`,
   'i',
 )
 
 // Single malformed protocol pattern - for typos, wrong separators, etc. Must start with h (or /h)
 // to be HTTP-like. Allows colons within letters (http:s//).
-const singleMalformedRegex = new RegExp(
+const singleMalformedRegex = /* @__PURE__ */ new RegExp(
   String.raw`^\/?(?:h[htps():]{1,10}|t{1,2}ps?)${leadingSchemeSeparator}[.,:/]*(www[./]+)?`,
   'i',
 )
