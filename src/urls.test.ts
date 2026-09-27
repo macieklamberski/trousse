@@ -5,15 +5,18 @@ import {
   decodeSegment,
   fixMalformedProtocol,
   getPathSegments,
+  getRegistrableDomain,
   getSubdomain,
   isHostOf,
   isHostOrSubdomainOf,
   isHttpUrl,
+  isIpAddress,
   isSubdomainOf,
   normalizeUrl,
   parseUrl,
   resolveFeedProtocol,
   resolveUrl,
+  stripWww,
   upgradeProtocol,
 } from './urls.js'
 
@@ -2287,5 +2290,99 @@ describe('normalizeUrl', () => {
 
       expect(normalizeUrl(value, defaultOptions)).toBe(expected)
     })
+  })
+})
+
+describe('stripWww', () => {
+  it('should strip a leading www label', () => {
+    expect(stripWww('www.example.com')).toBe('example.com')
+  })
+
+  it('should keep a host without a www label', () => {
+    expect(stripWww('blog.example.com')).toBe('blog.example.com')
+  })
+
+  it('should keep www inside a label', () => {
+    expect(stripWww('wwwexample.com')).toBe('wwwexample.com')
+  })
+
+  it('should strip only the first www label', () => {
+    expect(stripWww('www.www.example.com')).toBe('www.example.com')
+  })
+})
+
+describe('isIpAddress', () => {
+  it('should accept an IPv4 address', () => {
+    expect(isIpAddress('146.75.121.140')).toBe(true)
+  })
+
+  it('should accept an IPv6 address', () => {
+    expect(isIpAddress('2606:4700::1111')).toBe(true)
+  })
+
+  it('should accept a bracketed IPv6 address from URL.hostname', () => {
+    expect(isIpAddress('[2606:4700::1111]')).toBe(true)
+  })
+
+  it('should reject a domain', () => {
+    expect(isIpAddress('example.com')).toBe(false)
+  })
+
+  it('should reject a single-label host', () => {
+    expect(isIpAddress('localhost')).toBe(false)
+  })
+})
+
+describe('getRegistrableDomain', () => {
+  it('should return the host when it is already registrable', () => {
+    expect(getRegistrableDomain('https://example.com/feed')).toBe('example.com')
+  })
+
+  it('should drop a subdomain', () => {
+    expect(getRegistrableDomain('https://blog.example.com/feed')).toBe('example.com')
+  })
+
+  it('should drop several subdomains', () => {
+    expect(getRegistrableDomain('https://feeds.blog.example.com/atom')).toBe('example.com')
+  })
+
+  it('should group blogs on a hosting platform', () => {
+    expect(getRegistrableDomain('https://alice.wordpress.org/feed')).toBe('wordpress.org')
+    expect(getRegistrableDomain('https://bob.wordpress.org/feed')).toBe('wordpress.org')
+  })
+
+  it('should keep the registrable label under a country code suffix', () => {
+    expect(getRegistrableDomain('https://news.example.co.uk/feed')).toBe('example.co.uk')
+    expect(getRegistrableDomain('https://example.co.uk/feed')).toBe('example.co.uk')
+    expect(getRegistrableDomain('https://shop.example.com.au/feed')).toBe('example.com.au')
+    expect(getRegistrableDomain('https://dept.example.ac.uk/feed')).toBe('example.ac.uk')
+  })
+
+  // A two-letter suffix alone does not make the label before it a public suffix.
+  it('should not mistake a short domain for a country code suffix', () => {
+    expect(getRegistrableDomain('https://blog.example.io/feed')).toBe('example.io')
+    expect(getRegistrableDomain('https://pages.github.io/feed')).toBe('github.io')
+  })
+
+  it('should ignore a port', () => {
+    expect(getRegistrableDomain('https://example.com:8080/feed')).toBe('example.com')
+    expect(getRegistrableDomain('https://test.domain.co.uk:8080/feed')).toBe('domain.co.uk')
+  })
+
+  it('should return an IP address unchanged', () => {
+    expect(getRegistrableDomain('https://146.75.121.140/feed')).toBe('146.75.121.140')
+    expect(getRegistrableDomain('https://[2606:4700::1111]/feed')).toBe('[2606:4700::1111]')
+  })
+
+  it('should return a single-label host unchanged', () => {
+    expect(getRegistrableDomain('http://localhost/feed')).toBe('localhost')
+  })
+
+  it('should accept a URL instance', () => {
+    expect(getRegistrableDomain(new URL('https://blog.example.com/feed'))).toBe('example.com')
+  })
+
+  it('should return undefined for an unparseable URL', () => {
+    expect(getRegistrableDomain('not a url')).toBeUndefined()
   })
 })

@@ -119,6 +119,9 @@ const ipv4Regex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
 // hostnames.
 const ipv6Regex = /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i
 
+const wwwPrefixRegex = /^www\./
+const ipv6BracketsRegex = /^\[|\]$/g
+
 // Characters that are safe in URL path segments and don't need percent encoding.
 const safePathCharsRegex = /[a-zA-Z0-9._~!$&'()*+,;=:@-]/
 const httpsLetterRegex = /s/i
@@ -280,13 +283,7 @@ export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'ht
     const hostname = parsed.hostname
 
     // Valid web hostnames must have at least one of:
-    // Note: IPv6 hostnames include brackets (e.g., [::1]), strip them for pattern matching.
-    if (
-      hostname.includes('.') ||
-      hostname === 'localhost' ||
-      ipv4Regex.test(hostname) ||
-      ipv6Regex.test(hostname.replace(/^\[|\]$/g, ''))
-    ) {
+    if (hostname.includes('.') || hostname === 'localhost' || isIpAddress(hostname)) {
       return parsed.href
     }
 
@@ -456,8 +453,8 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
     }
 
     // Strip www prefix.
-    if (options.stripWww && parsed.hostname.startsWith('www.')) {
-      parsed.hostname = parsed.hostname.slice(4)
+    if (options.stripWww) {
+      parsed.hostname = stripWww(parsed.hostname)
     }
 
     // Strip hash/fragment.
@@ -546,4 +543,55 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
   } catch {
     return url
   }
+}
+
+export const stripWww = (hostname: string): string => {
+  return hostname.replace(wwwPrefixRegex, '')
+}
+
+// URL.hostname wraps an IPv6 address in brackets, so they are accepted here.
+export const isIpAddress = (hostname: string): boolean => {
+  return ipv4Regex.test(hostname) || ipv6Regex.test(hostname.replace(ipv6BracketsRegex, ''))
+}
+
+// Two-label public suffixes take the form generic-second-level under a country code: co.uk,
+// com.au, edu.pl. Matching the shape covers the common ones without carrying the list.
+const genericSecondLevels = [
+  'ac',
+  'co',
+  'com',
+  'edu',
+  'go',
+  'gob',
+  'gov',
+  'id',
+  'ne',
+  'net',
+  'or',
+  'org',
+]
+
+// The name a site owner registered, plus its public suffix, so every subdomain of a hosting
+// platform resolves to one name. Never returns more labels than the host it came from.
+export const getRegistrableDomain = (url: string | URL): string | undefined => {
+  const hostname = parseUrl(url)?.hostname
+
+  if (!hostname) {
+    return
+  }
+
+  if (isIpAddress(hostname)) {
+    return hostname
+  }
+
+  const parts = hostname.split('.')
+
+  if (parts.length <= 2) {
+    return hostname
+  }
+
+  const [secondLevel, topLevel] = parts.slice(-2)
+  const labels = topLevel.length === 2 && genericSecondLevels.includes(secondLevel) ? 3 : 2
+
+  return parts.slice(-labels).join('.')
 }
