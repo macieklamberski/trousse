@@ -627,9 +627,19 @@ describe('escapeRegex', () => {
   it('should escape every regex metacharacter', () => {
     // biome-ignore lint/suspicious/noTemplateCurlyInString: The metacharacters are the subject here, not a placeholder.
     const value = '.*+?^${}()|[]\\-'
-    const expected = '\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\\\-'
+    const expected = '\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\\\x2d'
 
     expect(escapeRegex(value)).toBe(expected)
+  })
+
+  it('should stay valid under the u and v flags', () => {
+    const value = 'a-b'
+
+    const unicodeRegex = new RegExp(`^${escapeRegex(value)}$`, 'u')
+    const unicodeSetsRegex = new RegExp(`^${escapeRegex(value)}$`, 'v')
+
+    expect(unicodeRegex.test(value)).toBe(true)
+    expect(unicodeSetsRegex.test(value)).toBe(true)
   })
 
   it('should leave a value with no metacharacters unchanged', () => {

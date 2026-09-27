@@ -2,14 +2,15 @@ import { isNullish } from './is.js'
 import type { Pattern } from './types.js'
 
 const whitespaceRegex = /\s+/
-// `-` is only special inside a character class, but escaping it always is free and keeps the
-// result safe to interpolate into one. It sits last so it reads as a literal, not a range.
+// `-` is only special inside a character class, but escaping it keeps the result safe to
+// interpolate into one. It sits last so it reads as a literal, not a range.
 const regexMetaCharsRegex = /[.*+?^${}()|[\]\\-]/g
 
 // Escapes a literal so it can be interpolated into a regex source string, for the common case
-// of building one pattern out of a list of plain strings.
+// of building one pattern out of a list of plain strings. `-` becomes `\x2d`, because `\-` is a
+// syntax error outside a character class under the `u` and `v` flags.
 export const escapeRegex = (value: string): string => {
-  return value.replace(regexMetaCharsRegex, '\\$&')
+  return value.replace(regexMetaCharsRegex, (char) => (char === '-' ? '\\x2d' : `\\${char}`))
 }
 
 export const isAnyOf = (
