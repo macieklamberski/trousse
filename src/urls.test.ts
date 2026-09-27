@@ -109,6 +109,10 @@ describe('getPathSegments', () => {
 })
 
 describe('isHostOf', () => {
+  it('should match a fully qualified host with a trailing dot', () => {
+    expect(isHostOf('https://example.com./feed', 'example.com')).toBe(true)
+  })
+
   it('should match the exact hostname for a string input', () => {
     expect(isHostOf('https://example.com/path', 'example.com')).toBe(true)
   })
@@ -153,6 +157,10 @@ describe('isHostOf', () => {
 })
 
 describe('isSubdomainOf', () => {
+  it('should match a fully qualified subdomain with a trailing dot', () => {
+    expect(isSubdomainOf('https://sub.example.com./feed', 'example.com')).toBe(true)
+  })
+
   it('should match subdomains for a string input', () => {
     expect(isSubdomainOf('https://sub.example.com/path', 'example.com')).toBe(true)
   })
@@ -246,6 +254,10 @@ describe('isHostOrSubdomainOf', () => {
 })
 
 describe('getSubdomain', () => {
+  it('should return the label of a fully qualified host with a trailing dot', () => {
+    expect(getSubdomain('https://alice.podbean.com./feed', 'podbean.com')).toBe('alice')
+  })
+
   it('should return the label in front of the domain', () => {
     expect(getSubdomain('https://alice.podbean.com/e/episode', 'podbean.com')).toBe('alice')
   })

@@ -24,8 +24,19 @@ export const getPathSegments = (value: string | URL): Array<string> => {
   return parseUrl(value)?.pathname.split('/').filter(Boolean) ?? []
 }
 
-export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string>): boolean => {
+// A fully qualified `example.com.` ends in a dot that no domain pattern carries.
+const getHostname = (url: string | URL): string | undefined => {
   const hostname = parseUrl(url)?.hostname
+
+  if (!hostname) {
+    return
+  }
+
+  return hostname.endsWith('.') ? hostname.slice(0, -1) : hostname
+}
+
+export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string>): boolean => {
+  const hostname = getHostname(url)
 
   if (!hostname) {
     return false
@@ -38,7 +49,7 @@ export const isSubdomainOf = (
   url: string | URL,
   domains: string | ReadonlyArray<string>,
 ): boolean => {
-  const hostname = parseUrl(url)?.hostname
+  const hostname = getHostname(url)
 
   if (!hostname) {
     return false
@@ -76,7 +87,7 @@ export const getSubdomain = (
   url: string | URL,
   domains: string | ReadonlyArray<string>,
 ): string | undefined => {
-  const hostname = parseUrl(url)?.hostname.toLowerCase()
+  const hostname = getHostname(url)?.toLowerCase()
 
   if (!hostname) {
     return
@@ -587,7 +598,7 @@ const genericSecondLevels = [
 // The name a site owner registered, plus its public suffix, so every subdomain of a hosting
 // platform resolves to one name. Never returns more labels than the host it came from.
 export const getRegistrableDomain = (url: string | URL): string | undefined => {
-  const hostname = parseUrl(url)?.hostname
+  const hostname = getHostname(url)
 
   if (!hostname) {
     return
@@ -597,12 +608,10 @@ export const getRegistrableDomain = (url: string | URL): string | undefined => {
     return hostname
   }
 
-  // A fully qualified `example.com.` ends in an empty label, which would shift the slice.
-  const trimmedHostname = hostname.endsWith('.') ? hostname.slice(0, -1) : hostname
-  const parts = trimmedHostname.split('.')
+  const parts = hostname.split('.')
 
   if (parts.length <= 2) {
-    return trimmedHostname
+    return hostname
   }
 
   const [secondLevel, topLevel] = parts.slice(-2)
