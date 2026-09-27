@@ -263,6 +263,11 @@ export const resolveFeedProtocol = (url: string, protocol: 'http' | 'https' = 'h
 // - example.com/feed → https://example.com/feed
 // - /path/to/feed → /path/to/feed (unchanged, relative path)
 export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'https'): string => {
+  // A bracketed IPv6 host holds colons, which the scheme check below would read as a scheme.
+  if (url.startsWith('[')) {
+    return parseUrl(`${protocol}://${url}`) ? `${protocol}://${url}` : url
+  }
+
   // Skip if URL already has a real protocol. No registered IANA scheme contains a dot or slash, so
   // "example.com:8080" won't false-positive as a scheme.
   const colonIndex = url.indexOf(':')

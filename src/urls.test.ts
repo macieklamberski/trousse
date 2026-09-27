@@ -812,6 +812,19 @@ describe('fixMalformedProtocol', () => {
 })
 
 describe('addMissingProtocol', () => {
+  it('should add protocol to a bare IPv6 host', () => {
+    const value = '[::1]:8080/feed'
+    const expected = 'https://[::1]:8080/feed'
+
+    expect(addMissingProtocol(value)).toBe(expected)
+  })
+
+  it('should leave an invalid bracketed host unchanged', () => {
+    const value = '[not-ipv6]/feed'
+
+    expect(addMissingProtocol(value)).toBe(value)
+  })
+
   describe('protocol-relative URLs', () => {
     const values = [
       { value: '//example.com/feed', expected: 'https://example.com/feed' },
