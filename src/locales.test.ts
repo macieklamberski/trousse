@@ -3,7 +3,7 @@ import { escapeHtml, t, tx } from './locales.js'
 
 describe('escapeHtml', () => {
   it('should escape all HTML-significant characters', () => {
-    expect(escapeHtml(`&<>"'`)).toBe('&amp;&lt;&gt;&quot;&#39;')
+    expect(escapeHtml(`&<>"'`)).toBe('&amp;&lt;&gt;&quot;&apos;')
   })
 
   it('should return a string without significant characters unchanged', () => {
@@ -57,6 +57,6 @@ describe('tx', () => {
   })
 
   it('should escape all HTML-significant characters in params', () => {
-    expect(tx('{{value}}', { value: `&<>"'` })).toBe('&amp;&lt;&gt;&quot;&#39;')
+    expect(tx('{{value}}', { value: `&<>"'` })).toBe('&amp;&lt;&gt;&quot;&apos;')
   })
 })
