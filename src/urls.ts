@@ -99,6 +99,7 @@ export const decodeSegment = (segment: string | undefined): string | undefined =
   } catch {}
 }
 
+// Keyed by the array itself, so an array changed after its first use keeps its old set.
 const strippedParamsCache = new WeakMap<Array<string>, Set<string>>()
 
 const getStrippedParamsSet = (params: Array<string>): Set<string> => {

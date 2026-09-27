@@ -42,7 +42,7 @@ export type NormalizeOptions = {
   collapseSlashes?: boolean // /// → /
   stripHash?: boolean // Strip #fragment
   sortQueryParams?: boolean // Sort query params alphabetically
-  stripQueryParams?: Array<string> // Query params to strip
+  stripQueryParams?: Array<string> // Query params to strip, cached per array, so never mutate it
   stripQuery?: boolean // Strip entire query string
   stripEmptyQuery?: boolean // /feed? → /feed
   lowercaseQuery?: boolean // Lowercase query param names and values
