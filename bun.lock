@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "trousse",
+      "dependencies": {
+        "entities": "^8.1.0",
+      },
       "devDependencies": {
         "@types/bun": "^1.4.2",
         "kvalita": "^1.24.0",
@@ -359,6 +362,8 @@
     "emojilib": ["emojilib@2.4.0", "", {}, "sha512-5U0rVMU5Y2n2+ykNLQqMoqklN9ICBT/KsvC1Gz6vqHbz2AXXGkG+Pm5rMWk/8Vjrr/mY9985Hi8DYzn1F09Nyw=="],
 
     "empathic": ["empathic@2.0.1", "", {}, "sha512-YGRs8knHhKHVShLkFET/rWAU8kmHbOV5LwN938RHI0pljAJ1Gf6SzXsSmRaEzcXTtOOmVqJ5+WtQPL5uigY50Q=="],
+
+    "entities": ["entities@8.1.0", "", {}, "sha512-kxL7msIffSuh9aaFAMD7rxAIuTRMAHMeBtgHW2yUdWw732ZNh4MehkF2gdjvtdmikkaIP9bFDDJOPlsvm7avrA=="],
 
     "env-ci": ["env-ci@11.2.0", "", { "dependencies": { "execa": "^8.0.0", "java-properties": "^1.0.2" } }, "sha512-D5kWfzkmaOQDioPmiviWAVtKmpPT4/iJmMVQxWxMPJTFyTkdc5JQUfc5iXEeWxcOdsYTKSAiA/Age4NUOqKsRA=="],
 
