@@ -1899,6 +1899,15 @@ describe('normalizeUrl', () => {
       expect(normalizeUrl(value, options)).toBe(expected)
     })
 
+    it('should accept a readonly array of stripped params', () => {
+      const value = 'https://example.com/feed?custom=1&keep=2'
+      const stripQueryParams = ['custom'] as const
+      const options = { ...defaultOptions, stripQueryParams }
+      const expected = 'example.com/feed?keep=2'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
     it('should strip uppercase tracking parameters', () => {
       const value = 'https://example.com/feed?UTM_SOURCE=twitter&FBCLID=abc&id=123'
       const options = { ...defaultOptions, stripQueryParams: ['utm_source', 'fbclid'] }
