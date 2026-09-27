@@ -10,6 +10,14 @@ const regexEscapableCharsRegex = /[.*+?^${}()|[\]\\/&!#%,:;<=>@`~-]/g
 // Escapes a literal so it can be interpolated into a regex source string, for the common case
 // of building one pattern out of a list of plain strings. The result stays valid inside and
 // outside a character class under every flag.
+// A global or sticky regex resumes from its lastIndex, so a shared pattern would alternate
+// between matching and missing the same value.
+const testRegex = (regex: RegExp, value: string): boolean => {
+  regex.lastIndex = 0
+
+  return regex.test(value)
+}
+
 export const escapeRegex = (value: string): string => {
   return value.replace(regexEscapableCharsRegex, (char) => {
     if (regexSyntaxCharsRegex.test(char)) {
@@ -35,7 +43,7 @@ export const isAnyOf = (
 
   return list.some((pattern) => {
     if (pattern instanceof RegExp) {
-      return pattern.test(parsedValue)
+      return testRegex(pattern, parsedValue)
     }
 
     return parsedValue === (parser ? pattern : pattern.toLowerCase().trim())
@@ -72,7 +80,7 @@ export const includesAnyOf = (
 
   return patterns.some((pattern) => {
     if (pattern instanceof RegExp) {
-      return pattern.test(parsedValue)
+      return testRegex(pattern, parsedValue)
     }
 
     return pattern && parsedValue.includes(parser ? pattern : pattern.toLowerCase())
@@ -84,7 +92,7 @@ export const startsWithAnyOf = (value: string, patterns: ReadonlyArray<Pattern>)
 
   return patterns.some((pattern) => {
     if (pattern instanceof RegExp) {
-      return pattern.test(lowerValue)
+      return testRegex(pattern, lowerValue)
     }
 
     return pattern && lowerValue.startsWith(pattern.toLowerCase())
@@ -96,7 +104,7 @@ export const endsWithAnyOf = (value: string, patterns: ReadonlyArray<Pattern>): 
 
   return patterns.some((pattern) => {
     if (pattern instanceof RegExp) {
-      return pattern.test(lowerValue)
+      return testRegex(pattern, lowerValue)
     }
 
     return pattern && lowerValue.endsWith(pattern.toLowerCase())
@@ -112,8 +120,13 @@ export const anyWordMatchesAnyOf = (value: string, patterns: ReadonlyArray<Patte
   for (const pattern of patterns) {
     if (pattern instanceof RegExp) {
       regexPatterns.push(pattern)
-    } else {
-      stringPatterns.push(pattern.toLowerCase().trim())
+      continue
+    }
+
+    const stringPattern = pattern.toLowerCase().trim()
+
+    if (stringPattern) {
+      stringPatterns.push(stringPattern)
     }
   }
 
@@ -127,7 +140,7 @@ export const anyWordMatchesAnyOf = (value: string, patterns: ReadonlyArray<Patte
     }
 
     for (const regexPattern of regexPatterns) {
-      if (regexPattern.test(word)) {
+      if (testRegex(regexPattern, word)) {
         return true
       }
     }

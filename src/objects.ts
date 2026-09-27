@@ -1,6 +1,23 @@
 import { isPresent } from './is.js'
 import type { AnyOf } from './types.js'
 
+// Assigning to `__proto__` replaces the prototype, so an own `__proto__` key from JSON.parse would
+// vanish and its fields would be inherited instead.
+const setKey = <T extends object>(object: T, key: keyof T, value: unknown): void => {
+  if (key === '__proto__') {
+    Object.defineProperty(object, key, {
+      value,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    })
+
+    return
+  }
+
+  object[key] = value as T[keyof T]
+}
+
 // Keys the object does not have are skipped rather than set to undefined, so picking from a
 // value with optional fields yields only the ones actually present.
 export const pick = <T extends object, K extends keyof T>(
@@ -11,7 +28,7 @@ export const pick = <T extends object, K extends keyof T>(
 
   for (const key of keys) {
     if (key in object) {
-      result[key] = object[key]
+      setKey(result, key, object[key])
     }
   }
 
@@ -69,7 +86,7 @@ export const trimObject = <T extends Record<string, unknown>>(
     const value = object[key]
 
     if (keep(value)) {
-      result[key] = value
+      setKey(result, key, value)
     }
   }
 

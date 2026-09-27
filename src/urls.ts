@@ -37,14 +37,17 @@ const getHostname = (url: string | URL): string | undefined => {
 
 const nonAsciiRegex = /[\u0080-\uffff]/
 
-// URL.hostname holds an internationalized domain in punycode, so a domain pattern written in
-// Unicode, like `bücher.de`, goes through the same conversion before it is compared.
-const toAsciiDomain = (domain: string): string => {
-  if (!nonAsciiRegex.test(domain)) {
-    return domain
+// A domain pattern is read the way getHostname reads a hostname: trimmed, without the trailing dot
+// of `example.com.`, and in punycode, as URL.hostname holds a Unicode domain like `bücher.de`.
+const normalizeDomain = (domain: string): string => {
+  const trimmed = domain.trim()
+  const bare = trimmed.endsWith('.') ? trimmed.slice(0, -1) : trimmed
+
+  if (!nonAsciiRegex.test(bare)) {
+    return bare
   }
 
-  return parseUrl(`http://${domain}`)?.hostname ?? domain
+  return parseUrl(`http://${bare}`)?.hostname ?? bare
 }
 
 export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string>): boolean => {
@@ -56,7 +59,7 @@ export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string
 
   const list = typeof hosts === 'string' ? [hosts] : hosts
 
-  return isAnyOf(hostname, list.map(toAsciiDomain))
+  return isAnyOf(hostname, list.map(normalizeDomain))
 }
 
 export const isSubdomainOf = (
@@ -73,7 +76,7 @@ export const isSubdomainOf = (
 
   return endsWithAnyOf(
     hostname,
-    list.map((domain) => `.${toAsciiDomain(domain)}`),
+    list.map((domain) => `.${normalizeDomain(domain)}`),
   )
 }
 
@@ -110,7 +113,7 @@ export const getSubdomain = (
   const list = typeof domains === 'string' ? [domains] : domains
 
   for (const domain of list) {
-    const suffix = `.${toAsciiDomain(domain).toLowerCase()}`
+    const suffix = `.${normalizeDomain(domain).toLowerCase()}`
 
     if (hostname.endsWith(suffix) && hostname.length > suffix.length) {
       return hostname.slice(0, -suffix.length)
@@ -164,6 +167,8 @@ const httpProtocolRegex = /^http:\/\//i
 const httpsProtocolRegex = /^https:\/\//i
 
 const leadingWhitespaceChars = [' ', '\t', '\n']
+const relativeLeadChars = ['/', '.', '?', '#']
+const localhostRegex = /^localhost(?:[:/?#]|$)/i
 
 // Pre-compiled patterns for fixMalformedProtocol.
 // Fast path: valid http(s):// followed by hostname char (excludes lone 'w' to avoid partial 'www').
@@ -307,7 +312,7 @@ export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'ht
   if (colonIndex > 0) {
     const beforeColon = url.slice(0, colonIndex)
     const hasScheme =
-      !beforeColon.includes('.') && !beforeColon.includes('/') && beforeColon !== 'localhost'
+      !beforeColon.includes('.') && !beforeColon.includes('/') && !localhostRegex.test(url)
 
     if (hasScheme) {
       return url
@@ -333,8 +338,8 @@ export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'ht
   }
 
   // Case 2: Bare domain (example.com/feed).
-  // Skip if is a path.
-  if (url.startsWith('/') || url.startsWith('.')) {
+  // Skip if is a path, a query or a fragment.
+  if (relativeLeadChars.includes(url.charAt(0))) {
     return url
   }
 
@@ -343,7 +348,7 @@ export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'ht
   const dotIndex = url.indexOf('.')
   if (dotIndex === -1 || (slashIndex !== -1 && dotIndex > slashIndex)) {
     // Exception: localhost is valid without a dot.
-    if (!url.startsWith('localhost')) {
+    if (!localhostRegex.test(url)) {
       return url
     }
   }
@@ -377,6 +382,11 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
   // start of the string, so a leading space would stop them.
   const trimmedUrl = url.trim()
 
+  // An empty href would resolve to the base itself.
+  if (!trimmedUrl) {
+    return
+  }
+
   // Fragment-only URLs can only be resolved against a base URL.
   if (trimmedUrl.startsWith('#') && !base) {
     return
@@ -393,12 +403,16 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
   // Step 2: Convert feed-related protocols.
   resolvedUrl = resolveFeedProtocol(resolvedUrl)
 
-  // Step 3: Fix malformed HTTP/HTTPS protocols.
-  resolvedUrl = fixMalformedProtocol(resolvedUrl)
+  // Step 3: Fix malformed HTTP/HTTPS protocols. With a base, a leading `/` makes the href a path on
+  // the base's host, as a browser reads it, so `/http://other.com/x` stays on that host.
+  if (!base || !resolvedUrl.startsWith('/')) {
+    resolvedUrl = fixMalformedProtocol(resolvedUrl)
+  }
 
   // Step 4: Resolve relative URLs if base is provided.
   if (base) {
-    const resolved = parseUrl(resolvedUrl, base)
+    // An invalid base fails the parse even for an absolute href, so the href is parsed again alone.
+    const resolved = parseUrl(resolvedUrl, base) ?? parseUrl(resolvedUrl)
 
     if (!resolved) {
       return
@@ -587,8 +601,11 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
   }
 }
 
+// A host whose only other label is the top-level domain, like `www.com`, keeps its `www`.
 export const stripWww = (hostname: string): string => {
-  return hostname.replace(wwwPrefixRegex, '')
+  const stripped = hostname.replace(wwwPrefixRegex, '')
+
+  return stripped.includes('.') ? stripped : hostname
 }
 
 // URL.hostname wraps an IPv6 address in brackets, so they are accepted here.
@@ -616,7 +633,7 @@ const genericSecondLevels = [
 // The name a site owner registered, plus its public suffix, so every subdomain of a hosting
 // platform resolves to one name. Never returns more labels than the host it came from.
 export const getRegistrableDomain = (url: string | URL): string | undefined => {
-  const hostname = getHostname(url)
+  const hostname = getHostname(url)?.toLowerCase()
 
   if (!hostname) {
     return
