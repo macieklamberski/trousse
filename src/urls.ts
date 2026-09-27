@@ -417,8 +417,8 @@ const decodeAndNormalizeEncoding = (value: string): string => {
   })
 }
 
-// Applies the form-urlencoded rules for a key by hand. `new URLSearchParams(pair)` gives the same
-// answer, but costs about 0.23µs more per pair for building a whole parser around one string.
+// Applies the form-urlencoded rules for a key by hand. `new URLSearchParams(pair)` turns a
+// malformed escape like `%E0` into U+FFFD, which would sort distinct malformed keys as one.
 const decodeQueryKey = (pair: string): string => {
   const key = pair.split('=')[0].replace(plusRegex, ' ')
 
@@ -446,7 +446,7 @@ const compareQueryPairs = (a: string, b: string): number => {
 }
 
 // Lowercases the literal characters of a pair while leaving percent escapes alone, so the raw
-// encoding survives. Escapes keep their uppercase hex, which normalizeEncoding expects.
+// encoding survives, hex case included.
 const lowercaseQueryPair = (pair: string): string => {
   return pair.replace(percentEscapeOrLettersRegex, (match) => {
     return match.startsWith('%') ? match : match.toLowerCase()
