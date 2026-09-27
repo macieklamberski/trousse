@@ -1,23 +1,9 @@
-const placeholderRegex = /\{\{(\w+)\}\}/g
-const escapableRegex = /[&<>"']/g
+import { escapeUTF8 } from 'entities'
 
-// Single-pass HTML escape of the five significant characters. Cheaper and lighter than a chained
-// `replaceAll` (one scan instead of five), and the set is fixed by the spec so it never goes stale.
+const placeholderRegex = /\{\{(\w+)\}\}/g
+
 export const escapeHtml = (value: string): string => {
-  return value.replace(escapableRegex, (char) => {
-    switch (char) {
-      case '&':
-        return '&amp;'
-      case '<':
-        return '&lt;'
-      case '>':
-        return '&gt;'
-      case '"':
-        return '&quot;'
-      default:
-        return '&#39;'
-    }
-  })
+  return escapeUTF8(value)
 }
 
 // Interpolates `{{key}}` placeholders in a locale string with the given params. A placeholder
