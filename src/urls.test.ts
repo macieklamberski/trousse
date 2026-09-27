@@ -2131,16 +2131,23 @@ describe('normalizeUrl', () => {
     })
 
     it('should normalize unicode in pathname by default', () => {
-      const value = 'https://example.com/caf\u00e9'
+      const value = 'https://example.com/cafe\u0301'
       const expected = 'example.com/caf%C3%A9'
 
       expect(normalizeUrl(value, defaultOptions)).toBe(expected)
     })
 
+    it('should normalize unicode in query by default', () => {
+      const value = 'https://example.com/feed?q=cafe\u0301'
+      const expected = 'example.com/feed?q=caf%C3%A9'
+
+      expect(normalizeUrl(value, defaultOptions)).toBe(expected)
+    })
+
     it('should skip unicode normalization when normalizeUnicode is false', () => {
-      const value = 'https://example.com/caf\u00e9'
+      const value = 'https://example.com/cafe\u0301'
       const options = { ...defaultOptions, normalizeUnicode: false }
-      const expected = 'example.com/caf%C3%A9'
+      const expected = 'example.com/cafe%CC%81'
 
       expect(normalizeUrl(value, options)).toBe(expected)
     })

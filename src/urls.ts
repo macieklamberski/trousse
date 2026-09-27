@@ -448,13 +448,9 @@ const lowercaseQueryPair = (pair: string): string => {
 
 export const normalizeUrl = (url: string, options: NormalizeOptions): string => {
   try {
-    const parsed = new URL(url)
-
-    // Unicode normalization.
-    if (options.normalizeUnicode) {
-      parsed.hostname = parsed.hostname.normalize('NFC')
-      parsed.pathname = parsed.pathname.normalize('NFC')
-    }
+    // The parser percent-encodes the path, query and fragment and already applies NFC to the host,
+    // so NFC only has an effect on the raw string.
+    const parsed = new URL(options.normalizeUnicode ? url.normalize('NFC') : url)
 
     // Strip authentication.
     if (options.stripAuthentication) {
