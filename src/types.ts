@@ -32,3 +32,20 @@ export type PartialNullish<T> = { [Key in keyof T]?: Nullish<T[Key]> }
 export type MaybePromise<T> = T | Promise<T>
 
 export type Pattern = string | RegExp
+
+export type NormalizeOptions = {
+  stripProtocol?: boolean // Strip protocol (http ↔ https treated same)
+  stripAuthentication?: boolean // Strip user:pass@
+  stripWww?: boolean // Strip www. prefix
+  stripTrailingSlash?: boolean // /feed/ → /feed
+  stripRootSlash?: boolean // example.com/ → example.com
+  collapseSlashes?: boolean // /// → /
+  stripHash?: boolean // Strip #fragment
+  sortQueryParams?: boolean // Sort query params alphabetically
+  stripQueryParams?: Array<string> // Query params to strip
+  stripQuery?: boolean // Strip entire query string
+  stripEmptyQuery?: boolean // /feed? → /feed
+  lowercaseQuery?: boolean // Lowercase query param names and values
+  normalizeEncoding?: boolean // Normalize %XX encoding
+  normalizeUnicode?: boolean // NFC normalization
+}
