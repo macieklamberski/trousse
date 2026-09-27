@@ -42,6 +42,14 @@ describe('isAnyOf', () => {
     expect(isAnyOf(value, patterns, normalizeMimeType)).toBe(true)
   })
 
+  it('should compare patterns as written when using custom parser', () => {
+    const value = ' Foo '
+    const patterns = ['Foo']
+    const parser = (input: string) => input.trim()
+
+    expect(isAnyOf(value, patterns, parser)).toBe(true)
+  })
+
   it('should return false when value only partially matches', () => {
     const value = 'application/rss+xml; charset=utf-8'
     const patterns = ['application/rss+xml']
@@ -203,6 +211,14 @@ describe('getAnyOf', () => {
     expect(getAnyOf(value, patterns, normalizeMimeType)).toBe('application/rss+xml')
   })
 
+  it('should compare patterns as written when using custom parser', () => {
+    const value = ' Foo '
+    const patterns = ['Foo']
+    const parser = (input: string) => input.trim()
+
+    expect(getAnyOf(value, patterns, parser)).toBe('Foo')
+  })
+
   it('should return the entry when value has surrounding whitespace', () => {
     const value = '  Top '
     const patterns = ['hot', 'top']
@@ -267,6 +283,14 @@ describe('includesAnyOf', () => {
     const patterns = ['application/rss+xml']
 
     expect(includesAnyOf(value, patterns, normalizeMimeType)).toBe(true)
+  })
+
+  it('should compare patterns as written when using custom parser', () => {
+    const value = 'My Foo Feed'
+    const patterns = ['Foo']
+    const parser = (input: string) => input.trim()
+
+    expect(includesAnyOf(value, patterns, parser)).toBe(true)
   })
 
   it('should return false when value does not include any pattern', () => {

@@ -13,6 +13,7 @@ export const escapeRegex = (value: string): string => {
   return value.replace(regexMetaCharsRegex, (char) => (char === '-' ? '\\x2d' : `\\${char}`))
 }
 
+// A custom parser owns normalization, so the patterns are compared as written when one is given.
 export const isAnyOf = (
   value: string | undefined,
   patterns: Pattern | ReadonlyArray<Pattern>,
@@ -30,7 +31,7 @@ export const isAnyOf = (
       return pattern.test(parsedValue)
     }
 
-    return parsedValue === pattern.toLowerCase().trim()
+    return parsedValue === (parser ? pattern : pattern.toLowerCase().trim())
   })
 }
 
@@ -46,7 +47,9 @@ export const getAnyOf = <T extends string>(
 
   const parsedValue = parser ? parser(value) : value.toLowerCase().trim()
 
-  return patterns.find((pattern) => parsedValue === pattern.toLowerCase().trim())
+  return patterns.find((pattern) => {
+    return parsedValue === (parser ? pattern : pattern.toLowerCase().trim())
+  })
 }
 
 export const includesAnyOf = (
@@ -65,7 +68,7 @@ export const includesAnyOf = (
       return pattern.test(parsedValue)
     }
 
-    return pattern && parsedValue.includes(pattern.toLowerCase())
+    return pattern && parsedValue.includes(parser ? pattern : pattern.toLowerCase())
   })
 }
 
