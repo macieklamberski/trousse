@@ -656,6 +656,20 @@ describe('escapeRegex', () => {
     expect(escapeRegex(value)).toBe(expected)
   })
 
+  it('should stay valid inside and outside a character class under every flag', () => {
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: The metacharacters are the subject here, not a placeholder.
+    const value = '.*+?^${}()|[]\\/-&&!!##%%,,::;;<<==>>@@``~~'
+
+    for (const flags of ['', 'u', 'v']) {
+      const literalRegex = new RegExp(`^${escapeRegex(value)}$`, flags)
+      const classRegex = new RegExp(`^[${escapeRegex(value)}]+$`, flags)
+
+      expect(literalRegex.test(value)).toBe(true)
+      expect(classRegex.test(value)).toBe(true)
+      expect(classRegex.test('a')).toBe(false)
+    }
+  })
+
   it('should stay valid under the u and v flags', () => {
     const value = 'a-b'
 
