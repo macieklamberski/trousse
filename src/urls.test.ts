@@ -109,6 +109,15 @@ describe('getPathSegments', () => {
 })
 
 describe('isHostOf', () => {
+  it('should match a host written in Unicode', () => {
+    expect(isHostOf('https://bücher.de/feed', 'bücher.de')).toBe(true)
+    expect(isHostOf('https://bücher.de/feed', ['example.com', 'bücher.de'])).toBe(true)
+  })
+
+  it('should not match a Unicode pattern that is not a valid host', () => {
+    expect(isHostOf('https://bücher.de/feed', 'bü cher.de')).toBe(false)
+  })
+
   it('should match a fully qualified host with a trailing dot', () => {
     expect(isHostOf('https://example.com./feed', 'example.com')).toBe(true)
   })
@@ -157,6 +166,10 @@ describe('isHostOf', () => {
 })
 
 describe('isSubdomainOf', () => {
+  it('should match a subdomain of a domain written in Unicode', () => {
+    expect(isSubdomainOf('https://shop.bücher.de/feed', 'bücher.de')).toBe(true)
+  })
+
   it('should match a fully qualified subdomain with a trailing dot', () => {
     expect(isSubdomainOf('https://sub.example.com./feed', 'example.com')).toBe(true)
   })
@@ -254,6 +267,10 @@ describe('isHostOrSubdomainOf', () => {
 })
 
 describe('getSubdomain', () => {
+  it('should return the label in front of a domain written in Unicode', () => {
+    expect(getSubdomain('https://shop.bücher.de/feed', 'bücher.de')).toBe('shop')
+  })
+
   it('should return the label of a fully qualified host with a trailing dot', () => {
     expect(getSubdomain('https://alice.podbean.com./feed', 'podbean.com')).toBe('alice')
   })

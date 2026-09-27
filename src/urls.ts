@@ -35,6 +35,18 @@ const getHostname = (url: string | URL): string | undefined => {
   return hostname.endsWith('.') ? hostname.slice(0, -1) : hostname
 }
 
+const nonAsciiRegex = /[\u0080-\uffff]/
+
+// URL.hostname holds an internationalized domain in punycode, so a domain pattern written in
+// Unicode, like `bücher.de`, goes through the same conversion before it is compared.
+const toAsciiDomain = (domain: string): string => {
+  if (!nonAsciiRegex.test(domain)) {
+    return domain
+  }
+
+  return parseUrl(`http://${domain}`)?.hostname ?? domain
+}
+
 export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string>): boolean => {
   const hostname = getHostname(url)
 
@@ -42,7 +54,9 @@ export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string
     return false
   }
 
-  return isAnyOf(hostname, hosts)
+  const list = typeof hosts === 'string' ? [hosts] : hosts
+
+  return isAnyOf(hostname, list.map(toAsciiDomain))
 }
 
 export const isSubdomainOf = (
@@ -59,7 +73,7 @@ export const isSubdomainOf = (
 
   return endsWithAnyOf(
     hostname,
-    list.map((domain) => `.${domain}`),
+    list.map((domain) => `.${toAsciiDomain(domain)}`),
   )
 }
 
@@ -96,7 +110,7 @@ export const getSubdomain = (
   const list = typeof domains === 'string' ? [domains] : domains
 
   for (const domain of list) {
-    const suffix = `.${domain.toLowerCase()}`
+    const suffix = `.${toAsciiDomain(domain).toLowerCase()}`
 
     if (hostname.endsWith(suffix) && hostname.length > suffix.length) {
       return hostname.slice(0, -suffix.length)
