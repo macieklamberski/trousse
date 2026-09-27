@@ -2001,6 +2001,14 @@ describe('normalizeUrl', () => {
       expect(normalizeUrl(value, options)).toBe(expected)
     })
 
+    it('should remove empty query string followed by a fragment', () => {
+      const value = 'https://example.com/feed?#top'
+      const options = { ...defaultOptions, stripHash: false }
+      const expected = 'example.com/feed#top'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
     it('should preserve empty query string when stripEmptyQuery is false', () => {
       const value = 'https://example.com/feed?'
       const options = { ...defaultOptions, sortQueryParams: false, stripEmptyQuery: false }

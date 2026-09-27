@@ -532,7 +532,7 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
     }
 
     // Remove empty query string.
-    if (options.stripEmptyQuery && parsed.href.endsWith('?')) {
+    if (options.stripEmptyQuery && parsed.search === '') {
       parsed.search = ''
     }
 
