@@ -67,6 +67,18 @@ describe('parseUrl', () => {
   it('should return undefined for a relative URL without a base', () => {
     expect(parseUrl('/feed.xml')).toBeUndefined()
   })
+
+  it('should fall back to the constructor when URL.parse is missing', () => {
+    const nativeParse = URL.parse
+    Object.defineProperty(URL, 'parse', { value: undefined, configurable: true })
+
+    try {
+      expect(parseUrl('https://example.com/path')?.hostname).toBe('example.com')
+      expect(parseUrl('not a url')).toBeUndefined()
+    } finally {
+      Object.defineProperty(URL, 'parse', { value: nativeParse, configurable: true })
+    }
+  })
 })
 
 describe('getPathSegments', () => {
