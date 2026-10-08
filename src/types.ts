@@ -49,6 +49,6 @@ export type NormalizeOptions = {
   stripQuery?: boolean // Strip entire query string
   stripEmptyQuery?: boolean // /feed? → /feed, against RFC 3986 §6.2.3
   lowercaseQuery?: boolean // Lowercase query param names and values
-  normalizeEncoding?: boolean // Uppercase %XX hex, decode needless path escapes, RFC 3986 §6.2.2
+  normalizeEncoding?: boolean // Uppercase %XX hex, decode needless escapes, RFC 3986 §6.2.2
   normalizeUnicode?: boolean // NFC on raw input, no-op on a serialized href, RFC 3987 §5.3.2.2
 }
