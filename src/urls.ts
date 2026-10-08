@@ -197,7 +197,7 @@ const singleMalformedRegex = /* @__PURE__ */ new RegExp(
   'i',
 )
 
-// Fix common malformations in HTTP/HTTPS protocols. Handles:
+// Fix common malformations in the http and https schemes. Handles:
 // - Excess slashes: http:////example.com → http://example.com
 // - Leading slash: /http://example.com → http://example.com
 // - Typos in protocol: htp://, htps://, hhttps:// → http:// or https://
@@ -236,7 +236,8 @@ export const fixMalformedProtocol = (url: string): string => {
   return url
 }
 
-// Convert known feed-related protocols to HTTPS. Examples:
+// Convert known feed-related schemes to HTTPS. `feed:` is provisional in the IANA registry, the
+// others are unregistered. See: https://www.iana.org/assignments/uri-schemes/prov/feed. Examples:
 // - feed://example.com/rss.xml → https://example.com/rss.xml
 // - feed:https://example.com/rss.xml → https://example.com/rss.xml
 // - rss://example.com/feed.xml → https://example.com/feed.xml
@@ -292,7 +293,7 @@ export const resolveFeedProtocol = (url: string, protocol: 'http' | 'https' = 'h
   return url
 }
 
-// Adds protocol to URLs missing a scheme. Handles both protocol-relative URLs (//example.com) and
+// Adds a scheme to URLs missing one. Handles both protocol-relative URLs (//example.com) and
 // bare domains (example.com). Examples:
 // - //example.com/feed → https://example.com/feed
 // - //localhost/api → https://localhost/api
@@ -362,11 +363,9 @@ export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'ht
   return `${protocol}://${url}`
 }
 
-// Swaps an existing HTTP(S) protocol on a URL. Unlike `addMissingProtocol`, which only acts when
-// the protocol is absent, this rewrites the scheme when one is already present. Protocol-relative
-// URLs (`//host`) and non-HTTP schemes (`mailto:`, `data:`, `ftp://`) are left unchanged.
-// Case-insensitive on the matched protocol; only the leading scheme is touched, not any later
-// `http://` substring inside the path or query.
+// Swaps an existing http or https scheme on a URL. Scheme-relative URLs (`//host`) and other
+// schemes (`mailto:`, `data:`, `ftp://`) are left unchanged, and so is any later `http://` inside
+// the path or query.
 export const upgradeProtocol = (url: string, protocol: 'http' | 'https' = 'https'): string => {
   const sourceRegex = protocol === 'https' ? httpProtocolRegex : httpsProtocolRegex
 
@@ -388,8 +387,9 @@ export const upgradeProtocol = (url: string, protocol: 'http' | 'https' = 'https
   return parsed.href
 }
 
-// Resolves a URL by converting feed protocols, resolving relative URLs, and ensuring it's a valid
-// HTTP(S) URL.
+// Turns a raw reference from markup or user input into the http(s) URL to fetch. It decodes HTML
+// character references, so a second pass can change the URL: a URL that is already final, like a
+// response URL or a Location header, goes through parseUrl instead.
 export const resolveUrl = (url: string, base?: string): string | undefined => {
   // The URL parser strips surrounding spaces itself, but the repair steps below match from the
   // start of the string, so a leading space would stop them.
@@ -509,6 +509,9 @@ const lowercaseQueryPair = (pair: string): string => {
   })
 }
 
+// Builds a key for comparing URLs, not a URL to fetch. Several options produce a string a server
+// may answer differently, or one no URL parser reads back the same.
+// See: https://www.rfc-editor.org/rfc/rfc3986#section-6.
 export const normalizeUrl = (url: string, options: NormalizeOptions): string => {
   try {
     // The parser percent-encodes the path, query and fragment and already applies NFC to the host,
@@ -603,7 +606,7 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
       result = parsed.origin
     }
 
-    // Strip protocol for comparison.
+    // Strip scheme for comparison.
     if (options.stripProtocol) {
       result = result.replace(protocolPrefixRegex, '')
     }
