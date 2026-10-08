@@ -53,6 +53,7 @@ export type {
   Nullish,
   PartialNullish,
   Pattern,
+  RegistrableDomainOptions,
 } from './types.js'
 export {
   addMissingProtocol,
