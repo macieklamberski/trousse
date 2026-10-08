@@ -187,6 +187,22 @@ describe('isAnyOf', () => {
     expect(isAnyOf('feed', patterns)).toBe(true)
     expect(isAnyOf('feed', patterns)).toBe(true)
   })
+
+  it('should match a regex in the original case of the value', () => {
+    const value = 'Foo'
+    // biome-ignore lint/performance/useTopLevelRegex: Test-specific pattern.
+    const patterns = [/^Foo$/]
+
+    expect(isAnyOf(value, patterns)).toBe(true)
+  })
+
+  it('should still match a lowercase regex against an uppercase value', () => {
+    const value = '/RSS/'
+    // biome-ignore lint/performance/useTopLevelRegex: Test-specific pattern.
+    const patterns = [/^\/rss\/$/]
+
+    expect(isAnyOf(value, patterns)).toBe(true)
+  })
 })
 
 describe('getAnyOf', () => {
@@ -398,6 +414,14 @@ describe('includesAnyOf', () => {
     expect(includesAnyOf('rss feed', patterns)).toBe(true)
     expect(includesAnyOf('rss feed', patterns)).toBe(true)
   })
+
+  it('should match a regex in the original case of the value', () => {
+    const value = 'Hello World'
+    // biome-ignore lint/performance/useTopLevelRegex: Test-specific pattern.
+    const patterns = [/World/]
+
+    expect(includesAnyOf(value, patterns)).toBe(true)
+  })
 })
 
 describe('startsWithAnyOf', () => {
@@ -484,6 +508,14 @@ describe('startsWithAnyOf', () => {
     expect(startsWithAnyOf('feed.xml', patterns)).toBe(true)
     expect(startsWithAnyOf('feed.xml', patterns)).toBe(true)
   })
+
+  it('should match a regex in the original case of the value', () => {
+    const value = 'Hello World'
+    // biome-ignore lint/performance/useTopLevelRegex: Test-specific pattern.
+    const patterns = [/^Hello/]
+
+    expect(startsWithAnyOf(value, patterns)).toBe(true)
+  })
 })
 
 describe('endsWithAnyOf', () => {
@@ -569,6 +601,14 @@ describe('endsWithAnyOf', () => {
 
     expect(endsWithAnyOf('main.feed', patterns)).toBe(true)
     expect(endsWithAnyOf('main.feed', patterns)).toBe(true)
+  })
+
+  it('should match a regex in the original case of the value', () => {
+    const value = 'Hello World'
+    // biome-ignore lint/performance/useTopLevelRegex: Test-specific pattern.
+    const patterns = [/World$/]
+
+    expect(endsWithAnyOf(value, patterns)).toBe(true)
   })
 })
 
@@ -684,6 +724,14 @@ describe('anyWordMatchesAnyOf', () => {
   it('should not match a blank pattern against leading whitespace', () => {
     expect(anyWordMatchesAnyOf(' hello', ['  '])).toBe(false)
     expect(anyWordMatchesAnyOf(' hello', [''])).toBe(false)
+  })
+
+  it('should match a regex in the original case of a word', () => {
+    const value = 'Hello World'
+    // biome-ignore lint/performance/useTopLevelRegex: Test-specific pattern.
+    const patterns = [/^World$/]
+
+    expect(anyWordMatchesAnyOf(value, patterns)).toBe(true)
   })
 })
 

@@ -15,6 +15,12 @@ const testRegex = (regex: RegExp, value: string): boolean => {
   return regex.test(value)
 }
 
+// A RegExp pattern meets the value lowercased, as a string pattern does, then in its original case,
+// so `/^Foo$/` matches `Foo` while `/\/rss\//` still matches `/RSS/`.
+const testRegexAnyCase = (regex: RegExp, lowerValue: string, value: string): boolean => {
+  return testRegex(regex, lowerValue) || (lowerValue !== value && testRegex(regex, value))
+}
+
 // Escapes a literal for a regex source string, valid inside and outside a character class under
 // every flag. RegExp.escape also escapes a leading letter or digit and whitespace, and Node 18 and
 // 20 lack it. See: https://tc39.es/ecma262/#sec-regexp.escape.
@@ -29,6 +35,8 @@ export const escapeRegex = (value: string): string => {
 }
 
 // A custom parser owns normalization, so the patterns are compared as written when one is given.
+// Without one, matching lowercases with toLowerCase, wider than ASCII case-insensitive, so the
+// Kelvin sign matches `k`. See: https://infra.spec.whatwg.org/#ascii-case-insensitive.
 export const isAnyOf = (
   value: string | undefined,
   patterns: Pattern | ReadonlyArray<Pattern>,
@@ -39,11 +47,12 @@ export const isAnyOf = (
   }
 
   const parsedValue = parser ? parser(value) : value.toLowerCase().trim()
+  const originalValue = parser ? parsedValue : value.trim()
   const list = typeof patterns === 'string' || patterns instanceof RegExp ? [patterns] : patterns
 
   return list.some((pattern) => {
     if (pattern instanceof RegExp) {
-      return testRegex(pattern, parsedValue)
+      return testRegexAnyCase(pattern, parsedValue, originalValue)
     }
 
     return parsedValue === (parser ? pattern : pattern.toLowerCase().trim())
@@ -77,10 +86,11 @@ export const includesAnyOf = (
   }
 
   const parsedValue = parser ? parser(value) : value.toLowerCase()
+  const originalValue = parser ? parsedValue : value
 
   return patterns.some((pattern) => {
     if (pattern instanceof RegExp) {
-      return testRegex(pattern, parsedValue)
+      return testRegexAnyCase(pattern, parsedValue, originalValue)
     }
 
     return pattern && parsedValue.includes(parser ? pattern : pattern.toLowerCase())
@@ -92,7 +102,7 @@ export const startsWithAnyOf = (value: string, patterns: ReadonlyArray<Pattern>)
 
   return patterns.some((pattern) => {
     if (pattern instanceof RegExp) {
-      return testRegex(pattern, lowerValue)
+      return testRegexAnyCase(pattern, lowerValue, value)
     }
 
     return pattern && lowerValue.startsWith(pattern.toLowerCase())
@@ -104,7 +114,7 @@ export const endsWithAnyOf = (value: string, patterns: ReadonlyArray<Pattern>): 
 
   return patterns.some((pattern) => {
     if (pattern instanceof RegExp) {
-      return testRegex(pattern, lowerValue)
+      return testRegexAnyCase(pattern, lowerValue, value)
     }
 
     return pattern && lowerValue.endsWith(pattern.toLowerCase())
@@ -130,17 +140,19 @@ export const anyWordMatchesAnyOf = (value: string, patterns: ReadonlyArray<Patte
     }
   }
 
-  const words = value.toLowerCase().split(whitespaceRegex)
+  const words = value.split(whitespaceRegex)
 
   for (const word of words) {
+    const lowerWord = word.toLowerCase()
+
     for (const stringPattern of stringPatterns) {
-      if (word === stringPattern) {
+      if (lowerWord === stringPattern) {
         return true
       }
     }
 
     for (const regexPattern of regexPatterns) {
-      if (testRegex(regexPattern, word)) {
+      if (testRegexAnyCase(regexPattern, lowerWord, word)) {
         return true
       }
     }
