@@ -1,8 +1,9 @@
 const placeholderRegex = /\{\{(\w+)\}\}/g
 const escapableRegex = /[&<>"']/g
 
-// Single-pass HTML escape of the five significant characters. Cheaper and lighter than a chained
-// `replaceAll` (one scan instead of five), and the set is fixed by the spec so it never goes stale.
+// Escapes the five characters that make text safe inside an element and inside a single- or
+// double-quoted attribute. HTML's own serializer escapes a different set and never `'`.
+// See: https://html.spec.whatwg.org/multipage/parsing.html#escapingString.
 export const escapeHtml = (value: string): string => {
   return value.replace(escapableRegex, (char) => {
     switch (char) {

@@ -33,6 +33,7 @@ export const isPlainObject = (value: unknown): value is Record<string, unknown> 
   return isObject(value) && Object.getPrototypeOf(value) === Object.prototype
 }
 
+// See: https://www.unicode.org/reports/tr44/#White_Space.
 const whitespaceOnlyRegex = /^\p{White_Space}*$/u
 
 export const isNonEmptyString = (value: unknown): value is string => {

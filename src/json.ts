@@ -1,4 +1,5 @@
 // Mirrors the regex \s character set exactly: ECMAScript WhiteSpace and LineTerminator.
+// See: https://tc39.es/ecma262/#sec-white-space.
 const isWhitespaceCode = (code: number): boolean => {
   return (
     (code >= 0x09 && code <= 0x0d) ||
@@ -15,13 +16,16 @@ const isWhitespaceCode = (code: number): boolean => {
   )
 }
 
-// Scans from both ends instead of testing regexes: an unanchored /\}\s*$/ attempts a match
-// at every closing brace, which costs milliseconds per call on multi-megabyte documents.
+// A cheap pre-check, not a parse: it skips the ECMAScript whitespace set, wider than the four
+// characters JSON allows, so `\u00a0{}` passes and JSON.parse still throws on it.
+// See: https://www.rfc-editor.org/rfc/rfc8259#section-2.
 export const isJsonLike = (value: string): boolean => {
   if (value.length < 2) {
     return false
   }
 
+  // Both ends are scanned by hand: an unanchored /\}\s*$/ attempts a match at every closing brace,
+  // which costs milliseconds per call on multi-megabyte documents.
   let start = 0
   let end = value.length - 1
 
