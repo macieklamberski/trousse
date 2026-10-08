@@ -42,9 +42,18 @@ export const coerceBoolean = (value: unknown): boolean | undefined => {
   }
 }
 
+// A digit-only string is a date only as the four-digit year of the ECMAScript date format. Any
+// other length falls to implementation-specific parsing, which reads `1` as the year 2001.
+// See: https://tc39.es/ecma262/#sec-date-time-string-format.
+const nonYearDigitsRegex = /^\s*(\d{1,3}|\d{5,})\s*$/
+
 export const coerceDate = (value: unknown): Date | undefined => {
   if (isValidDate(value)) {
     return value
+  }
+
+  if (isString(value) && nonYearDigitsRegex.test(value)) {
+    return
   }
 
   if (isNumber(value) || isNonEmptyString(value)) {

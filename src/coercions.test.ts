@@ -228,6 +228,20 @@ describe('coerceDate', () => {
     expect(coerceDate('javascript')).toBeUndefined()
   })
 
+  it('should parse a four-digit year string', () => {
+    expect(coerceDate('2024')).toEqual(new Date('2024-01-01T00:00:00Z'))
+  })
+
+  const nonYearDigitStrings: Array<string> = ['0', '1', '12', '123', '12345', '123456']
+
+  it.each(nonYearDigitStrings)('should return undefined for the digit string %s', (value) => {
+    expect(coerceDate(value)).toBeUndefined()
+  })
+
+  it('should return undefined for a padded digit string', () => {
+    expect(coerceDate(' 1 ')).toBeUndefined()
+  })
+
   it('should return undefined for empty and whitespace-only strings', () => {
     expect(coerceDate('')).toBeUndefined()
     expect(coerceDate('   ')).toBeUndefined()
