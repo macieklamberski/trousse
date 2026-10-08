@@ -1859,6 +1859,14 @@ describe('normalizeUrl', () => {
 
       expect(normalizeUrl(value, defaultOptions)).toBe(expected)
     })
+
+    it('should give the same result when normalizing a repeated www prefix twice', () => {
+      const value = 'https://www.www.example.com/feed'
+      const options = { ...defaultOptions, stripScheme: false }
+      const once = normalizeUrl(value, options)
+
+      expect(normalizeUrl(once, options)).toBe(once)
+    })
   })
 
   describe('port stripping', () => {
@@ -2636,8 +2644,12 @@ describe('stripWww', () => {
     expect(stripWww('wwwexample.com')).toBe('wwwexample.com')
   })
 
-  it('should strip only the first www label', () => {
-    expect(stripWww('www.www.example.com')).toBe('www.example.com')
+  it('should strip every leading www label', () => {
+    expect(stripWww('www.www.example.com')).toBe('example.com')
+  })
+
+  it('should keep the last www label when only the top-level domain would remain', () => {
+    expect(stripWww('www.www.com')).toBe('www.com')
   })
 
   it('should keep www when only the top-level domain would remain', () => {
