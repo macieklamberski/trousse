@@ -852,6 +852,25 @@ describe('fixMalformedScheme', () => {
     },
   )
 
+  const schemeLikeUsernameUrls: Array<string> = [
+    'https://http:secret@example.com/feed',
+    'https://ps:secret@example.com/feed',
+  ]
+
+  it.each(schemeLikeUsernameUrls)(
+    'should not mistake a username for a doubled scheme (%s)',
+    (value) => {
+      expect(fixMalformedScheme(value)).toBe(value)
+    },
+  )
+
+  it('should fix a nested double scheme before credentials', () => {
+    const value = 'http://https://user:secret@example.com/feed'
+    const expected = 'https://user:secret@example.com/feed'
+
+    expect(fixMalformedScheme(value)).toBe(expected)
+  })
+
   const nonHttpUrls: Array<string> = [
     'ftp://example.com/file',
     'mailto:user@example.com',
@@ -1279,6 +1298,12 @@ describe('resolveUrl', () => {
 
     it('should preserve authentication credentials', () => {
       const value = 'https://user:pass@example.com/feed.xml'
+
+      expect(resolveUrl(value)).toBe(value)
+    })
+
+    it('should preserve credentials whose username reads as a scheme', () => {
+      const value = 'https://http:secret@example.com/feed'
 
       expect(resolveUrl(value)).toBe(value)
     })
