@@ -33,19 +33,22 @@ export type MaybePromise<T> = T | Promise<T>
 
 export type Pattern = string | RegExp
 
+// See: https://www.rfc-editor.org/rfc/rfc3986.
+// See: https://www.rfc-editor.org/rfc/rfc9110.
+// See: https://www.rfc-editor.org/rfc/rfc3987.
 export type NormalizeOptions = {
-  stripProtocol?: boolean // Strip protocol (http ↔ https treated same)
-  stripAuthentication?: boolean // Strip user:pass@
+  stripProtocol?: boolean // Strip the scheme, so http and https compare the same
+  stripAuthentication?: boolean // Strip user:pass@, RFC 3986 §3.2.1, RFC 9110 §4.2.4
   stripWww?: boolean // Strip www. prefix
   stripTrailingSlash?: boolean // /feed/ → /feed
-  stripRootSlash?: boolean // example.com/ → example.com
+  stripRootSlash?: boolean // example.com/ → example.com, against RFC 9110 §4.2.3
   collapseSlashes?: boolean // /// → /
-  stripHash?: boolean // Strip #fragment
-  sortQueryParams?: boolean // Sort query params alphabetically
+  stripHash?: boolean // Strip #fragment, never sent to the server, RFC 3986 §3.5
+  sortQueryParams?: boolean // Sort query params alphabetically, a server may read them in order
   stripQueryParams?: ReadonlyArray<string> // Query params to strip, cached per array, so never mutate it
   stripQuery?: boolean // Strip entire query string
-  stripEmptyQuery?: boolean // /feed? → /feed
+  stripEmptyQuery?: boolean // /feed? → /feed, against RFC 3986 §6.2.3
   lowercaseQuery?: boolean // Lowercase query param names and values
-  normalizeEncoding?: boolean // Normalize %XX encoding
-  normalizeUnicode?: boolean // NFC normalization
+  normalizeEncoding?: boolean // Uppercase %XX hex, decode needless path escapes, RFC 3986 §6.2.2
+  normalizeUnicode?: boolean // NFC on raw input, no-op on a serialized href, RFC 3987 §5.3.2.2
 }
