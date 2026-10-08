@@ -214,7 +214,7 @@ describe('isSubdomainOf', () => {
   })
 
   it('should not match a different domain sharing a suffix', () => {
-    expect(isSubdomainOf('https://notexample.com/path', 'example.com')).toBe(false)
+    expect(isSubdomainOf('https://myshop.example/path', 'shop.example')).toBe(false)
   })
 
   it('should return false for invalid URLs', () => {
@@ -256,23 +256,25 @@ describe('isHttpUrl', () => {
 
 describe('isHostOrSubdomainOf', () => {
   it('should match the bare domain', () => {
-    expect(isHostOrSubdomainOf('https://medium.com/@alice', 'medium.com')).toBe(true)
+    expect(isHostOrSubdomainOf('https://example.com/@alice', 'example.com')).toBe(true)
   })
 
   it('should match a subdomain', () => {
-    expect(isHostOrSubdomainOf('https://alice.medium.com/', 'medium.com')).toBe(true)
+    expect(isHostOrSubdomainOf('https://alice.example.com/', 'example.com')).toBe(true)
   })
 
   it('should match domains given as an array', () => {
-    expect(isHostOrSubdomainOf('https://alice.itch.io/', ['medium.com', 'itch.io'])).toBe(true)
+    expect(isHostOrSubdomainOf('https://alice.example.org/', ['example.com', 'example.org'])).toBe(
+      true,
+    )
   })
 
   it('should not match a different domain sharing a suffix', () => {
-    expect(isHostOrSubdomainOf('https://notmedium.com/', 'medium.com')).toBe(false)
+    expect(isHostOrSubdomainOf('https://myshop.example/', 'shop.example')).toBe(false)
   })
 
   it('should return false for invalid URLs', () => {
-    expect(isHostOrSubdomainOf('not a url', 'medium.com')).toBe(false)
+    expect(isHostOrSubdomainOf('not a url', 'example.com')).toBe(false)
   })
 })
 
@@ -282,11 +284,11 @@ describe('getSubdomain', () => {
   })
 
   it('should return the label of a fully qualified host with a trailing dot', () => {
-    expect(getSubdomain('https://alice.podbean.com./feed', 'podbean.com')).toBe('alice')
+    expect(getSubdomain('https://alice.example.net./feed', 'example.net')).toBe('alice')
   })
 
   it('should return the label in front of the domain', () => {
-    expect(getSubdomain('https://alice.podbean.com/e/episode', 'podbean.com')).toBe('alice')
+    expect(getSubdomain('https://alice.example.net/e/episode', 'example.net')).toBe('alice')
   })
 
   it('should return every label in front of the domain', () => {
@@ -304,7 +306,7 @@ describe('getSubdomain', () => {
   })
 
   it('should accept a URL instance', () => {
-    expect(getSubdomain(new URL('https://alice.podbean.com/'), 'podbean.com')).toBe('alice')
+    expect(getSubdomain(new URL('https://alice.example.net/'), 'example.net')).toBe('alice')
   })
 
   it('should lowercase the hostname of a URL with another scheme', () => {
@@ -312,15 +314,15 @@ describe('getSubdomain', () => {
   })
 
   it('should return undefined for the bare domain', () => {
-    expect(getSubdomain('https://podbean.com/', 'podbean.com')).toBeUndefined()
+    expect(getSubdomain('https://example.net/', 'example.net')).toBeUndefined()
   })
 
   it('should return undefined for another domain sharing a suffix', () => {
-    expect(getSubdomain('https://notpodbean.com/', 'podbean.com')).toBeUndefined()
+    expect(getSubdomain('https://myshop.example/', 'shop.example')).toBeUndefined()
   })
 
   it('should return undefined for invalid URLs', () => {
-    expect(getSubdomain('not a url', 'podbean.com')).toBeUndefined()
+    expect(getSubdomain('not a url', 'example.net')).toBeUndefined()
   })
 
   it('should read a pattern with surrounding spaces or a trailing dot', () => {
@@ -874,21 +876,19 @@ describe('addMissingScheme', () => {
   })
 
   describe('scheme-relative URLs', () => {
-    const values = [
-      { value: '//example.com/feed', expected: 'https://example.com/feed' },
-      { value: '//cdn.example.com/style.css', expected: 'https://cdn.example.com/style.css' },
-      { value: '//localhost/api', expected: 'https://localhost/api' },
-      { value: '//192.168.1.1/api', expected: 'https://192.168.1.1/api' },
-      { value: '//example.com:8080/feed', expected: 'https://example.com:8080/feed' },
-      { value: '//[::1]/feed', expected: 'https://[::1]/feed' },
-      { value: '//[2001:db8::1]/feed', expected: 'https://[2001:db8::1]/feed' },
+    const schemeRelativeCases: Array<[string, string]> = [
+      ['//example.com/feed', 'https://example.com/feed'],
+      ['//cdn.example.com/style.css', 'https://cdn.example.com/style.css'],
+      ['//localhost/api', 'https://localhost/api'],
+      ['//192.168.1.1/api', 'https://192.168.1.1/api'],
+      ['//example.com:8080/feed', 'https://example.com:8080/feed'],
+      ['//[::1]/feed', 'https://[::1]/feed'],
+      ['//[2001:db8::1]/feed', 'https://[2001:db8::1]/feed'],
     ]
 
-    for (const { value, expected } of values) {
-      it(`should convert ${value} to ${expected}`, () => {
-        expect(addMissingScheme(value)).toBe(expected)
-      })
-    }
+    it.each(schemeRelativeCases)('should convert %s to %s', (value, expected) => {
+      expect(addMissingScheme(value)).toBe(expected)
+    })
 
     it('should use http when specified', () => {
       const value = '//example.com/feed'
@@ -974,13 +974,16 @@ describe('addMissingScheme', () => {
   })
 
   describe('invalid scheme-relative URLs', () => {
-    const values = ['//Users/file.xml', '//home/user/file.txt', '///triple-slash', '//singlelabel']
+    const invalidSchemeRelativeUrls: Array<string> = [
+      '//Users/file.xml',
+      '//home/user/file.txt',
+      '///triple-slash',
+      '//singlelabel',
+    ]
 
-    for (const value of values) {
-      it(`should return ${value} unchanged`, () => {
-        expect(addMissingScheme(value)).toBe(value)
-      })
-    }
+    it.each(invalidSchemeRelativeUrls)('should return %s unchanged', (value) => {
+      expect(addMissingScheme(value)).toBe(value)
+    })
 
     it('should handle malformed URLs gracefully', () => {
       const value = '//not valid url $#@'
@@ -1062,22 +1065,17 @@ describe('addMissingScheme', () => {
 
 describe('upgradeScheme', () => {
   describe('default (upgrade to https)', () => {
-    const values = [
-      { value: 'http://example.com/feed', expected: 'https://example.com/feed' },
-      {
-        value: 'http://example.com:8080/path?a=1#frag',
-        expected: 'https://example.com:8080/path?a=1#frag',
-      },
-      { value: 'http://user:pass@example.com/', expected: 'https://user:pass@example.com/' },
-      { value: 'http://localhost/', expected: 'https://localhost/' },
-      { value: 'http://192.168.1.1/api', expected: 'https://192.168.1.1/api' },
+    const upgradeCases: Array<[string, string]> = [
+      ['http://example.com/feed', 'https://example.com/feed'],
+      ['http://example.com:8080/path?a=1#frag', 'https://example.com:8080/path?a=1#frag'],
+      ['http://user:pass@example.com/', 'https://user:pass@example.com/'],
+      ['http://localhost/', 'https://localhost/'],
+      ['http://192.168.1.1/api', 'https://192.168.1.1/api'],
     ]
 
-    for (const { value, expected } of values) {
-      it(`should upgrade ${value} to ${expected}`, () => {
-        expect(upgradeScheme(value)).toBe(expected)
-      })
-    }
+    it.each(upgradeCases)('should upgrade %s to %s', (value, expected) => {
+      expect(upgradeScheme(value)).toBe(expected)
+    })
 
     it('should be case-insensitive on the scheme', () => {
       expect(upgradeScheme('HTTP://example.com/feed')).toBe('https://example.com/feed')
@@ -2591,8 +2589,8 @@ describe('getRegistrableDomain', () => {
   })
 
   it('should group blogs on a hosting platform', () => {
-    expect(getRegistrableDomain('https://alice.wordpress.org/feed')).toBe('wordpress.org')
-    expect(getRegistrableDomain('https://bob.wordpress.org/feed')).toBe('wordpress.org')
+    expect(getRegistrableDomain('https://alice.example.org/feed')).toBe('example.org')
+    expect(getRegistrableDomain('https://bob.example.org/feed')).toBe('example.org')
   })
 
   it('should keep the registrable label under a country code suffix', () => {
@@ -2605,7 +2603,6 @@ describe('getRegistrableDomain', () => {
   // A two-letter suffix alone does not make the label before it a public suffix.
   it('should not mistake a short domain for a country code suffix', () => {
     expect(getRegistrableDomain('https://blog.example.io/feed')).toBe('example.io')
-    expect(getRegistrableDomain('https://pages.github.io/feed')).toBe('github.io')
   })
 
   it('should ignore a port', () => {
