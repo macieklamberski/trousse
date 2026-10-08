@@ -16,7 +16,10 @@ export const coerceNumber = (value: unknown): number | undefined => {
     return Number.isNaN(value) ? undefined : value
   }
 
-  if (isNonEmptyString(value)) {
+  // StringToNumber reads a string of only whitespace as 0. Its whitespace set is the one `trim`
+  // strips, which includes U+FEFF, unlike the Unicode White_Space set isNonEmptyString checks.
+  // See: https://tc39.es/ecma262/#sec-stringtonumber.
+  if (isString(value) && value.trim()) {
     const numeric = +value
 
     return Number.isNaN(numeric) ? undefined : numeric
