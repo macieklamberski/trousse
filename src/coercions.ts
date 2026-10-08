@@ -66,7 +66,7 @@ export const coerceDate = (value: unknown): Date | undefined => {
   }
 }
 
-export const coerceSingular = <T>(value: T | Array<T>): T => {
+export const coerceSingular = <T>(value: T | Array<T>): T | undefined => {
   return Array.isArray(value) ? value[0] : value
 }
 
