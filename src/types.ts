@@ -44,6 +44,7 @@ export type NormalizeOptions = {
   stripScheme?: boolean // Strip the scheme, so http and https compare the same
   /** @deprecated Use `stripScheme` instead, which wins when both are set. */
   stripProtocol?: boolean
+  stripHostTrailingDot?: boolean // example.com. → example.com, the DNS absolute form, RFC 1034 §3.1
   stripAuthentication?: boolean // Strip user:pass@, RFC 3986 §3.2.1, RFC 9110 §4.2.4
   stripWww?: boolean // Strip www. prefix
   stripTrailingSlash?: boolean // /feed/ → /feed, against RFC 3986 §3.3
