@@ -2638,4 +2638,64 @@ describe('getRegistrableDomain', () => {
   it('should lowercase the host of a non-HTTP URL', () => {
     expect(getRegistrableDomain('foo://WWW.Example.COM/')).toBe('example.com')
   })
+
+  describe('with suffixes', () => {
+    const suffixes = [
+      'example',
+      'co.example',
+      '*.wild.example',
+      '!keep.wild.example',
+      'bücher.example',
+    ]
+
+    it('should keep the label before a multi-label rule', () => {
+      const value = 'https://shop.co.example/feed'
+
+      expect(getRegistrableDomain(value, { suffixes })).toBe('shop.co.example')
+    })
+
+    it('should treat a wildcard rule as matching any one label', () => {
+      const value = 'https://a.b.wild.example/feed'
+
+      expect(getRegistrableDomain(value, { suffixes })).toBe('a.b.wild.example')
+    })
+
+    it('should let an exception rule win over a wildcard', () => {
+      const value = 'https://www.keep.wild.example/feed'
+
+      expect(getRegistrableDomain(value, { suffixes })).toBe('keep.wild.example')
+    })
+
+    it('should fall back to the last label when no rule matches', () => {
+      const value = 'https://blog.example.test/feed'
+
+      expect(getRegistrableDomain(value, { suffixes })).toBe('example.test')
+    })
+
+    it('should return a host that is itself a public suffix unchanged', () => {
+      const value = 'https://co.example/feed'
+
+      expect(getRegistrableDomain(value, { suffixes })).toBe('co.example')
+    })
+
+    it('should match a rule written in Unicode against a punycode host', () => {
+      const value = 'https://shop.bücher.example/feed'
+
+      expect(getRegistrableDomain(value, { suffixes })).toBe('shop.xn--bcher-kva.example')
+    })
+
+    it('should match a rule written in uppercase', () => {
+      const value = 'https://shop.co.example/feed'
+      const options = { suffixes: ['CO.EXAMPLE'] }
+
+      expect(getRegistrableDomain(value, options)).toBe('shop.co.example')
+    })
+
+    it('should drop every subdomain above the registrable domain', () => {
+      const value = 'https://feeds.blog.example.com/atom'
+      const options = { suffixes: ['com'] }
+
+      expect(getRegistrableDomain(value, options)).toBe('example.com')
+    })
+  })
 })

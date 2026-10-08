@@ -1,6 +1,6 @@
 import { decodeHTMLStrict } from 'entities'
 import { endsWithAnyOf, isAnyOf } from './matching.js'
-import type { NormalizeOptions } from './types.js'
+import type { NormalizeOptions, RegistrableDomainOptions } from './types.js'
 
 const httpSchemes = ['http:', 'https:']
 
@@ -656,9 +656,77 @@ const genericSecondLevels = [
   'org',
 ]
 
+type SuffixRules = {
+  names: Set<string>
+  wildcards: Set<string>
+  exceptions: Set<string>
+}
+
+// Keyed by the array itself, so an array changed after its first use keeps its old rules.
+const suffixRulesCache = new WeakMap<ReadonlyArray<string>, SuffixRules>()
+
+// A rule is a domain, or one with a leading `*.` wildcard or `!` exception. The list writes rules
+// in Unicode, so they go through the same punycode step as a hostname.
+const getSuffixRules = (suffixes: ReadonlyArray<string>): SuffixRules => {
+  let cached = suffixRulesCache.get(suffixes)
+
+  if (cached) {
+    return cached
+  }
+
+  cached = { names: new Set(), wildcards: new Set(), exceptions: new Set() }
+
+  for (const entry of suffixes) {
+    const rule = entry.toLowerCase()
+
+    if (rule.startsWith('!')) {
+      cached.exceptions.add(normalizeDomain(rule.slice(1)))
+      continue
+    }
+
+    if (rule.startsWith('*.')) {
+      cached.wildcards.add(normalizeDomain(rule.slice(2)))
+      continue
+    }
+
+    cached.names.add(normalizeDomain(rule))
+  }
+
+  suffixRulesCache.set(suffixes, cached)
+
+  return cached
+}
+
+// The number of labels in the public suffix, by the list's prevailing rule: an exception rule
+// wins, then the rule with the most labels, then the implicit `*` covering the last label.
+// See: https://github.com/publicsuffix/list/wiki/Format#formal-algorithm.
+const getPublicSuffixLength = (labels: Array<string>, rules: SuffixRules): number => {
+  for (let index = 0; index < labels.length; index++) {
+    if (rules.exceptions.has(labels.slice(index).join('.'))) {
+      return labels.length - index - 1
+    }
+  }
+
+  for (let index = 0; index < labels.length; index++) {
+    if (rules.names.has(labels.slice(index).join('.'))) {
+      return labels.length - index
+    }
+
+    if (index + 1 < labels.length && rules.wildcards.has(labels.slice(index + 1).join('.'))) {
+      return labels.length - index
+    }
+  }
+
+  return 1
+}
+
 // The name a site owner registered, plus its public suffix, so every subdomain of a hosting
-// platform resolves to one name. Never returns more labels than the host it came from.
-export const getRegistrableDomain = (url: string | URL): string | undefined => {
+// platform resolves to one name. Never returns more labels than the host it came from. Given
+// `suffixes`, the Public Suffix List rules decide where the suffix starts.
+export const getRegistrableDomain = (
+  url: string | URL,
+  options?: RegistrableDomainOptions,
+): string | undefined => {
   const hostname = getHostname(url)?.toLowerCase()
 
   if (!hostname) {
@@ -670,6 +738,12 @@ export const getRegistrableDomain = (url: string | URL): string | undefined => {
   }
 
   const parts = hostname.split('.')
+
+  if (options?.suffixes) {
+    const suffixLength = getPublicSuffixLength(parts, getSuffixRules(options.suffixes))
+
+    return parts.slice(-Math.min(suffixLength + 1, parts.length)).join('.')
+  }
 
   if (parts.length <= 2) {
     return hostname

@@ -33,6 +33,10 @@ export type MaybePromise<T> = T | Promise<T>
 
 export type Pattern = string | RegExp
 
+export type RegistrableDomainOptions = {
+  suffixes?: ReadonlyArray<string> // Public Suffix List rules, cached per array, so never mutate it
+}
+
 // See: https://www.rfc-editor.org/rfc/rfc3986.
 // See: https://www.rfc-editor.org/rfc/rfc9110.
 // See: https://www.rfc-editor.org/rfc/rfc3987.
