@@ -581,10 +581,11 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
     if (parsed.search && (options.stripQueryParams || options.lowercaseQuery)) {
       let pairs = parsed.search.slice(1).split('&')
 
-      // Remove tracking/specified parameters (case-insensitive).
+      // Remove tracking/specified parameters (case-insensitive). An empty pair goes too, or a
+      // stripped `?a=1&utm_source=x&` would keep a separator `?a=1` lacks.
       if (options.stripQueryParams) {
         const strippedSet = getStrippedParamsSet(options.stripQueryParams)
-        pairs = pairs.filter((pair) => !strippedSet.has(decodeQueryKey(pair).toLowerCase()))
+        pairs = pairs.filter((pair) => pair && !strippedSet.has(decodeQueryKey(pair).toLowerCase()))
       }
 
       // Lowercase query parameters.
