@@ -42,7 +42,7 @@ export const isNonEmptyString = (value: unknown): value is string => {
   }
 
   // Fast path: a printable ASCII first character cannot be White_Space, so the string is
-  // necessarily non-empty and non-whitespace-only. Roughly 2× faster on typical values.
+  // necessarily non-empty and non-whitespace-only.
   const code = value.charCodeAt(0)
 
   if (code > 0x20 && code < 0x7f) {

@@ -29,10 +29,8 @@ export const t = (template: string, params: Record<string, string | number>): st
   })
 }
 
-// Like `t`, but for locale strings that contain markup (e.g. `<strong>{{name}}</strong>`). The
-// template is trusted (developer-authored) and kept as-is; `{{key}}` params are untrusted and
-// HTML-escaped, so the result is safe to render as HTML — the template's markup renders while
-// param values render as inert text.
+// Like `t`, for a locale string holding markup such as `<strong>{{name}}</strong>`. The template is
+// trusted and kept as is, while each param is HTML-escaped, so a param renders as inert text.
 export const tx = (template: string, params: Record<string, string | number>): string => {
   return template.replace(placeholderRegex, (placeholder, key) => {
     return Object.hasOwn(params, key) ? escapeHtml(String(params[key])) : placeholder
