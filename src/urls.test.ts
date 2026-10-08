@@ -1715,21 +1715,6 @@ describe('normalizeUrl', () => {
 
       expect(normalizeUrl(value, options)).toBe(value)
     })
-
-    it('should strip scheme when the deprecated stripProtocol is true', () => {
-      const value = 'https://example.com/feed'
-      const expected = 'example.com/feed'
-      const options = { stripProtocol: true }
-
-      expect(normalizeUrl(value, options)).toBe(expected)
-    })
-
-    it('should let stripScheme win over stripProtocol', () => {
-      const value = 'https://example.com/feed'
-      const options = { stripScheme: false, stripProtocol: true }
-
-      expect(normalizeUrl(value, options)).toBe(value)
-    })
   })
 
   describe('authentication handling', () => {

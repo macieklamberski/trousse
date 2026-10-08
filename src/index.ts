@@ -55,10 +55,8 @@ export type {
   Pattern,
 } from './types.js'
 export {
-  addMissingProtocol,
   addMissingScheme,
   decodeSegment,
-  fixMalformedProtocol,
   fixMalformedScheme,
   getPathSegments,
   getRegistrableDomain,
@@ -70,10 +68,8 @@ export {
   isSubdomainOf,
   normalizeUrl,
   parseUrl,
-  resolveFeedProtocol,
   resolveFeedScheme,
   resolveUrl,
   stripWww,
-  upgradeProtocol,
   upgradeScheme,
 } from './urls.js'

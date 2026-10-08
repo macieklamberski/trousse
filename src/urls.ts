@@ -607,7 +607,7 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
     }
 
     // Strip scheme for comparison.
-    if (options.stripScheme ?? options.stripProtocol) {
+    if (options.stripScheme) {
       result = result.replace(schemePrefixRegex, '')
     }
 
@@ -670,15 +670,3 @@ export const getRegistrableDomain = (url: string | URL): string | undefined => {
 
   return parts.slice(-labels).join('.')
 }
-
-/** @deprecated Use `fixMalformedScheme` instead. */
-export const fixMalformedProtocol = fixMalformedScheme
-
-/** @deprecated Use `resolveFeedScheme` instead. */
-export const resolveFeedProtocol = resolveFeedScheme
-
-/** @deprecated Use `addMissingScheme` instead. */
-export const addMissingProtocol = addMissingScheme
-
-/** @deprecated Use `upgradeScheme` instead. */
-export const upgradeProtocol = upgradeScheme
