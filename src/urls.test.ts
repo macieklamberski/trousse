@@ -1906,6 +1906,63 @@ describe('normalizeUrl', () => {
     })
   })
 
+  describe('host trailing dot stripping', () => {
+    it('should strip the trailing dot of the host when stripHostTrailingDot is true', () => {
+      const value = 'https://example.com./feed'
+      const options = { stripHostTrailingDot: true }
+      const expected = 'https://example.com/feed'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should preserve the trailing dot of the host by default', () => {
+      const value = 'https://example.com./feed'
+      const expected = 'example.com./feed'
+
+      expect(normalizeUrl(value, defaultOptions)).toBe(expected)
+    })
+
+    it('should keep the port when stripping the trailing dot', () => {
+      const value = 'https://example.com.:8080/feed'
+      const options = { stripHostTrailingDot: true }
+      const expected = 'https://example.com:8080/feed'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should keep an IPv4 host whole', () => {
+      const value = 'http://192.168.1.1./feed'
+      const options = { stripHostTrailingDot: true }
+      const expected = 'http://192.168.1.1/feed'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should keep an IPv6 host whole', () => {
+      const value = 'http://[2001:db8::1]:8080/feed'
+      const options = { stripHostTrailingDot: true }
+      const expected = 'http://[2001:db8::1]:8080/feed'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should keep a host that is only a dot', () => {
+      const value = 'http://./feed'
+      const options = { stripHostTrailingDot: true }
+      const expected = 'http://./feed'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should keep www on a top-level domain written with a trailing dot', () => {
+      const value = 'https://www.com./feed'
+      const options = { stripHostTrailingDot: true, stripWww: true }
+      const expected = 'https://www.com/feed'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+  })
+
   describe('trailing slash removal', () => {
     it('should remove trailing slash from path by default', () => {
       const value = 'https://example.com/feed/'

@@ -523,6 +523,11 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
     // so NFC only has an effect on the raw string.
     const parsed = new URL(options.normalizeUnicode ? url.normalize('NFC') : url)
 
+    // Before stripWww, which keeps `www.com` whole only once the dot is gone.
+    if (options.stripHostTrailingDot && parsed.hostname.endsWith('.')) {
+      parsed.hostname = parsed.hostname.slice(0, -1)
+    }
+
     if (options.stripAuthentication) {
       parsed.username = ''
       parsed.password = ''
