@@ -178,7 +178,6 @@ const localhostRegex = /^localhost(?:[:/?#]|$)/i
 const schemeColonRegex = /^[^/]*:/
 const missingColonSchemeRegex = /^https?[\s=.\\]*\/\//i
 
-// Pre-compiled patterns for fixMalformedScheme.
 // Fast path: valid http(s):// followed by hostname char (excludes lone 'w' to avoid partial 'www').
 const validUrlRegex = /^https?:\/\/(?:www\.|[a-vx-z0-9])/i
 
@@ -213,18 +212,9 @@ const isSchemeToken = (token: string, separator: string): boolean => {
   return `${token}${separator}`.includes(':') || (lowered.includes('t') && lowered.includes('p'))
 }
 
-// Fix common malformations in the http and https schemes. Handles:
-// - Excess slashes: http:////example.com → http://example.com
-// - Leading slash: /http://example.com → http://example.com
-// - Typos in scheme: htp://, htps://, hhttps:// → http:// or https://
-// - Missing colon: http//example.com → http://example.com
-// - Multiple colons: http:::// → http://
-// - Wrong separators: http=//, http.\\ → http://
-// - Leading junk after scheme: http://./example.com → http://example.com
-// - Placeholder syntax: http(s):// → https://
-// - Double scheme: http:http://, https:https:// → dedupe
-// - Misplaced www: https:www.// → https://www
-// - Missing www dot: https://www/ → https://www
+// Repairs a malformed http or https scheme: typos such as `htp://`, a missing, doubled or split
+// colon, wrong separators or extra slashes, a doubled scheme, junk after it, `http(s)://`, and a
+// misplaced `www` or one missing its dot.
 export const fixMalformedScheme = (url: string): string => {
   // Fast path: valid URL without doubled scheme.
   if (validUrlRegex.test(url) && !doubledSchemeRegex.test(url)) {
@@ -232,34 +222,33 @@ export const fixMalformedScheme = (url: string): string => {
   }
 
   const doubledMatch = doubledSchemeRegex.exec(url)
+
   if (doubledMatch && isSchemeToken(doubledMatch[1], doubledMatch[2])) {
     const inner = doubledMatch[1]
     const www = doubledMatch[3]
     const rest = url.slice(doubledMatch[0].length)
     const scheme = httpsLetterRegex.test(inner) ? 'https://' : 'http://'
-    return scheme + (www ? 'www.' : '') + rest
+
+    return `${scheme}${www ? 'www.' : ''}${rest}`
   }
 
   const singleMatch = singleMalformedRegex.exec(url)
+
   if (singleMatch && isSchemeToken(singleMatch[1], singleMatch[2])) {
     const fullMatch = singleMatch[0]
     const www = singleMatch[3]
     const rest = url.slice(fullMatch.length)
     const scheme = httpsLetterRegex.test(fullMatch) ? 'https://' : 'http://'
-    return scheme + (www ? 'www.' : '') + rest
+
+    return `${scheme}${www ? 'www.' : ''}${rest}`
   }
 
   return url
 }
 
-// Convert known feed-related schemes to HTTPS. `feed:` is provisional in the IANA registry, the
-// others are unregistered. See: https://www.iana.org/assignments/uri-schemes/prov/feed. Examples:
-// - feed://example.com/rss.xml → https://example.com/rss.xml
-// - feed:https://example.com/rss.xml → https://example.com/rss.xml
-// - rss://example.com/feed.xml → https://example.com/feed.xml
-// - pcast://example.com/podcast.xml → https://example.com/podcast.xml
-// - itpc://example.com/podcast.xml → https://example.com/podcast.xml
-// - itms-podcast://example.com/podcast.xml → https://example.com/podcast.xml
+// Feed pseudo-schemes, replaced as in `feed://host` or unwrapped as in `feed:https://host`.
+// `feed:` is provisional in the IANA registry, the others are unregistered.
+// See: https://www.iana.org/assignments/uri-schemes/prov/feed.
 const feedSchemes = [
   'feed:',
   'rss:',
@@ -309,13 +298,9 @@ export const resolveFeedScheme = (url: string, scheme: 'http' | 'https' = 'https
   return url
 }
 
-// Adds a scheme to URLs missing one. Handles both scheme-relative URLs (//example.com) and
-// bare domains (example.com). Examples:
-// - //example.com/feed → https://example.com/feed
-// - //localhost/api → https://localhost/api
-// - //Users/file.xml → //Users/file.xml (unchanged, not a valid URL)
-// - example.com/feed → https://example.com/feed
-// - /path/to/feed → /path/to/feed (unchanged, relative path)
+// Adds a scheme to a scheme-relative URL like `//example.com` or a bare domain like
+// `example.com/feed`. A path, a query, a fragment, or a host with no dot, such as `//Users/x`,
+// stays as it is.
 export const addMissingScheme = (url: string, scheme: 'http' | 'https' = 'https'): string => {
   // A bracketed IPv6 host holds colons, which the scheme check below would read as a scheme.
   if (url.startsWith('[')) {
@@ -347,7 +332,6 @@ export const addMissingScheme = (url: string, scheme: 'http' | 'https' = 'https'
 
     const hostname = parsed.hostname
 
-    // Valid web hostnames must have at least one of:
     if (hostname.includes('.') || hostname === 'localhost' || isIpAddress(hostname)) {
       return parsed.href
     }
@@ -364,6 +348,7 @@ export const addMissingScheme = (url: string, scheme: 'http' | 'https' = 'https'
   // Dot must be in the hostname (before first slash), not in the path.
   const slashIndex = url.indexOf('/')
   const dotIndex = url.indexOf('.')
+
   if (dotIndex === -1 || (slashIndex !== -1 && dotIndex > slashIndex)) {
     // Exception: localhost is valid without a dot.
     if (!localhostRegex.test(url)) {
@@ -371,8 +356,8 @@ export const addMissingScheme = (url: string, scheme: 'http' | 'https' = 'https'
     }
   }
 
-  // Check if it looks like a domain (no spaces or special chars at start).
   const firstChar = url.charAt(0)
+
   if (leadingWhitespaceChars.includes(firstChar)) {
     return url
   }
@@ -537,43 +522,31 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
     // so NFC only has an effect on the raw string.
     const parsed = new URL(options.normalizeUnicode ? url.normalize('NFC') : url)
 
-    // Strip authentication.
     if (options.stripAuthentication) {
       parsed.username = ''
       parsed.password = ''
     }
 
-    // Strip www prefix.
     if (options.stripWww) {
       parsed.hostname = stripWww(parsed.hostname)
     }
 
-    // Strip hash/fragment.
     if (options.stripHash) {
       parsed.hash = ''
     }
 
-    // Handle pathname normalization.
     let pathname = parsed.pathname
 
-    // Normalize percent encoding (decode unnecessarily encoded chars, uppercase hex).
     if (options.normalizeEncoding) {
       pathname = decodeAndNormalizeEncoding(pathname)
     }
 
-    // Collapse multiple slashes.
     if (options.collapseSlashes) {
       pathname = pathname.replace(/\/+/g, '/')
     }
 
-    // Handle trailing slash.
     if (options.stripTrailingSlash && pathname.length > 1 && pathname.endsWith('/')) {
       pathname = pathname.slice(0, -1)
-    }
-
-    // Handle single slash (root path).
-    if (options.stripRootSlash && pathname === '/') {
-      pathname = ''
     }
 
     parsed.pathname = pathname
@@ -587,7 +560,6 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
       parsed.hash = decodeAndNormalizeEncoding(parsed.hash)
     }
 
-    // Strip entire query string.
     if (options.stripQuery) {
       parsed.search = ''
     }
@@ -606,7 +578,6 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
         pairs = pairs.filter((pair) => pair && !strippedSet.has(decodeQueryKey(pair).toLowerCase()))
       }
 
-      // Lowercase query parameters.
       if (options.lowercaseQuery) {
         pairs = pairs.map(lowercaseQueryPair)
       }
@@ -622,12 +593,11 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
       parsed.search = pairs.sort(compareQueryPairs).join('&')
     }
 
-    // Remove empty query string.
+    // A bare `?` reads as an empty search, and writing an empty search drops it.
     if (options.stripEmptyQuery && parsed.search === '') {
       parsed.search = ''
     }
 
-    // Build result URL.
     let result = parsed.href
 
     // Strip root slash: URL.href always includes "/" for root paths.
@@ -635,7 +605,6 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
       result = parsed.origin
     }
 
-    // Strip scheme for comparison.
     if (options.stripScheme ?? options.stripProtocol) {
       result = result.replace(schemePrefixRegex, '')
     }

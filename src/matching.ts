@@ -122,8 +122,8 @@ export const endsWithAnyOf = (value: string, patterns: ReadonlyArray<Pattern>): 
 }
 
 export const anyWordMatchesAnyOf = (value: string, patterns: ReadonlyArray<Pattern>): boolean => {
-  // Lower and trim the patterns once up front — doing it inside the word loop (as isAnyOf
-  // would) repeats the work and its allocations for every word times every pattern.
+  // The patterns are lowered and trimmed once, outside the word loop, or the work and its
+  // allocations would repeat for every word times every pattern.
   const stringPatterns: Array<string> = []
   const regexPatterns: Array<RegExp> = []
 
