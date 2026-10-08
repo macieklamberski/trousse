@@ -158,7 +158,7 @@ const ipv4Regex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
 // hostnames.
 const ipv6Regex = /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i
 
-const wwwPrefixRegex = /^www\./
+const wwwPrefixRegex = /^(?:www\.)+(?=.*\.)/
 const ipv6BracketsRegex = /^\[|\]$/g
 
 // Only an unreserved character means the same encoded and literal. A reserved one like `+` or `,`
@@ -616,11 +616,10 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
   }
 }
 
-// A host whose only other label is the top-level domain, like `www.com`, keeps its `www`.
+// Strips every leading `www` label. A host whose only other label is the top-level domain, like
+// `www.com`, keeps its last `www`.
 export const stripWww = (hostname: string): string => {
-  const stripped = hostname.replace(wwwPrefixRegex, '')
-
-  return stripped.includes('.') ? stripped : hostname
+  return hostname.replace(wwwPrefixRegex, '')
 }
 
 // Expects a URL.hostname: it checks the shape only, so `999.1.1.1`, which the URL parser rejects,
