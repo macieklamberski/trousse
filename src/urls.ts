@@ -560,6 +560,15 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
 
     parsed.pathname = pathname
 
+    // Writing an empty search or hash drops the bare `?` or `#` a URL ends with.
+    if (options.normalizeEncoding && parsed.search.includes('%')) {
+      parsed.search = decodeAndNormalizeEncoding(parsed.search)
+    }
+
+    if (options.normalizeEncoding && parsed.hash.includes('%')) {
+      parsed.hash = decodeAndNormalizeEncoding(parsed.hash)
+    }
+
     // Strip entire query string.
     if (options.stripQuery) {
       parsed.search = ''

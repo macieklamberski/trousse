@@ -1985,9 +1985,10 @@ describe('normalizeUrl', () => {
 
     it('should sort by decoded key', () => {
       const value = 'https://example.com/feed?b=1&%61=2'
+      const options = { ...defaultOptions, normalizeEncoding: false }
       const expected = 'example.com/feed?%61=2&b=1'
 
-      expect(normalizeUrl(value, defaultOptions)).toBe(expected)
+      expect(normalizeUrl(value, options)).toBe(expected)
     })
 
     it('should drop a trailing separator instead of sorting it to the front', () => {
@@ -2256,6 +2257,34 @@ describe('normalizeUrl', () => {
       const expected = 'example.com/a%2Bb%3Dc%26d%2Ce'
 
       expect(normalizeUrl(value, defaultOptions)).toBe(expected)
+    })
+
+    it('should decode unreserved characters and uppercase hex in the query', () => {
+      const value = 'https://example.com/feed?q=%7e%41%3a'
+      const expected = 'https://example.com/feed?q=~A%3A'
+
+      expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(expected)
+    })
+
+    it('should keep reserved characters encoded in the query', () => {
+      const value = 'https://example.com/feed?q=a%26b%3Dc'
+      const expected = 'https://example.com/feed?q=a%26b%3Dc'
+
+      expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(expected)
+    })
+
+    it('should decode unreserved characters and uppercase hex in the fragment', () => {
+      const value = 'https://example.com/feed#%7e%41%3a'
+      const expected = 'https://example.com/feed#~A%3A'
+
+      expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(expected)
+    })
+
+    it('should keep an empty query when the fragment is encoded', () => {
+      const value = 'https://example.com/feed?#%41'
+      const expected = 'https://example.com/feed?#A'
+
+      expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(expected)
     })
 
     it('should preserve encoding when normalizeEncoding is false', () => {
