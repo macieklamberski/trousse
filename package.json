@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
-    "kvalita": "^1.24.0",
+    "kvalita": "^1.24.3",
     "tsdown": "^0.23.0"
   },
   "dependencies": {
