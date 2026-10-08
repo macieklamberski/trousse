@@ -56,8 +56,10 @@ export type {
 } from './types.js'
 export {
   addMissingProtocol,
+  addMissingScheme,
   decodeSegment,
   fixMalformedProtocol,
+  fixMalformedScheme,
   getPathSegments,
   getRegistrableDomain,
   getSubdomain,
@@ -69,7 +71,9 @@ export {
   normalizeUrl,
   parseUrl,
   resolveFeedProtocol,
+  resolveFeedScheme,
   resolveUrl,
   stripWww,
   upgradeProtocol,
+  upgradeScheme,
 } from './urls.js'

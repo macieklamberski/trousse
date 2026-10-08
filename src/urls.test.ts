@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 import type { NormalizeOptions } from './types.js'
 import {
-  addMissingProtocol,
+  addMissingScheme,
   decodeSegment,
-  fixMalformedProtocol,
+  fixMalformedScheme,
   getPathSegments,
   getRegistrableDomain,
   getSubdomain,
@@ -14,14 +14,14 @@ import {
   isSubdomainOf,
   normalizeUrl,
   parseUrl,
-  resolveFeedProtocol,
+  resolveFeedScheme,
   resolveUrl,
   stripWww,
-  upgradeProtocol,
+  upgradeScheme,
 } from './urls.js'
 
 const defaultOptions: NormalizeOptions = {
-  stripProtocol: true,
+  stripScheme: true,
   stripAuthentication: false,
   stripWww: true,
   stripTrailingSlash: true,
@@ -352,260 +352,255 @@ describe('decodeSegment', () => {
   })
 })
 
-describe('resolveFeedProtocol', () => {
+describe('resolveFeedScheme', () => {
   it('should convert feed:// to https://', () => {
     const value = 'feed://example.com/rss.xml'
     const expected = 'https://example.com/rss.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should convert rss:// to https://', () => {
     const value = 'rss://example.com/feed.xml'
     const expected = 'https://example.com/feed.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should convert pcast:// to https://', () => {
     const value = 'pcast://example.com/podcast.xml'
     const expected = 'https://example.com/podcast.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should convert itpc:// to https://', () => {
     const value = 'itpc://example.com/podcast.xml'
     const expected = 'https://example.com/podcast.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should convert podcast:// to https://', () => {
     const value = 'podcast://example.com/feed.xml'
     const expected = 'https://example.com/feed.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should unwrap feed:https:// to https://', () => {
     const value = 'feed:https://example.com/rss.xml'
     const expected = 'https://example.com/rss.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should unwrap feed:http:// to http://', () => {
     const value = 'feed:http://example.com/rss.xml'
     const expected = 'http://example.com/rss.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should unwrap rss:https:// to https://', () => {
     const value = 'rss:https://example.com/feed.xml'
     const expected = 'https://example.com/feed.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should unwrap pcast:https:// to https://', () => {
     const value = 'pcast:https://example.com/podcast.xml'
     const expected = 'https://example.com/podcast.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should unwrap itpc:http:// to http://', () => {
     const value = 'itpc:http://example.com/podcast.xml'
     const expected = 'http://example.com/podcast.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should unwrap podcast:https:// to https://', () => {
     const value = 'podcast:https://example.com/feed.xml'
     const expected = 'https://example.com/feed.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should convert podcasts:// to https://', () => {
     const value = 'podcasts://example.com/feed.xml'
     const expected = 'https://example.com/feed.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should unwrap podcasts:https:// to https://', () => {
     const value = 'podcasts:https://example.com/feed.xml'
     const expected = 'https://example.com/feed.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should convert itms:// to https://', () => {
     const value = 'itms://example.com/podcast.xml'
     const expected = 'https://example.com/podcast.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should convert itms-pcast:// to https://', () => {
     const value = 'itms-pcast://example.com/podcast.xml'
     const expected = 'https://example.com/podcast.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should convert itms-pcasts:// to https://', () => {
     const value = 'itms-pcasts://example.com/podcast.xml'
     const expected = 'https://example.com/podcast.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should convert itms-podcast:// to https://', () => {
     const value = 'itms-podcast://example.com/podcast.xml'
     const expected = 'https://example.com/podcast.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should convert itms-podcasts:// to https://', () => {
     const value = 'itms-podcasts://example.com/podcast.xml'
     const expected = 'https://example.com/podcast.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should unwrap itms-podcast:https:// to https://', () => {
     const value = 'itms-podcast:https://example.com/podcast.xml'
     const expected = 'https://example.com/podcast.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should return https URLs unchanged', () => {
     const value = 'https://example.com/feed.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(value)
+    expect(resolveFeedScheme(value)).toBe(value)
   })
 
   it('should return http URLs unchanged', () => {
     const value = 'http://example.com/rss.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(value)
+    expect(resolveFeedScheme(value)).toBe(value)
   })
 
   it('should return non-feed URLs starting with feed-scheme letters unchanged', () => {
-    expect(resolveFeedProtocol('ftp://example.com/feed.xml')).toBe('ftp://example.com/feed.xml')
-    expect(resolveFeedProtocol('irc://irc.example.com/feeds')).toBe('irc://irc.example.com/feeds')
-    expect(resolveFeedProtocol('feeds.example.com/rss')).toBe('feeds.example.com/rss')
-    expect(resolveFeedProtocol('podcasts.example.com/feed')).toBe('podcasts.example.com/feed')
-    expect(resolveFeedProtocol('rss.example.com/feed')).toBe('rss.example.com/feed')
+    expect(resolveFeedScheme('ftp://example.com/feed.xml')).toBe('ftp://example.com/feed.xml')
+    expect(resolveFeedScheme('irc://irc.example.com/feeds')).toBe('irc://irc.example.com/feeds')
+    expect(resolveFeedScheme('feeds.example.com/rss')).toBe('feeds.example.com/rss')
+    expect(resolveFeedScheme('podcasts.example.com/feed')).toBe('podcasts.example.com/feed')
+    expect(resolveFeedScheme('rss.example.com/feed')).toBe('rss.example.com/feed')
   })
 
   it('should return absolute path URLs unchanged', () => {
     const value = '/path/to/feed'
 
-    expect(resolveFeedProtocol(value)).toBe(value)
+    expect(resolveFeedScheme(value)).toBe(value)
   })
 
   it('should return relative path URLs unchanged', () => {
     const value = 'relative/feed.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(value)
+    expect(resolveFeedScheme(value)).toBe(value)
   })
 
   it('should handle feed URLs with paths and query params', () => {
     const value = 'feed://example.com/path/to/feed?format=rss'
     const expected = 'https://example.com/path/to/feed?format=rss'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should handle feed URLs with ports', () => {
     const value = 'feed://example.com:8080/feed.xml'
     const expected = 'https://example.com:8080/feed.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
-  it('should handle uppercase feed protocols', () => {
-    expect(resolveFeedProtocol('FEED://example.com/rss.xml')).toBe('https://example.com/rss.xml')
-    expect(resolveFeedProtocol('Feed://example.com/rss.xml')).toBe('https://example.com/rss.xml')
-    expect(resolveFeedProtocol('FEED:https://example.com/rss.xml')).toBe(
+  it('should handle uppercase feed schemes', () => {
+    expect(resolveFeedScheme('FEED://example.com/rss.xml')).toBe('https://example.com/rss.xml')
+    expect(resolveFeedScheme('Feed://example.com/rss.xml')).toBe('https://example.com/rss.xml')
+    expect(resolveFeedScheme('FEED:https://example.com/rss.xml')).toBe(
       'https://example.com/rss.xml',
     )
-    expect(resolveFeedProtocol('RSS://example.com/feed.xml')).toBe('https://example.com/feed.xml')
-    expect(resolveFeedProtocol('PCAST://example.com/podcast.xml')).toBe(
+    expect(resolveFeedScheme('RSS://example.com/feed.xml')).toBe('https://example.com/feed.xml')
+    expect(resolveFeedScheme('PCAST://example.com/podcast.xml')).toBe(
       'https://example.com/podcast.xml',
     )
   })
 
-  it('should handle mixed case in wrapped URL protocol', () => {
-    expect(resolveFeedProtocol('feed:HTTPS://example.com/rss.xml')).toBe(
+  it('should handle mixed case in wrapped URL scheme', () => {
+    expect(resolveFeedScheme('feed:HTTPS://example.com/rss.xml')).toBe(
       'HTTPS://example.com/rss.xml',
     )
-    expect(resolveFeedProtocol('feed:Http://example.com/rss.xml')).toBe(
-      'Http://example.com/rss.xml',
-    )
+    expect(resolveFeedScheme('feed:Http://example.com/rss.xml')).toBe('Http://example.com/rss.xml')
   })
 
   it('should return empty string unchanged', () => {
-    expect(resolveFeedProtocol('')).toBe('')
+    expect(resolveFeedScheme('')).toBe('')
   })
 
   it('should return malformed feed URL unchanged', () => {
     const value = 'feed:example.com'
 
-    expect(resolveFeedProtocol(value)).toBe(value)
+    expect(resolveFeedScheme(value)).toBe(value)
   })
 
   it('should handle feed URLs with authentication', () => {
     const value = 'feed://user:pass@example.com/rss.xml'
     const expected = 'https://user:pass@example.com/rss.xml'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
   it('should handle feed URLs with hash fragment', () => {
     const value = 'feed://example.com/rss.xml#latest'
     const expected = 'https://example.com/rss.xml#latest'
 
-    expect(resolveFeedProtocol(value)).toBe(expected)
+    expect(resolveFeedScheme(value)).toBe(expected)
   })
 
-  it('should use fallbackProtocol for feed:// URLs', () => {
-    expect(resolveFeedProtocol('feed://example.com/feed', 'http')).toBe('http://example.com/feed')
-    expect(resolveFeedProtocol('rss://example.com/feed', 'http')).toBe('http://example.com/feed')
+  it('should use the fallback scheme for feed:// URLs', () => {
+    expect(resolveFeedScheme('feed://example.com/feed', 'http')).toBe('http://example.com/feed')
+    expect(resolveFeedScheme('rss://example.com/feed', 'http')).toBe('http://example.com/feed')
   })
 
-  it('should ignore fallbackProtocol for wrapped URLs with explicit protocol', () => {
-    expect(resolveFeedProtocol('feed:https://example.com/feed', 'http')).toBe(
+  it('should ignore the fallback scheme for wrapped URLs with explicit scheme', () => {
+    expect(resolveFeedScheme('feed:https://example.com/feed', 'http')).toBe(
       'https://example.com/feed',
     )
-    expect(resolveFeedProtocol('feed:http://example.com/feed', 'https')).toBe(
+    expect(resolveFeedScheme('feed:http://example.com/feed', 'https')).toBe(
       'http://example.com/feed',
     )
   })
 })
 
-describe('fixMalformedProtocol', () => {
+describe('fixMalformedScheme', () => {
   const leadingSlashCases: Array<[string, string]> = [
     ['/http://example.com', 'http://example.com'],
     ['/https://example.com', 'https://example.com'],
   ]
 
-  it.each(leadingSlashCases)(
-    'should strip leading slash before protocol (%s)',
-    (value, expected) => {
-      expect(fixMalformedProtocol(value)).toBe(expected)
-    },
-  )
+  it.each(leadingSlashCases)('should strip leading slash before scheme (%s)', (value, expected) => {
+    expect(fixMalformedScheme(value)).toBe(expected)
+  })
 
-  const protocolTypoCases: Array<[string, string]> = [
+  const schemeTypoCases: Array<[string, string]> = [
     ['htp://example.com', 'http://example.com'],
     ['htps://example.com', 'https://example.com'],
     ['hhttps://example.com', 'https://example.com'],
@@ -613,8 +608,8 @@ describe('fixMalformedProtocol', () => {
     ['ttp://example.com', 'http://example.com'],
   ]
 
-  it.each(protocolTypoCases)('should fix protocol typos (%s)', (value, expected) => {
-    expect(fixMalformedProtocol(value)).toBe(expected)
+  it.each(schemeTypoCases)('should fix scheme typos (%s)', (value, expected) => {
+    expect(fixMalformedScheme(value)).toBe(expected)
   })
 
   const wrongSeparatorCases: Array<[string, string]> = [
@@ -625,9 +620,9 @@ describe('fixMalformedProtocol', () => {
   ]
 
   it.each(wrongSeparatorCases)(
-    'should fix wrong separators after protocol (%s)',
+    'should fix wrong separators after scheme (%s)',
     (value, expected) => {
-      expect(fixMalformedProtocol(value)).toBe(expected)
+      expect(fixMalformedScheme(value)).toBe(expected)
     },
   )
 
@@ -638,8 +633,8 @@ describe('fixMalformedProtocol', () => {
     ['https:/example.com/feed', 'https://example.com/feed'],
   ]
 
-  it.each(singleSlashCases)('should fix single slash after protocol (%s)', (value, expected) => {
-    expect(fixMalformedProtocol(value)).toBe(expected)
+  it.each(singleSlashCases)('should fix single slash after scheme (%s)', (value, expected) => {
+    expect(fixMalformedScheme(value)).toBe(expected)
   })
 
   const repeatedColonAndSlashCases: Array<[string, string]> = [
@@ -654,7 +649,7 @@ describe('fixMalformedProtocol', () => {
   it.each(repeatedColonAndSlashCases)(
     'should fix multiple colons and slashes (%s)',
     (value, expected) => {
-      expect(fixMalformedProtocol(value)).toBe(expected)
+      expect(fixMalformedScheme(value)).toBe(expected)
     },
   )
 
@@ -664,8 +659,8 @@ describe('fixMalformedProtocol', () => {
     ['https://...example.com', 'https://example.com'],
   ]
 
-  it.each(leadingJunkCases)('should remove leading junk after protocol (%s)', (value, expected) => {
-    expect(fixMalformedProtocol(value)).toBe(expected)
+  it.each(leadingJunkCases)('should remove leading junk after scheme (%s)', (value, expected) => {
+    expect(fixMalformedScheme(value)).toBe(expected)
   })
 
   const placeholderCases: Array<[string, string]> = [
@@ -674,10 +669,10 @@ describe('fixMalformedProtocol', () => {
   ]
 
   it.each(placeholderCases)('should fix placeholder syntax (%s)', (value, expected) => {
-    expect(fixMalformedProtocol(value)).toBe(expected)
+    expect(fixMalformedScheme(value)).toBe(expected)
   })
 
-  const splitProtocolCases: Array<[string, string]> = [
+  const splitSchemeCases: Array<[string, string]> = [
     ['http:s//example.com', 'https://example.com'],
     ['https:s//example.com', 'https://example.com'],
     ['ht:tps//example.com', 'https://example.com'],
@@ -686,12 +681,9 @@ describe('fixMalformedProtocol', () => {
     ['ht:tp//example.com', 'http://example.com'],
   ]
 
-  it.each(splitProtocolCases)(
-    'should fix colon within protocol letters (%s)',
-    (value, expected) => {
-      expect(fixMalformedProtocol(value)).toBe(expected)
-    },
-  )
+  it.each(splitSchemeCases)('should fix colon within scheme letters (%s)', (value, expected) => {
+    expect(fixMalformedScheme(value)).toBe(expected)
+  })
 
   const doubledPrefixCases: Array<[string, string]> = [
     ['http:http://example.com', 'http://example.com'],
@@ -701,8 +693,8 @@ describe('fixMalformedProtocol', () => {
     ['http::http://example.com', 'http://example.com'],
   ]
 
-  it.each(doubledPrefixCases)('should fix double protocol prefix (%s)', (value, expected) => {
-    expect(fixMalformedProtocol(value)).toBe(expected)
+  it.each(doubledPrefixCases)('should fix double scheme prefix (%s)', (value, expected) => {
+    expect(fixMalformedScheme(value)).toBe(expected)
   })
 
   const misplacedWwwCases: Array<[string, string]> = [
@@ -710,8 +702,8 @@ describe('fixMalformedProtocol', () => {
     ['https:www.//example.com', 'https://www.example.com'],
   ]
 
-  it.each(misplacedWwwCases)('should fix misplaced www after protocol (%s)', (value, expected) => {
-    expect(fixMalformedProtocol(value)).toBe(expected)
+  it.each(misplacedWwwCases)('should fix misplaced www after scheme (%s)', (value, expected) => {
+    expect(fixMalformedScheme(value)).toBe(expected)
   })
 
   const missingWwwDotCases: Array<[string, string]> = [
@@ -720,10 +712,10 @@ describe('fixMalformedProtocol', () => {
   ]
 
   it.each(missingWwwDotCases)('should fix missing dot after www (%s)', (value, expected) => {
-    expect(fixMalformedProtocol(value)).toBe(expected)
+    expect(fixMalformedScheme(value)).toBe(expected)
   })
 
-  const nestedProtocolCases: Array<[string, string]> = [
+  const nestedSchemeCases: Array<[string, string]> = [
     ['http://https//example.com', 'https://example.com'],
     ['http://https/example.com', 'https://example.com'],
     ['https://https//example.com', 'https://example.com'],
@@ -737,8 +729,8 @@ describe('fixMalformedProtocol', () => {
     ['httpss://htps://example.com', 'https://example.com'],
   ]
 
-  it.each(nestedProtocolCases)('should fix nested double protocols (%s)', (value, expected) => {
-    expect(fixMalformedProtocol(value)).toBe(expected)
+  it.each(nestedSchemeCases)('should fix nested double schemes (%s)', (value, expected) => {
+    expect(fixMalformedScheme(value)).toBe(expected)
   })
 
   const strayColonCases: Array<[string, string]> = [
@@ -748,9 +740,9 @@ describe('fixMalformedProtocol', () => {
   ]
 
   it.each(strayColonCases)(
-    'should fix stray colon after protocol slashes (%s)',
+    'should fix stray colon after scheme slashes (%s)',
     (value, expected) => {
-      expect(fixMalformedProtocol(value)).toBe(expected)
+      expect(fixMalformedScheme(value)).toBe(expected)
     },
   )
 
@@ -761,9 +753,9 @@ describe('fixMalformedProtocol', () => {
   ]
 
   it.each(portCases)(
-    'should preserve port numbers when fixing protocol typos (%s)',
+    'should preserve port numbers when fixing scheme typos (%s)',
     (value, expected) => {
-      expect(fixMalformedProtocol(value)).toBe(expected)
+      expect(fixMalformedScheme(value)).toBe(expected)
     },
   )
 
@@ -774,23 +766,23 @@ describe('fixMalformedProtocol', () => {
   ]
 
   it.each(queryStringCases)(
-    'should preserve query strings when fixing protocol typos (%s)',
+    'should preserve query strings when fixing scheme typos (%s)',
     (value, expected) => {
-      expect(fixMalformedProtocol(value)).toBe(expected)
+      expect(fixMalformedScheme(value)).toBe(expected)
     },
   )
 
-  const protocolInPathUrls: Array<string> = [
+  const schemeInPathUrls: Array<string> = [
     'http://example.com/path/http://file',
     'https://example.com/redirect?url=http://other.com',
     'http://example.com/api/https://callback',
   ]
 
-  it.each(protocolInPathUrls)('should not modify protocol-like strings in path (%s)', (value) => {
-    expect(fixMalformedProtocol(value)).toBe(value)
+  it.each(schemeInPathUrls)('should not modify scheme-like strings in path (%s)', (value) => {
+    expect(fixMalformedScheme(value)).toBe(value)
   })
 
-  const protocolLikeHostnameUrls: Array<string> = [
+  const schemeLikeHostnameUrls: Array<string> = [
     'https://tp.srgssr.ch/p/srf/embed',
     'https://ps.w.org/plugin/icon.png',
     'http://tp.media/x',
@@ -800,14 +792,14 @@ describe('fixMalformedProtocol', () => {
     'https://ps.tp.example.com/a',
   ]
 
-  it.each(protocolLikeHostnameUrls)(
-    'should not mistake a leading hostname label for a protocol (%s)',
+  it.each(schemeLikeHostnameUrls)(
+    'should not mistake a leading hostname label for a scheme (%s)',
     (value) => {
-      expect(fixMalformedProtocol(value)).toBe(value)
+      expect(fixMalformedScheme(value)).toBe(value)
     },
   )
 
-  const protocolLikePathUrls: Array<string> = [
+  const schemeLikePathUrls: Array<string> = [
     '/hp/support',
     '/tp/feed.xml',
     '/http/feed.xml',
@@ -816,23 +808,23 @@ describe('fixMalformedProtocol', () => {
     '/tps/tps/feed',
   ]
 
-  it.each(protocolLikePathUrls)(
-    'should not mistake a relative path segment for a protocol (%s)',
+  it.each(schemeLikePathUrls)(
+    'should not mistake a relative path segment for a scheme (%s)',
     (value) => {
-      expect(fixMalformedProtocol(value)).toBe(value)
+      expect(fixMalformedScheme(value)).toBe(value)
     },
   )
 
-  const protocolLikePortHostUrls: Array<string> = [
+  const schemeLikePortHostUrls: Array<string> = [
     'http://tps:8080/feed',
     'http://php:8080/feed',
     'http://sh:8080/feed',
   ]
 
-  it.each(protocolLikePortHostUrls)(
-    'should not mistake a host with a port for a doubled protocol (%s)',
+  it.each(schemeLikePortHostUrls)(
+    'should not mistake a host with a port for a doubled scheme (%s)',
     (value) => {
-      expect(fixMalformedProtocol(value)).toBe(value)
+      expect(fixMalformedScheme(value)).toBe(value)
     },
   )
 
@@ -844,8 +836,8 @@ describe('fixMalformedProtocol', () => {
     'tel:+1234567890',
   ]
 
-  it.each(nonHttpUrls)('should preserve non-HTTP protocols unchanged (%s)', (value) => {
-    expect(fixMalformedProtocol(value)).toBe(value)
+  it.each(nonHttpUrls)('should preserve non-HTTP schemes unchanged (%s)', (value) => {
+    expect(fixMalformedScheme(value)).toBe(value)
   })
 
   const validUrls: Array<string> = [
@@ -859,29 +851,29 @@ describe('fixMalformedProtocol', () => {
   ]
 
   it.each(validUrls)('should preserve valid URLs unchanged (%s)', (value) => {
-    expect(fixMalformedProtocol(value)).toBe(value)
+    expect(fixMalformedScheme(value)).toBe(value)
   })
 
   it('should return empty string unchanged', () => {
-    expect(fixMalformedProtocol('')).toBe('')
+    expect(fixMalformedScheme('')).toBe('')
   })
 })
 
-describe('addMissingProtocol', () => {
-  it('should add protocol to a bare IPv6 host', () => {
+describe('addMissingScheme', () => {
+  it('should add scheme to a bare IPv6 host', () => {
     const value = '[::1]:8080/feed'
     const expected = 'https://[::1]:8080/feed'
 
-    expect(addMissingProtocol(value)).toBe(expected)
+    expect(addMissingScheme(value)).toBe(expected)
   })
 
   it('should leave an invalid bracketed host unchanged', () => {
     const value = '[not-ipv6]/feed'
 
-    expect(addMissingProtocol(value)).toBe(value)
+    expect(addMissingScheme(value)).toBe(value)
   })
 
-  describe('protocol-relative URLs', () => {
+  describe('scheme-relative URLs', () => {
     const values = [
       { value: '//example.com/feed', expected: 'https://example.com/feed' },
       { value: '//cdn.example.com/style.css', expected: 'https://cdn.example.com/style.css' },
@@ -894,7 +886,7 @@ describe('addMissingProtocol', () => {
 
     for (const { value, expected } of values) {
       it(`should convert ${value} to ${expected}`, () => {
-        expect(addMissingProtocol(value)).toBe(expected)
+        expect(addMissingScheme(value)).toBe(expected)
       })
     }
 
@@ -902,44 +894,44 @@ describe('addMissingProtocol', () => {
       const value = '//example.com/feed'
       const expected = 'http://example.com/feed'
 
-      expect(addMissingProtocol(value, 'http')).toBe(expected)
+      expect(addMissingScheme(value, 'http')).toBe(expected)
     })
   })
 
   describe('bare domains', () => {
-    it('should add https:// to domain without protocol', () => {
+    it('should add https:// to domain without scheme', () => {
       const value = 'example.com/feed'
       const expected = 'https://example.com/feed'
 
-      expect(addMissingProtocol(value)).toBe(expected)
+      expect(addMissingScheme(value)).toBe(expected)
     })
 
     it('should add https:// to domain with subdomain', () => {
       const value = 'www.example.com/feed.xml'
       const expected = 'https://www.example.com/feed.xml'
 
-      expect(addMissingProtocol(value)).toBe(expected)
+      expect(addMissingScheme(value)).toBe(expected)
     })
 
     it('should use http when specified', () => {
       const value = 'example.com/feed'
       const expected = 'http://example.com/feed'
 
-      expect(addMissingProtocol(value, 'http')).toBe(expected)
+      expect(addMissingScheme(value, 'http')).toBe(expected)
     })
 
     it('should handle domain with query string', () => {
       const value = 'example.com/feed?format=rss'
       const expected = 'https://example.com/feed?format=rss'
 
-      expect(addMissingProtocol(value)).toBe(expected)
+      expect(addMissingScheme(value)).toBe(expected)
     })
 
     it('should add https:// to bare IPv4 address', () => {
       const value = '192.168.1.1/feed'
       const expected = 'https://192.168.1.1/feed'
 
-      expect(addMissingProtocol(value)).toBe(expected)
+      expect(addMissingScheme(value)).toBe(expected)
     })
   })
 
@@ -947,53 +939,53 @@ describe('addMissingProtocol', () => {
     it('should not modify http:// URLs', () => {
       const value = 'http://example.com/feed'
 
-      expect(addMissingProtocol(value)).toBe(value)
+      expect(addMissingScheme(value)).toBe(value)
     })
 
     it('should not modify https:// URLs', () => {
       const value = 'https://example.com/feed'
 
-      expect(addMissingProtocol(value)).toBe(value)
+      expect(addMissingScheme(value)).toBe(value)
     })
 
     it('should not modify absolute path URLs', () => {
       const value = '/path/to/feed'
 
-      expect(addMissingProtocol(value)).toBe(value)
+      expect(addMissingScheme(value)).toBe(value)
     })
 
     it('should not modify relative path URLs starting with dot', () => {
       const value = './feed.xml'
 
-      expect(addMissingProtocol(value)).toBe(value)
+      expect(addMissingScheme(value)).toBe(value)
     })
 
     it('should not modify relative path URLs starting with double dot', () => {
       const value = '../feed.xml'
 
-      expect(addMissingProtocol(value)).toBe(value)
+      expect(addMissingScheme(value)).toBe(value)
     })
 
     it('should handle localhost', () => {
-      expect(addMissingProtocol('localhost')).toBe('https://localhost')
-      expect(addMissingProtocol('localhost/')).toBe('https://localhost/')
-      expect(addMissingProtocol('localhost:3000')).toBe('https://localhost:3000')
+      expect(addMissingScheme('localhost')).toBe('https://localhost')
+      expect(addMissingScheme('localhost/')).toBe('https://localhost/')
+      expect(addMissingScheme('localhost:3000')).toBe('https://localhost:3000')
     })
   })
 
-  describe('invalid protocol-relative URLs', () => {
+  describe('invalid scheme-relative URLs', () => {
     const values = ['//Users/file.xml', '//home/user/file.txt', '///triple-slash', '//singlelabel']
 
     for (const value of values) {
       it(`should return ${value} unchanged`, () => {
-        expect(addMissingProtocol(value)).toBe(value)
+        expect(addMissingScheme(value)).toBe(value)
       })
     }
 
     it('should handle malformed URLs gracefully', () => {
       const value = '//not valid url $#@'
 
-      expect(addMissingProtocol(value)).toBe(value)
+      expect(addMissingScheme(value)).toBe(value)
     })
   })
 
@@ -1002,75 +994,73 @@ describe('addMissingProtocol', () => {
       const value = 'example.com/feed#section'
       const expected = 'https://example.com/feed#section'
 
-      expect(addMissingProtocol(value)).toBe(expected)
+      expect(addMissingScheme(value)).toBe(expected)
     })
 
     it('should not modify feed:// URLs', () => {
-      expect(addMissingProtocol('feed://example.com/rss')).toBe('feed://example.com/rss')
-      expect(addMissingProtocol('rss://example.com/feed')).toBe('rss://example.com/feed')
+      expect(addMissingScheme('feed://example.com/rss')).toBe('feed://example.com/rss')
+      expect(addMissingScheme('rss://example.com/feed')).toBe('rss://example.com/feed')
     })
 
     it('should handle domain with many subdomains', () => {
       const value = 'a.b.c.d.example.com/feed'
       const expected = 'https://a.b.c.d.example.com/feed'
 
-      expect(addMissingProtocol(value)).toBe(expected)
+      expect(addMissingScheme(value)).toBe(expected)
     })
 
     it('should handle IDN bare domain', () => {
       const value = 'münchen.de/feed'
       const expected = 'https://münchen.de/feed'
 
-      expect(addMissingProtocol(value)).toBe(expected)
+      expect(addMissingScheme(value)).toBe(expected)
     })
 
-    it('should handle protocol-relative with query', () => {
+    it('should handle scheme-relative with query', () => {
       const value = '//example.com/feed?format=rss&page=1'
       const expected = 'https://example.com/feed?format=rss&page=1'
 
-      expect(addMissingProtocol(value)).toBe(expected)
+      expect(addMissingScheme(value)).toBe(expected)
     })
 
     it('should handle bare domain without path', () => {
       const value = 'example.com'
       const expected = 'https://example.com'
 
-      expect(addMissingProtocol(value)).toBe(expected)
+      expect(addMissingScheme(value)).toBe(expected)
     })
 
     it('should not modify mailto: URLs', () => {
-      expect(addMissingProtocol('mailto:test@example.com')).toBe('mailto:test@example.com')
+      expect(addMissingScheme('mailto:test@example.com')).toBe('mailto:test@example.com')
     })
 
     it('should not modify data: URLs', () => {
-      expect(addMissingProtocol('data:text/html,<h1>Test</h1>')).toBe(
-        'data:text/html,<h1>Test</h1>',
-      )
+      expect(addMissingScheme('data:text/html,<h1>Test</h1>')).toBe('data:text/html,<h1>Test</h1>')
     })
 
     it('should return URLs with leading whitespace unchanged', () => {
-      expect(addMissingProtocol(' example.com')).toBe(' example.com')
-      expect(addMissingProtocol('\texample.com')).toBe('\texample.com')
-      expect(addMissingProtocol('\nexample.com')).toBe('\nexample.com')
+      expect(addMissingScheme(' example.com')).toBe(' example.com')
+      expect(addMissingScheme('\texample.com')).toBe('\texample.com')
+      expect(addMissingScheme('\nexample.com')).toBe('\nexample.com')
     })
 
     it('should not prefix a query or a fragment', () => {
-      expect(addMissingProtocol('?page=a.b')).toBe('?page=a.b')
-      expect(addMissingProtocol('#sec.1')).toBe('#sec.1')
+      expect(addMissingScheme('?page=a.b')).toBe('?page=a.b')
+      expect(addMissingScheme('#sec.1')).toBe('#sec.1')
     })
 
     it('should not read a host starting with localhost as localhost', () => {
-      expect(addMissingProtocol('localhosting/feed')).toBe('localhosting/feed')
+      expect(addMissingScheme('localhosting/feed')).toBe('localhosting/feed')
     })
 
     it('should handle localhost in any case', () => {
-      expect(addMissingProtocol('LOCALHOST:3000')).toBe('https://LOCALHOST:3000')
-      expect(addMissingProtocol('LocalHost/feed')).toBe('https://LocalHost/feed')
+      expect(addMissingScheme('LOCALHOST:3000')).toBe('https://LOCALHOST:3000')
+      expect(addMissingScheme('LocalHost/feed')).toBe('https://LocalHost/feed')
     })
   })
 })
 
-describe('upgradeProtocol', () => {
+describe('upgradeScheme', () => {
   describe('default (upgrade to https)', () => {
     const values = [
       { value: 'http://example.com/feed', expected: 'https://example.com/feed' },
@@ -1085,84 +1075,80 @@ describe('upgradeProtocol', () => {
 
     for (const { value, expected } of values) {
       it(`should upgrade ${value} to ${expected}`, () => {
-        expect(upgradeProtocol(value)).toBe(expected)
+        expect(upgradeScheme(value)).toBe(expected)
       })
     }
 
-    it('should be case-insensitive on the protocol', () => {
-      expect(upgradeProtocol('HTTP://example.com/feed')).toBe('https://example.com/feed')
-      expect(upgradeProtocol('Http://example.com/feed')).toBe('https://example.com/feed')
+    it('should be case-insensitive on the scheme', () => {
+      expect(upgradeScheme('HTTP://example.com/feed')).toBe('https://example.com/feed')
+      expect(upgradeScheme('Http://example.com/feed')).toBe('https://example.com/feed')
     })
 
-    it('should only touch the leading protocol, not occurrences inside the URL', () => {
+    it('should only touch the leading scheme, not occurrences inside the URL', () => {
       const value = 'http://proxy.example/?target=http://other.example/page'
       const expected = 'https://proxy.example/?target=http://other.example/page'
 
-      expect(upgradeProtocol(value)).toBe(expected)
+      expect(upgradeScheme(value)).toBe(expected)
     })
 
     it('should drop the port that is the https default', () => {
-      expect(upgradeProtocol('http://example.com:443/feed')).toBe('https://example.com/feed')
+      expect(upgradeScheme('http://example.com:443/feed')).toBe('https://example.com/feed')
     })
 
     it('should drop the port that was the http default', () => {
-      expect(upgradeProtocol('http://example.com:80/feed')).toBe('https://example.com/feed')
+      expect(upgradeScheme('http://example.com:80/feed')).toBe('https://example.com/feed')
     })
 
     it('should swap the scheme of a URL that does not parse', () => {
-      expect(upgradeProtocol('http://example.com:99999/feed')).toBe(
-        'https://example.com:99999/feed',
-      )
+      expect(upgradeScheme('http://example.com:99999/feed')).toBe('https://example.com:99999/feed')
     })
   })
 
   describe('downgrade to http', () => {
     it('should rewrite https:// to http://', () => {
-      expect(upgradeProtocol('https://example.com/feed', 'http')).toBe('http://example.com/feed')
+      expect(upgradeScheme('https://example.com/feed', 'http')).toBe('http://example.com/feed')
     })
 
     it('should drop the port that was the https default', () => {
-      expect(upgradeProtocol('https://example.com:443/feed', 'http')).toBe(
-        'http://example.com/feed',
-      )
+      expect(upgradeScheme('https://example.com:443/feed', 'http')).toBe('http://example.com/feed')
     })
 
     it('should drop the port that is the http default', () => {
-      expect(upgradeProtocol('https://example.com:80/feed', 'http')).toBe('http://example.com/feed')
+      expect(upgradeScheme('https://example.com:80/feed', 'http')).toBe('http://example.com/feed')
     })
 
-    it('should be case-insensitive on the protocol', () => {
-      expect(upgradeProtocol('HTTPS://example.com/feed', 'http')).toBe('http://example.com/feed')
+    it('should be case-insensitive on the scheme', () => {
+      expect(upgradeScheme('HTTPS://example.com/feed', 'http')).toBe('http://example.com/feed')
     })
 
     it('should leave http:// unchanged', () => {
-      expect(upgradeProtocol('http://example.com/feed', 'http')).toBe('http://example.com/feed')
+      expect(upgradeScheme('http://example.com/feed', 'http')).toBe('http://example.com/feed')
     })
   })
 
   describe('unchanged inputs', () => {
     it('should leave https:// unchanged when upgrading to https', () => {
-      expect(upgradeProtocol('https://example.com/feed')).toBe('https://example.com/feed')
+      expect(upgradeScheme('https://example.com/feed')).toBe('https://example.com/feed')
     })
 
-    it('should leave protocol-relative URLs unchanged', () => {
-      expect(upgradeProtocol('//example.com/feed')).toBe('//example.com/feed')
+    it('should leave scheme-relative URLs unchanged', () => {
+      expect(upgradeScheme('//example.com/feed')).toBe('//example.com/feed')
     })
 
     it('should leave non-http schemes unchanged', () => {
-      expect(upgradeProtocol('mailto:user@example.com')).toBe('mailto:user@example.com')
-      expect(upgradeProtocol('data:image/png;base64,iVBOR')).toBe('data:image/png;base64,iVBOR')
-      expect(upgradeProtocol('ftp://example.com/file')).toBe('ftp://example.com/file')
-      expect(upgradeProtocol('feed://example.com/rss.xml')).toBe('feed://example.com/rss.xml')
+      expect(upgradeScheme('mailto:user@example.com')).toBe('mailto:user@example.com')
+      expect(upgradeScheme('data:image/png;base64,iVBOR')).toBe('data:image/png;base64,iVBOR')
+      expect(upgradeScheme('ftp://example.com/file')).toBe('ftp://example.com/file')
+      expect(upgradeScheme('feed://example.com/rss.xml')).toBe('feed://example.com/rss.xml')
     })
 
     it('should leave bare domains and paths unchanged', () => {
-      expect(upgradeProtocol('example.com/feed')).toBe('example.com/feed')
-      expect(upgradeProtocol('/path/to/feed')).toBe('/path/to/feed')
+      expect(upgradeScheme('example.com/feed')).toBe('example.com/feed')
+      expect(upgradeScheme('/path/to/feed')).toBe('/path/to/feed')
     })
 
     it('should leave an empty string unchanged', () => {
-      expect(upgradeProtocol('')).toBe('')
+      expect(upgradeScheme('')).toBe('')
     })
   })
 })
@@ -1182,7 +1168,7 @@ describe('resolveUrl', () => {
     },
   )
 
-  it('should resolve a relative path whose first segment looks like a protocol', () => {
+  it('should resolve a relative path whose first segment looks like a scheme', () => {
     const value = '/hp/support'
     const base = 'https://example.com/'
     const expected = 'https://example.com/hp/support'
@@ -1298,7 +1284,7 @@ describe('resolveUrl', () => {
     })
   })
 
-  describe('feed protocol resolution', () => {
+  describe('feed scheme resolution', () => {
     it('should convert feed:// to https://', () => {
       const value = 'feed://example.com/rss.xml'
       const expected = 'https://example.com/rss.xml'
@@ -1321,14 +1307,14 @@ describe('resolveUrl', () => {
     })
   })
 
-  describe('hostname labels spelled like protocols', () => {
+  describe('hostname labels spelled like schemes', () => {
     it('should keep a label that is a suffix of https', () => {
       const value = 'https://tp.srgssr.ch/p/srf/embed'
 
       expect(resolveUrl(value)).toBe(value)
     })
 
-    it('should keep an apex domain spelled like a protocol', () => {
+    it('should keep an apex domain spelled like a scheme', () => {
       const value = 'https://tps.org/a'
 
       expect(resolveUrl(value)).toBe(value)
@@ -1348,7 +1334,7 @@ describe('resolveUrl', () => {
     })
   })
 
-  describe('protocol-relative URLs', () => {
+  describe('scheme-relative URLs', () => {
     it('should convert // to https:// by default', () => {
       const value = '//example.com/feed.xml'
       const expected = 'https://example.com/feed.xml'
@@ -1356,7 +1342,7 @@ describe('resolveUrl', () => {
       expect(resolveUrl(value)).toBe(expected)
     })
 
-    it('should inherit protocol from base URL', () => {
+    it('should inherit scheme from base URL', () => {
       const value = '//example.com/feed.xml'
       const base = 'http://other.com'
       const expected = 'http://example.com/feed.xml'
@@ -1364,7 +1350,7 @@ describe('resolveUrl', () => {
       expect(resolveUrl(value, base)).toBe(expected)
     })
 
-    it('should return undefined for invalid protocol-relative URLs', () => {
+    it('should return undefined for invalid scheme-relative URLs', () => {
       expect(resolveUrl('//Users/file.xml')).toBeUndefined()
       expect(resolveUrl('//intranet/feed.xml')).toBeUndefined()
     })
@@ -1451,12 +1437,12 @@ describe('resolveUrl', () => {
       expect(resolveUrl(value, 'http://example.com/blog/')).toBe(expected)
     })
 
-    it('should return undefined for non-HTTP protocol when base is provided', () => {
+    it('should return undefined for non-HTTP scheme when base is provided', () => {
       expect(resolveUrl('mailto:feed@example.com', base)).toBeUndefined()
       expect(resolveUrl('ftp://example.com/feed.xml', base)).toBeUndefined()
     })
 
-    it('should add protocol to localhost with port when base is provided', () => {
+    it('should add scheme to localhost with port when base is provided', () => {
       const value = 'localhost:8080/feed.xml'
       const expected = 'https://localhost:8080/feed.xml'
 
@@ -1522,7 +1508,7 @@ describe('resolveUrl', () => {
       expect(resolveUrl(value, '/blog/')).toBe(expected)
     })
 
-    it('should keep a path that starts with a protocol on the base host', () => {
+    it('should keep a path that starts with a scheme on the base host', () => {
       const value = '/http://other.com/x'
       const base = 'https://example.com/'
       const expected = 'https://example.com/http://other.com/x'
@@ -1574,7 +1560,7 @@ describe('resolveUrl', () => {
       expect(resolveUrl(value)).toBe(value)
     })
 
-    it('should apply entity decoding and protocol conversion together', () => {
+    it('should apply entity decoding and scheme conversion together', () => {
       const value = 'feed:https://example.com/feed?x=1&amp;y=2'
       const expected = 'https://example.com/feed?x=1&y=2'
 
@@ -1596,27 +1582,27 @@ describe('resolveUrl', () => {
       expect(resolveUrl('path/to/feed.xml')).toBeUndefined()
     })
 
-    it('should return undefined for ftp:// protocol', () => {
+    it('should return undefined for ftp:// scheme', () => {
       expect(resolveUrl('ftp://example.com/feed.xml')).toBeUndefined()
     })
 
-    it('should return undefined for mailto: protocol', () => {
+    it('should return undefined for mailto: scheme', () => {
       expect(resolveUrl('mailto:feed@example.com')).toBeUndefined()
     })
 
-    it('should return undefined for tel: protocol', () => {
+    it('should return undefined for tel: scheme', () => {
       expect(resolveUrl('tel:+1234567890')).toBeUndefined()
     })
 
-    it('should return undefined for javascript: protocol', () => {
+    it('should return undefined for javascript: scheme', () => {
       expect(resolveUrl('javascript:alert(1)')).toBeUndefined()
     })
 
-    it('should return undefined for data: protocol', () => {
+    it('should return undefined for data: scheme', () => {
       expect(resolveUrl('data:text/xml,<feed/>')).toBeUndefined()
     })
 
-    it('should return undefined for file:// protocol', () => {
+    it('should return undefined for file:// scheme', () => {
       expect(resolveUrl('file:///etc/passwd')).toBeUndefined()
     })
 
@@ -1624,7 +1610,7 @@ describe('resolveUrl', () => {
       expect(resolveUrl('not a valid url')).toBeUndefined()
     })
 
-    it('should return undefined for protocol only', () => {
+    it('should return undefined for scheme only', () => {
       expect(resolveUrl('https://')).toBeUndefined()
     })
 
@@ -1708,24 +1694,39 @@ describe('resolveUrl', () => {
 })
 
 describe('normalizeUrl', () => {
-  describe('protocol stripping', () => {
-    it('should strip https:// protocol by default', () => {
+  describe('scheme stripping', () => {
+    it('should strip https:// scheme by default', () => {
       const value = 'https://example.com/feed'
       const expected = 'example.com/feed'
 
       expect(normalizeUrl(value, defaultOptions)).toBe(expected)
     })
 
-    it('should strip http:// protocol by default', () => {
+    it('should strip http:// scheme by default', () => {
       const value = 'http://example.com/feed'
       const expected = 'example.com/feed'
 
       expect(normalizeUrl(value, defaultOptions)).toBe(expected)
     })
 
-    it('should preserve protocol when stripProtocol is false', () => {
+    it('should preserve scheme when stripScheme is false', () => {
       const value = 'https://example.com/feed'
-      const options = { stripProtocol: false }
+      const options = { stripScheme: false }
+
+      expect(normalizeUrl(value, options)).toBe(value)
+    })
+
+    it('should strip scheme when the deprecated stripProtocol is true', () => {
+      const value = 'https://example.com/feed'
+      const expected = 'example.com/feed'
+      const options = { stripProtocol: true }
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should let stripScheme win over stripProtocol', () => {
+      const value = 'https://example.com/feed'
+      const options = { stripScheme: false, stripProtocol: true }
 
       expect(normalizeUrl(value, options)).toBe(value)
     })
@@ -1748,7 +1749,7 @@ describe('normalizeUrl', () => {
 
     it('should strip authentication when stripAuthentication is true', () => {
       const value = 'https://user:pass@example.com/feed'
-      const options = { stripAuthentication: true, stripProtocol: false }
+      const options = { stripAuthentication: true, stripScheme: false }
       const expected = 'https://example.com/feed'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2327,7 +2328,7 @@ describe('normalizeUrl', () => {
     it('should apply minimal normalizations when all options are false', () => {
       const value = 'https://www.example.com:8080/feed/'
       const options: NormalizeOptions = {
-        stripProtocol: false,
+        stripScheme: false,
         stripAuthentication: false,
         stripWww: false,
         stripTrailingSlash: false,

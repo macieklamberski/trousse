@@ -37,7 +37,9 @@ export type Pattern = string | RegExp
 // See: https://www.rfc-editor.org/rfc/rfc9110.
 // See: https://www.rfc-editor.org/rfc/rfc3987.
 export type NormalizeOptions = {
-  stripProtocol?: boolean // Strip the scheme, so http and https compare the same
+  stripScheme?: boolean // Strip the scheme, so http and https compare the same
+  /** @deprecated Use `stripScheme` instead, which wins when both are set. */
+  stripProtocol?: boolean
   stripAuthentication?: boolean // Strip user:pass@, RFC 3986 §3.2.1, RFC 9110 §4.2.4
   stripWww?: boolean // Strip www. prefix
   stripTrailingSlash?: boolean // /feed/ → /feed
