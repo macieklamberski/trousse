@@ -3,6 +3,7 @@ import type { AnyOf } from './types.js'
 
 // Assigning to `__proto__` replaces the prototype, so an own `__proto__` key from JSON.parse would
 // vanish and its fields would be inherited instead.
+// See: https://tc39.es/ecma262/#sec-object.prototype.__proto__.
 const setKey = <T extends object>(object: T, key: keyof T, value: unknown): void => {
   if (key === '__proto__') {
     Object.defineProperty(object, key, {

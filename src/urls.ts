@@ -25,6 +25,7 @@ export const getPathSegments = (value: string | URL): Array<string> => {
 }
 
 // A fully qualified `example.com.` ends in a dot that no domain pattern carries.
+// See: https://www.rfc-editor.org/rfc/rfc1034#section-3.1.
 const getHostname = (url: string | URL): string | undefined => {
   const hostname = parseUrl(url)?.hostname
 
@@ -39,6 +40,7 @@ const nonAsciiRegex = /[\u0080-\uffff]/
 
 // A domain pattern is read the way getHostname reads a hostname: trimmed, without the trailing dot
 // of `example.com.`, and in punycode, as URL.hostname holds a Unicode domain like `bücher.de`.
+// See: https://url.spec.whatwg.org/#concept-domain-to-ascii.
 const normalizeDomain = (domain: string): string => {
   const trimmed = domain.trim()
   const bare = trimmed.endsWith('.') ? trimmed.slice(0, -1) : trimmed
@@ -80,6 +82,7 @@ export const isSubdomainOf = (
   )
 }
 
+// See: https://fetch.spec.whatwg.org/#http-scheme.
 export const isHttpUrl = (url: string | URL): boolean => {
   const scheme = parseUrl(url)?.protocol
 
@@ -123,6 +126,7 @@ export const getSubdomain = (
 
 // A path segment arrives percent-encoded, unlike a query value, which `searchParams` decodes. A
 // malformed escape such as `%E0` returns undefined, so `decodeSegment(value) ?? value` keeps it.
+// See: https://www.rfc-editor.org/rfc/rfc3986#section-2.1.
 export const decodeSegment = (segment: string | undefined): string | undefined => {
   if (segment === undefined) {
     return
@@ -308,8 +312,9 @@ export const addMissingScheme = (url: string, scheme: 'http' | 'https' = 'https'
     return parseUrl(`${scheme}://${url}`) ? `${scheme}://${url}` : url
   }
 
-  // Skip if URL already has a real scheme. No registered IANA scheme contains a dot or slash, so
-  // "example.com:8080" won't false-positive as a scheme.
+  // Skip if URL already has a real scheme. A scheme may hold a dot, as the registered `z39.50r`
+  // does, but reading one as a host keeps `example.com:8080` from passing as a scheme.
+  // See: https://www.rfc-editor.org/rfc/rfc3986#section-3.1.
   const colonIndex = url.indexOf(':')
 
   if (colonIndex > 0) {
@@ -393,8 +398,9 @@ export const upgradeScheme = (url: string, scheme: 'http' | 'https' = 'https'): 
 // character references, so a second pass can change the URL: a URL that is already final, like a
 // response URL or a Location header, goes through parseUrl instead.
 export const resolveUrl = (url: string, base?: string): string | undefined => {
-  // The URL parser strips surrounding spaces itself, but the repair steps below match from the
-  // start of the string, so a leading space would stop them.
+  // The repair steps below match from the start of the string, so surrounding whitespace goes
+  // first. `trim` also strips NBSP and U+FEFF, which the URL parser keeps as part of the URL.
+  // See: https://url.spec.whatwg.org/#concept-basic-url-parser.
   const trimmedUrl = url.trim()
 
   // An empty href would resolve to the base itself.
@@ -487,6 +493,7 @@ const decodeQueryKey = (pair: string): string => {
 }
 
 // Orders two pairs by their decoded key, comparing code units the way searchParams.sort does.
+// See: https://url.spec.whatwg.org/#dom-urlsearchparams-sort.
 const compareQueryPairs = (a: string, b: string): number => {
   const keyA = decodeQueryKey(a)
   const keyB = decodeQueryKey(b)
@@ -634,7 +641,8 @@ export const stripWww = (hostname: string): string => {
   return stripped.includes('.') ? stripped : hostname
 }
 
-// URL.hostname wraps an IPv6 address in brackets, so they are accepted here.
+// Expects a URL.hostname: it checks the shape only, so `999.1.1.1`, which the URL parser rejects,
+// passes. URL.hostname wraps an IPv6 address in brackets, so they are accepted here.
 export const isIpAddress = (hostname: string): boolean => {
   return ipv4Regex.test(hostname) || ipv6Regex.test(hostname.replace(ipv6BracketsRegex, ''))
 }

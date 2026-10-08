@@ -42,15 +42,15 @@ export type NormalizeOptions = {
   stripProtocol?: boolean
   stripAuthentication?: boolean // Strip user:pass@, RFC 3986 §3.2.1, RFC 9110 §4.2.4
   stripWww?: boolean // Strip www. prefix
-  stripTrailingSlash?: boolean // /feed/ → /feed
+  stripTrailingSlash?: boolean // /feed/ → /feed, against RFC 3986 §3.3
   stripRootSlash?: boolean // example.com/ → example.com, against RFC 9110 §4.2.3
-  collapseSlashes?: boolean // /// → /
+  collapseSlashes?: boolean // /// → /, against RFC 3986 §3.3
   stripHash?: boolean // Strip #fragment, never sent to the server, RFC 3986 §3.5
   sortQueryParams?: boolean // Sort query params alphabetically, a server may read them in order
   stripQueryParams?: ReadonlyArray<string> // Query params to strip, cached per array, so never mutate it
   stripQuery?: boolean // Strip entire query string
   stripEmptyQuery?: boolean // /feed? → /feed, against RFC 3986 §6.2.3
-  lowercaseQuery?: boolean // Lowercase query param names and values
+  lowercaseQuery?: boolean // Lowercase query param names and values, against RFC 3986 §6.2.2.1
   normalizeEncoding?: boolean // Uppercase %XX hex, decode needless escapes, RFC 3986 §6.2.2
   normalizeUnicode?: boolean // NFC on raw input, no-op on a serialized href, RFC 3987 §5.3.2.2
 }

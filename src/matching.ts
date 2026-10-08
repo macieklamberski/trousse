@@ -7,9 +7,6 @@ const whitespaceRegex = /\s+/
 const regexSyntaxCharsRegex = /[.*+?^${}()|[\]\\/]/
 const regexEscapableCharsRegex = /[.*+?^${}()|[\]\\/&!#%,:;<=>@`~-]/g
 
-// Escapes a literal so it can be interpolated into a regex source string, for the common case
-// of building one pattern out of a list of plain strings. The result stays valid inside and
-// outside a character class under every flag.
 // A global or sticky regex resumes from its lastIndex, so a shared pattern would alternate
 // between matching and missing the same value.
 const testRegex = (regex: RegExp, value: string): boolean => {
@@ -18,6 +15,9 @@ const testRegex = (regex: RegExp, value: string): boolean => {
   return regex.test(value)
 }
 
+// Escapes a literal for a regex source string, valid inside and outside a character class under
+// every flag. RegExp.escape also escapes a leading letter or digit and whitespace, and Node 18 and
+// 20 lack it. See: https://tc39.es/ecma262/#sec-regexp.escape.
 export const escapeRegex = (value: string): string => {
   return value.replace(regexEscapableCharsRegex, (char) => {
     if (regexSyntaxCharsRegex.test(char)) {
