@@ -192,9 +192,10 @@ const leadingSchemeSeparator = String.raw`\.*(?::[:\s=.\\/]*|[\s=\\/][:\s=.\\/]+
 // Doubled/nested scheme pattern - captures the INNER scheme which takes precedence.
 // Matches: http:http://, https:https://, http://https//, htp://ttps://, etc. An inner match
 // followed by `:` and a digit is a host with a port, as in `http://tps:8080`, and one followed by
-// `:` and an `@` before any `/?#` is a username, as in `https://http:secret@host`. Both are skipped.
+// an `@` before any `/?#\` is part of a username, as in `https://http:secret@host` or
+// `https://http=user@host`. Both are skipped.
 const doubledSchemeRegex = /* @__PURE__ */ new RegExp(
-  String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d|:[^/?#]*@)(${schemeSeparator})[.,:/]*(www[./]+)?`,
+  String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d|[^/?#\\]*@)(${schemeSeparator})[.,:/]*(www[./]+)?`,
   'i',
 )
 
