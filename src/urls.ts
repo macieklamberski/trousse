@@ -157,8 +157,10 @@ const ipv6Regex = /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i
 const wwwPrefixRegex = /^www\./
 const ipv6BracketsRegex = /^\[|\]$/g
 
-// Characters that are safe in URL path segments and don't need percent encoding.
-const safePathCharsRegex = /[a-zA-Z0-9._~!$&'()*+,;=:@-]/
+// Only an unreserved character means the same encoded and literal. A reserved one like `+` or `,`
+// can carry meaning to the server once decoded.
+// See: https://www.rfc-editor.org/rfc/rfc3986#section-6.2.2.2.
+const unreservedCharsRegex = /[a-zA-Z0-9._~-]/
 const httpsLetterRegex = /s/i
 const protocolPrefixRegex = /^https?:\/\//
 const percentEscapeOrLettersRegex = /%[0-9A-Fa-f]{2}|[A-Z]+/g
@@ -463,8 +465,7 @@ const decodeAndNormalizeEncoding = (value: string): string => {
     const charCode = Number.parseInt(hex, 16)
     const char = String.fromCharCode(charCode)
 
-    // Decode if it's a safe character that doesn't need encoding.
-    if (safePathCharsRegex.test(char)) {
+    if (unreservedCharsRegex.test(char)) {
       return char
     }
 

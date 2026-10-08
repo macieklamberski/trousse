@@ -2251,6 +2251,13 @@ describe('normalizeUrl', () => {
       expect(normalizeUrl(value, defaultOptions)).toBe(expected)
     })
 
+    it('should keep reserved characters encoded', () => {
+      const value = 'https://example.com/a%2Bb%3Dc%26d%2ce'
+      const expected = 'example.com/a%2Bb%3Dc%26d%2Ce'
+
+      expect(normalizeUrl(value, defaultOptions)).toBe(expected)
+    })
+
     it('should preserve encoding when normalizeEncoding is false', () => {
       const value = 'https://example.com/path%2Dto%2Dfeed'
       const options = { ...defaultOptions, normalizeEncoding: false }
