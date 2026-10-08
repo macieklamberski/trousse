@@ -171,6 +171,8 @@ const httpsSchemeRegex = /^https:\/\//i
 const leadingWhitespaceChars = [' ', '\t', '\n']
 const relativeLeadChars = ['/', '.', '?', '#']
 const localhostRegex = /^localhost(?:[:/?#]|$)/i
+const schemeColonRegex = /^[^/]*:/
+const missingColonSchemeRegex = /^https?[\s=.\\]*\/\//i
 
 // Pre-compiled patterns for fixMalformedScheme.
 // Fast path: valid http(s):// followed by hostname char (excludes lone 'w' to avoid partial 'www').
@@ -188,16 +190,24 @@ const leadingSchemeSeparator = String.raw`\.*(?::[:\s=.\\/]*|[\s=\\/][:\s=.\\/]+
 // Matches: http:http://, https:https://, http://https//, htp://ttps://, etc. An inner match
 // followed by `:` and a digit is a host with a port, as in `http://tps:8080`, so it is skipped.
 const doubledSchemeRegex = /* @__PURE__ */ new RegExp(
-  String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d)${schemeSeparator}[.,:/]*(www[./]+)?`,
+  String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d)(${schemeSeparator})[.,:/]*(www[./]+)?`,
   'i',
 )
 
 // Single malformed scheme pattern - for typos, wrong separators, etc. Must start with h (or /h)
 // to be HTTP-like. Allows colons within letters (http:s//).
 const singleMalformedRegex = /* @__PURE__ */ new RegExp(
-  String.raw`^\/?(?:h[htps():]{1,10}|t{1,2}ps?)${leadingSchemeSeparator}[.,:/]*(www[./]+)?`,
+  String.raw`^\/?(h[htps():]{1,10}|t{1,2}ps?)(${leadingSchemeSeparator})[.,:/]*(www[./]+)?`,
   'i',
 )
+
+// Without a colon, only a token spelled with both `t` and `p` reads as a scheme, so the host `hp`
+// in `http://hp/support` and the relative path `hp//x` stay as they are.
+const isSchemeToken = (token: string, separator: string): boolean => {
+  const lowered = token.toLowerCase()
+
+  return `${token}${separator}`.includes(':') || (lowered.includes('t') && lowered.includes('p'))
+}
 
 // Fix common malformations in the http and https schemes. Handles:
 // - Excess slashes: http:////example.com → http://example.com
@@ -218,18 +228,18 @@ export const fixMalformedScheme = (url: string): string => {
   }
 
   const doubledMatch = doubledSchemeRegex.exec(url)
-  if (doubledMatch) {
+  if (doubledMatch && isSchemeToken(doubledMatch[1], doubledMatch[2])) {
     const inner = doubledMatch[1]
-    const www = doubledMatch[2]
+    const www = doubledMatch[3]
     const rest = url.slice(doubledMatch[0].length)
     const scheme = httpsLetterRegex.test(inner) ? 'https://' : 'http://'
     return scheme + (www ? 'www.' : '') + rest
   }
 
   const singleMatch = singleMalformedRegex.exec(url)
-  if (singleMatch) {
+  if (singleMatch && isSchemeToken(singleMatch[1], singleMatch[2])) {
     const fullMatch = singleMatch[0]
-    const www = singleMatch[1]
+    const www = singleMatch[3]
     const rest = url.slice(fullMatch.length)
     const scheme = httpsLetterRegex.test(fullMatch) ? 'https://' : 'http://'
     return scheme + (www ? 'www.' : '') + rest
@@ -418,9 +428,10 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
   // Step 2: Convert feed-related schemes.
   resolvedUrl = resolveFeedScheme(resolvedUrl)
 
-  // Step 3: Fix malformed HTTP/HTTPS schemes. With a base, a leading `/` makes the href a path on
-  // the base's host, as a browser reads it, so `/http://other.com/x` stays on that host.
-  if (!base || !resolvedUrl.startsWith('/')) {
+  // Step 3: Fix malformed HTTP/HTTPS schemes. With a base, a browser reads an href with no colon
+  // before its first `/` as a relative path, so `tps//x` and `/http://other.com/x` stay on the
+  // base host. Only an exact `http` or `https` then `//`, as in `http//x`, reads as a scheme.
+  if (!base || schemeColonRegex.test(resolvedUrl) || missingColonSchemeRegex.test(resolvedUrl)) {
     resolvedUrl = fixMalformedScheme(resolvedUrl)
   }
 

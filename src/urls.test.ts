@@ -815,6 +815,28 @@ describe('fixMalformedScheme', () => {
     },
   )
 
+  const schemeLikeSingleLabelHostUrls: Array<string> = [
+    'http://hp/support',
+    'http://ssh/feed.xml',
+    'https://sh/x',
+  ]
+
+  it.each(schemeLikeSingleLabelHostUrls)(
+    'should not mistake a single-label host for a doubled scheme (%s)',
+    (value) => {
+      expect(fixMalformedScheme(value)).toBe(value)
+    },
+  )
+
+  const schemeLikeDoubleSlashPathUrls: Array<string> = ['hp//x', 'hh//x']
+
+  it.each(schemeLikeDoubleSlashPathUrls)(
+    'should not mistake a path with a double slash for a scheme (%s)',
+    (value) => {
+      expect(fixMalformedScheme(value)).toBe(value)
+    },
+  )
+
   const schemeLikePortHostUrls: Array<string> = [
     'http://tps:8080/feed',
     'http://php:8080/feed',
@@ -1506,6 +1528,35 @@ describe('resolveUrl', () => {
 
       expect(resolveUrl(value, 'not a valid base')).toBe(expected)
       expect(resolveUrl(value, '/blog/')).toBe(expected)
+    })
+
+    it('should keep a relative path spelled like a scheme on the base host', () => {
+      const value = 'hp//x'
+      const base = 'https://example.com/a/'
+      const expected = 'https://example.com/a/hp//x'
+
+      expect(resolveUrl(value, base)).toBe(expected)
+    })
+
+    const baseRelativeSchemeLikePaths: Array<[string, string]> = [
+      ['tps//x', 'https://example.com/a/tps//x'],
+      ['ttp//x', 'https://example.com/a/ttp//x'],
+      ['https/./x', 'https://example.com/a/https/x'],
+    ]
+
+    it.each(baseRelativeSchemeLikePaths)(
+      'should keep the scheme-like relative path %s on the base host',
+      (value, expected) => {
+        expect(resolveUrl(value, 'https://example.com/a/')).toBe(expected)
+      },
+    )
+
+    it('should repair an exact scheme missing its colon against a base', () => {
+      const value = 'http//example.org/feed'
+      const base = 'https://example.com/a/'
+      const expected = 'http://example.org/feed'
+
+      expect(resolveUrl(value, base)).toBe(expected)
     })
 
     it('should keep a path that starts with a scheme on the base host', () => {
