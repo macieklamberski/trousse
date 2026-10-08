@@ -1100,11 +1100,35 @@ describe('upgradeProtocol', () => {
 
       expect(upgradeProtocol(value)).toBe(expected)
     })
+
+    it('should drop the port that is the https default', () => {
+      expect(upgradeProtocol('http://example.com:443/feed')).toBe('https://example.com/feed')
+    })
+
+    it('should drop the port that was the http default', () => {
+      expect(upgradeProtocol('http://example.com:80/feed')).toBe('https://example.com/feed')
+    })
+
+    it('should swap the scheme of a URL that does not parse', () => {
+      expect(upgradeProtocol('http://example.com:99999/feed')).toBe(
+        'https://example.com:99999/feed',
+      )
+    })
   })
 
   describe('downgrade to http', () => {
     it('should rewrite https:// to http://', () => {
       expect(upgradeProtocol('https://example.com/feed', 'http')).toBe('http://example.com/feed')
+    })
+
+    it('should drop the port that was the https default', () => {
+      expect(upgradeProtocol('https://example.com:443/feed', 'http')).toBe(
+        'http://example.com/feed',
+      )
+    })
+
+    it('should drop the port that is the http default', () => {
+      expect(upgradeProtocol('https://example.com:80/feed', 'http')).toBe('http://example.com/feed')
     })
 
     it('should be case-insensitive on the protocol', () => {

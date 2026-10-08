@@ -368,11 +368,24 @@ export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'ht
 // Case-insensitive on the matched protocol; only the leading scheme is touched, not any later
 // `http://` substring inside the path or query.
 export const upgradeProtocol = (url: string, protocol: 'http' | 'https' = 'https'): string => {
-  if (protocol === 'https') {
-    return url.replace(httpProtocolRegex, 'https://')
+  const sourceRegex = protocol === 'https' ? httpProtocolRegex : httpsProtocolRegex
+
+  if (!sourceRegex.test(url)) {
+    return url
   }
 
-  return url.replace(httpsProtocolRegex, 'http://')
+  const parsed = parseUrl(url)
+
+  if (!parsed) {
+    return url.replace(sourceRegex, `${protocol}://`)
+  }
+
+  // The setter drops a port that is the new scheme's default, so `http://a.com:443` becomes
+  // `https://a.com/`, and `https://a.com:443` arrives already parsed to `https://a.com/`.
+  // See: https://url.spec.whatwg.org/#scheme-state.
+  parsed.protocol = protocol
+
+  return parsed.href
 }
 
 // Resolves a URL by converting feed protocols, resolving relative URLs, and ensuring it's a valid
