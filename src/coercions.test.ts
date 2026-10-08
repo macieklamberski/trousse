@@ -129,6 +129,14 @@ describe('coerceNumber', () => {
     expect(coerceNumber('   ')).toBeUndefined()
   })
 
+  it('should return undefined for a byte order mark', () => {
+    expect(coerceNumber('\ufeff')).toBeUndefined()
+  })
+
+  it('should parse a number after a byte order mark', () => {
+    expect(coerceNumber('\ufeff42')).toBe(42)
+  })
+
   it('should return undefined for boolean', () => {
     expect(coerceNumber(true)).toBeUndefined()
   })
