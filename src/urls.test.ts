@@ -2091,6 +2091,22 @@ describe('normalizeUrl', () => {
       expect(normalizeUrl(value, options)).toBe(expected)
     })
 
+    it('should drop a trailing separator left by stripping', () => {
+      const value = 'https://example.com/feed?id=1&utm_source=twitter&'
+      const options = { stripQueryParams: ['utm_source'] }
+      const expected = 'https://example.com/feed?id=1'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should drop a doubled separator left by stripping', () => {
+      const value = 'https://example.com/feed?id=1&&utm_source=twitter'
+      const options = { stripQueryParams: ['utm_source'] }
+      const expected = 'https://example.com/feed?id=1'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
     it('should keep a valueless param that is not stripped', () => {
       const value = 'https://example.com/feed?utm_source=twitter&atom'
       const options = { ...defaultOptions, stripQueryParams: ['utm_source'] }
