@@ -855,6 +855,8 @@ describe('fixMalformedScheme', () => {
   const schemeLikeUsernameUrls: Array<string> = [
     'https://http:secret@example.com/feed',
     'https://ps:secret@example.com/feed',
+    'https://http=user@example.com/feed',
+    'https://https=user@example.com/feed',
   ]
 
   it.each(schemeLikeUsernameUrls)(
