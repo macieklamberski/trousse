@@ -2,7 +2,7 @@ import { decodeHTMLStrict } from 'entities'
 import { endsWithAnyOf, isAnyOf } from './matching.js'
 import type { NormalizeOptions } from './types.js'
 
-const httpProtocols = ['http:', 'https:']
+const httpSchemes = ['http:', 'https:']
 
 export const parseUrl = (value: string | URL, base?: string | URL): URL | undefined => {
   if (value instanceof URL && base === undefined) {
@@ -81,13 +81,13 @@ export const isSubdomainOf = (
 }
 
 export const isHttpUrl = (url: string | URL): boolean => {
-  const protocol = parseUrl(url)?.protocol
+  const scheme = parseUrl(url)?.protocol
 
-  if (!protocol) {
+  if (!scheme) {
     return false
   }
 
-  return httpProtocols.includes(protocol)
+  return httpSchemes.includes(scheme)
 }
 
 export const isHostOrSubdomainOf = (
@@ -162,17 +162,17 @@ const ipv6BracketsRegex = /^\[|\]$/g
 // See: https://www.rfc-editor.org/rfc/rfc3986#section-6.2.2.2.
 const unreservedCharsRegex = /[a-zA-Z0-9._~-]/
 const httpsLetterRegex = /s/i
-const protocolPrefixRegex = /^https?:\/\//
+const schemePrefixRegex = /^https?:\/\//
 const percentEscapeOrLettersRegex = /%[0-9A-Fa-f]{2}|[A-Z]+/g
 const plusRegex = /\+/g
-const httpProtocolRegex = /^http:\/\//i
-const httpsProtocolRegex = /^https:\/\//i
+const httpSchemeRegex = /^http:\/\//i
+const httpsSchemeRegex = /^https:\/\//i
 
 const leadingWhitespaceChars = [' ', '\t', '\n']
 const relativeLeadChars = ['/', '.', '?', '#']
 const localhostRegex = /^localhost(?:[:/?#]|$)/i
 
-// Pre-compiled patterns for fixMalformedProtocol.
+// Pre-compiled patterns for fixMalformedScheme.
 // Fast path: valid http(s):// followed by hostname char (excludes lone 'w' to avoid partial 'www').
 const validUrlRegex = /^https?:\/\/(?:www\.|[a-vx-z0-9])/i
 
@@ -184,15 +184,15 @@ const schemeSeparator = String.raw`\.*[:\s=\\/][:\s=.\\/]*`
 // `/hp/support` is not `hp://support`. That separator needs a colon or at least two characters.
 const leadingSchemeSeparator = String.raw`\.*(?::[:\s=.\\/]*|[\s=\\/][:\s=.\\/]+)`
 
-// Doubled/nested protocol pattern - captures the INNER protocol which takes precedence.
+// Doubled/nested scheme pattern - captures the INNER scheme which takes precedence.
 // Matches: http:http://, https:https://, http://https//, htp://ttps://, etc. An inner match
 // followed by `:` and a digit is a host with a port, as in `http://tps:8080`, so it is skipped.
-const doubledProtocolRegex = /* @__PURE__ */ new RegExp(
+const doubledSchemeRegex = /* @__PURE__ */ new RegExp(
   String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d)${schemeSeparator}[.,:/]*(www[./]+)?`,
   'i',
 )
 
-// Single malformed protocol pattern - for typos, wrong separators, etc. Must start with h (or /h)
+// Single malformed scheme pattern - for typos, wrong separators, etc. Must start with h (or /h)
 // to be HTTP-like. Allows colons within letters (http:s//).
 const singleMalformedRegex = /* @__PURE__ */ new RegExp(
   String.raw`^\/?(?:h[htps():]{1,10}|t{1,2}ps?)${leadingSchemeSeparator}[.,:/]*(www[./]+)?`,
@@ -202,28 +202,28 @@ const singleMalformedRegex = /* @__PURE__ */ new RegExp(
 // Fix common malformations in the http and https schemes. Handles:
 // - Excess slashes: http:////example.com → http://example.com
 // - Leading slash: /http://example.com → http://example.com
-// - Typos in protocol: htp://, htps://, hhttps:// → http:// or https://
+// - Typos in scheme: htp://, htps://, hhttps:// → http:// or https://
 // - Missing colon: http//example.com → http://example.com
 // - Multiple colons: http:::// → http://
 // - Wrong separators: http=//, http.\\ → http://
-// - Leading junk after protocol: http://./example.com → http://example.com
+// - Leading junk after scheme: http://./example.com → http://example.com
 // - Placeholder syntax: http(s):// → https://
-// - Double protocol: http:http://, https:https:// → dedupe
+// - Double scheme: http:http://, https:https:// → dedupe
 // - Misplaced www: https:www.// → https://www
 // - Missing www dot: https://www/ → https://www
-export const fixMalformedProtocol = (url: string): string => {
-  // Fast path: valid URL without doubled protocol.
-  if (validUrlRegex.test(url) && !doubledProtocolRegex.test(url)) {
+export const fixMalformedScheme = (url: string): string => {
+  // Fast path: valid URL without doubled scheme.
+  if (validUrlRegex.test(url) && !doubledSchemeRegex.test(url)) {
     return url
   }
 
-  const doubledMatch = doubledProtocolRegex.exec(url)
+  const doubledMatch = doubledSchemeRegex.exec(url)
   if (doubledMatch) {
     const inner = doubledMatch[1]
     const www = doubledMatch[2]
     const rest = url.slice(doubledMatch[0].length)
-    const protocol = httpsLetterRegex.test(inner) ? 'https://' : 'http://'
-    return protocol + (www ? 'www.' : '') + rest
+    const scheme = httpsLetterRegex.test(inner) ? 'https://' : 'http://'
+    return scheme + (www ? 'www.' : '') + rest
   }
 
   const singleMatch = singleMalformedRegex.exec(url)
@@ -231,8 +231,8 @@ export const fixMalformedProtocol = (url: string): string => {
     const fullMatch = singleMatch[0]
     const www = singleMatch[1]
     const rest = url.slice(fullMatch.length)
-    const protocol = httpsLetterRegex.test(fullMatch) ? 'https://' : 'http://'
-    return protocol + (www ? 'www.' : '') + rest
+    const scheme = httpsLetterRegex.test(fullMatch) ? 'https://' : 'http://'
+    return scheme + (www ? 'www.' : '') + rest
   }
 
   return url
@@ -246,7 +246,7 @@ export const fixMalformedProtocol = (url: string): string => {
 // - pcast://example.com/podcast.xml → https://example.com/podcast.xml
 // - itpc://example.com/podcast.xml → https://example.com/podcast.xml
 // - itms-podcast://example.com/podcast.xml → https://example.com/podcast.xml
-const feedProtocols = [
+const feedSchemes = [
   'feed:',
   'rss:',
   'podcast:',
@@ -260,7 +260,7 @@ const feedProtocols = [
   'itms-podcasts:',
 ]
 
-export const resolveFeedProtocol = (url: string, protocol: 'http' | 'https' = 'https'): string => {
+export const resolveFeedScheme = (url: string, scheme: 'http' | 'https' = 'https'): string => {
   // Feed schemes start with f, r, p, or i, so anything else returns before lowercasing the whole
   // URL. `| 32` lowercases an ASCII letter.
   const firstCharCode = url.charCodeAt(0) | 32
@@ -276,39 +276,39 @@ export const resolveFeedProtocol = (url: string, protocol: 'http' | 'https' = 'h
 
   const urlLower = url.toLowerCase()
 
-  for (const scheme of feedProtocols) {
-    if (!urlLower.startsWith(scheme)) {
+  for (const prefix of feedSchemes) {
+    if (!urlLower.startsWith(prefix)) {
       continue
     }
 
-    // Case 1: Wrapping protocol (e.g., feed:https://example.com).
-    if (urlLower.startsWith(`${scheme}http://`) || urlLower.startsWith(`${scheme}https://`)) {
-      return url.slice(scheme.length)
+    // Case 1: Wrapping scheme (e.g., feed:https://example.com).
+    if (urlLower.startsWith(`${prefix}http://`) || urlLower.startsWith(`${prefix}https://`)) {
+      return url.slice(prefix.length)
     }
 
-    // Case 2: Replacing protocol (e.g., feed://example.com).
-    if (urlLower.startsWith(`${scheme}//`)) {
-      return `${protocol}:${url.slice(scheme.length)}`
+    // Case 2: Replacing scheme (e.g., feed://example.com).
+    if (urlLower.startsWith(`${prefix}//`)) {
+      return `${scheme}:${url.slice(prefix.length)}`
     }
   }
 
   return url
 }
 
-// Adds a scheme to URLs missing one. Handles both protocol-relative URLs (//example.com) and
+// Adds a scheme to URLs missing one. Handles both scheme-relative URLs (//example.com) and
 // bare domains (example.com). Examples:
 // - //example.com/feed → https://example.com/feed
 // - //localhost/api → https://localhost/api
 // - //Users/file.xml → //Users/file.xml (unchanged, not a valid URL)
 // - example.com/feed → https://example.com/feed
 // - /path/to/feed → /path/to/feed (unchanged, relative path)
-export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'https'): string => {
+export const addMissingScheme = (url: string, scheme: 'http' | 'https' = 'https'): string => {
   // A bracketed IPv6 host holds colons, which the scheme check below would read as a scheme.
   if (url.startsWith('[')) {
-    return parseUrl(`${protocol}://${url}`) ? `${protocol}://${url}` : url
+    return parseUrl(`${scheme}://${url}`) ? `${scheme}://${url}` : url
   }
 
-  // Skip if URL already has a real protocol. No registered IANA scheme contains a dot or slash, so
+  // Skip if URL already has a real scheme. No registered IANA scheme contains a dot or slash, so
   // "example.com:8080" won't false-positive as a scheme.
   const colonIndex = url.indexOf(':')
 
@@ -322,9 +322,9 @@ export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'ht
     }
   }
 
-  // Case 1: Protocol-relative URL (//example.com).
+  // Case 1: Scheme-relative URL (//example.com).
   if (url.startsWith('//') && !url.startsWith('///')) {
-    const parsed = parseUrl(`${protocol}:${url}`)
+    const parsed = parseUrl(`${scheme}:${url}`)
 
     if (!parsed) {
       return url
@@ -362,14 +362,14 @@ export const addMissingProtocol = (url: string, protocol: 'http' | 'https' = 'ht
     return url
   }
 
-  return `${protocol}://${url}`
+  return `${scheme}://${url}`
 }
 
 // Swaps an existing http or https scheme on a URL. Scheme-relative URLs (`//host`) and other
 // schemes (`mailto:`, `data:`, `ftp://`) are left unchanged, and so is any later `http://` inside
 // the path or query.
-export const upgradeProtocol = (url: string, protocol: 'http' | 'https' = 'https'): string => {
-  const sourceRegex = protocol === 'https' ? httpProtocolRegex : httpsProtocolRegex
+export const upgradeScheme = (url: string, scheme: 'http' | 'https' = 'https'): string => {
+  const sourceRegex = scheme === 'https' ? httpSchemeRegex : httpsSchemeRegex
 
   if (!sourceRegex.test(url)) {
     return url
@@ -378,13 +378,13 @@ export const upgradeProtocol = (url: string, protocol: 'http' | 'https' = 'https
   const parsed = parseUrl(url)
 
   if (!parsed) {
-    return url.replace(sourceRegex, `${protocol}://`)
+    return url.replace(sourceRegex, `${scheme}://`)
   }
 
   // The setter drops a port that is the new scheme's default, so `http://a.com:443` becomes
   // `https://a.com/`, and `https://a.com:443` arrives already parsed to `https://a.com/`.
   // See: https://url.spec.whatwg.org/#scheme-state.
-  parsed.protocol = protocol
+  parsed.protocol = scheme
 
   return parsed.href
 }
@@ -415,13 +415,13 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
   // `?id=1&copy=2`) is left intact instead of being mangled into `?id=1©=2`.
   resolvedUrl = trimmedUrl.includes('&') ? decodeHTMLStrict(trimmedUrl) : trimmedUrl
 
-  // Step 2: Convert feed-related protocols.
-  resolvedUrl = resolveFeedProtocol(resolvedUrl)
+  // Step 2: Convert feed-related schemes.
+  resolvedUrl = resolveFeedScheme(resolvedUrl)
 
-  // Step 3: Fix malformed HTTP/HTTPS protocols. With a base, a leading `/` makes the href a path on
+  // Step 3: Fix malformed HTTP/HTTPS schemes. With a base, a leading `/` makes the href a path on
   // the base's host, as a browser reads it, so `/http://other.com/x` stays on that host.
   if (!base || !resolvedUrl.startsWith('/')) {
-    resolvedUrl = fixMalformedProtocol(resolvedUrl)
+    resolvedUrl = fixMalformedScheme(resolvedUrl)
   }
 
   // Step 4: Resolve relative URLs if base is provided.
@@ -433,7 +433,7 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
       return
     }
 
-    // An absolute http(s) href needs no protocol repair and reparsing it changes nothing, so return
+    // An absolute http(s) href needs no scheme repair and reparsing it changes nothing, so return
     // it directly.
     if (isHttpUrl(resolved)) {
       return resolved.href
@@ -442,10 +442,10 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
     resolvedUrl = resolved.href
   }
 
-  // Step 5: Add protocol if missing (handles both // and bare domains).
-  resolvedUrl = addMissingProtocol(resolvedUrl)
+  // Step 5: Add scheme if missing (handles both // and bare domains).
+  resolvedUrl = addMissingScheme(resolvedUrl)
 
-  // Step 6: Validate and reject non-HTTP(S) protocols.
+  // Step 6: Validate and reject non-HTTP(S) schemes.
   const parsed = parseUrl(resolvedUrl)
 
   if (!parsed || !isHttpUrl(parsed)) {
@@ -617,8 +617,8 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
     }
 
     // Strip scheme for comparison.
-    if (options.stripProtocol) {
-      result = result.replace(protocolPrefixRegex, '')
+    if (options.stripScheme ?? options.stripProtocol) {
+      result = result.replace(schemePrefixRegex, '')
     }
 
     return result
@@ -680,3 +680,15 @@ export const getRegistrableDomain = (url: string | URL): string | undefined => {
 
   return parts.slice(-labels).join('.')
 }
+
+/** @deprecated Use `fixMalformedScheme` instead. */
+export const fixMalformedProtocol = fixMalformedScheme
+
+/** @deprecated Use `resolveFeedScheme` instead. */
+export const resolveFeedProtocol = resolveFeedScheme
+
+/** @deprecated Use `addMissingScheme` instead. */
+export const addMissingProtocol = addMissingScheme
+
+/** @deprecated Use `upgradeScheme` instead. */
+export const upgradeProtocol = upgradeScheme
