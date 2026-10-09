@@ -43,10 +43,10 @@ export {
   startsWithAnyOf,
 } from './matching.js'
 export {
-  feedAcceptHeader,
+  createAcceptHeader,
   feedMimeTypes,
   genericFeedMimeTypes,
-  htmlAcceptHeader,
+  genericHtmlMimeTypes,
   htmlMimeTypes,
 } from './mimes.js'
 export { omit, pick, toMap, trimObject } from './objects.js'
@@ -61,6 +61,7 @@ export type {
   PartialNullish,
   Pattern,
   RegistrableDomainOptions,
+  WeightedMimeType,
 } from './types.js'
 export {
   addMissingProtocol,

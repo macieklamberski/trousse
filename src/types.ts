@@ -59,3 +59,8 @@ export type NormalizeOptions = {
   normalizeEncoding?: boolean // Uppercase %XX hex, decode needless escapes, RFC 3986 §6.2.2
   normalizeUnicode?: boolean // NFC on raw input, no-op on a serialized href, RFC 3987 §5.3.2.2
 }
+
+export type WeightedMimeType = {
+  mime: string
+  quality: number // Accept header q value, from 0 to 1
+}

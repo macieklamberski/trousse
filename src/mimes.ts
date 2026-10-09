@@ -1,79 +1,54 @@
-export const feedMimeTypes = [
-  // RSS, never registered with IANA.
-  'application/rss+xml',
-  'application/rss',
-  'text/rss',
-  'text/rss+xml',
-  'application/x-rss+xml',
-  // Atom, registered by RFC 4287.
-  'application/atom+xml',
-  'application/atom',
-  'application/x.atom+xml',
-  'application/x-atom+xml',
-  'text/atom+xml',
-  'text/atom',
-  // JSON Feed, the type its 1.1 spec recommends.
-  'application/feed+json',
-  // RDF, RSS 1.0, registered by RFC 3870.
-  'application/rdf+xml',
-  'text/rdf',
-  'text/rdf+xml',
+import type { WeightedMimeType } from './types.js'
+
+export const feedMimeTypes: Array<WeightedMimeType> = [
+  // The type each format's spec names: Atom (RFC 4287), RSS, JSON Feed 1.1, RDF (RFC 3870).
+  { mime: 'application/atom+xml', quality: 1 },
+  { mime: 'application/rss+xml', quality: 1 },
+  { mime: 'application/feed+json', quality: 1 },
+  { mime: 'application/rdf+xml', quality: 1 },
+  // RSS variants, none registered with IANA.
+  { mime: 'application/rss', quality: 0.9 },
+  { mime: 'text/rss', quality: 0.9 },
+  { mime: 'text/rss+xml', quality: 0.9 },
+  { mime: 'application/x-rss+xml', quality: 0.9 },
+  // Atom variants.
+  { mime: 'application/atom', quality: 0.9 },
+  { mime: 'application/x.atom+xml', quality: 0.9 },
+  { mime: 'application/x-atom+xml', quality: 0.9 },
+  { mime: 'text/atom+xml', quality: 0.9 },
+  { mime: 'text/atom', quality: 0.9 },
+  // RDF variants.
+  { mime: 'text/rdf', quality: 0.9 },
+  { mime: 'text/rdf+xml', quality: 0.9 },
 ]
 
-// Containers a feed can be served as, which do not identify a feed alone.
-export const genericFeedMimeTypes = [
-  'application/xml',
-  'text/xml',
-  'application/json',
-  'text/plain',
+// Containers a feed can be served as, which do not identify a feed alone. No */* here: Rails
+// reads any Accept with */* as a browser and answers an extensionless feed URL with HTML.
+export const genericFeedMimeTypes: Array<WeightedMimeType> = [
+  { mime: 'application/xml', quality: 0.8 },
+  { mime: 'text/xml', quality: 0.8 },
+  { mime: 'application/json', quality: 0.8 },
+  { mime: 'text/plain', quality: 0.1 }, // Any text is text/plain
 ]
 
-export const htmlMimeTypes = ['text/html', 'application/xhtml+xml']
-
-const primaryFeedMimeTypes = [
-  'application/atom+xml',
-  'application/rss+xml',
-  'application/feed+json',
-  'application/rdf+xml',
+export const htmlMimeTypes: Array<WeightedMimeType> = [
+  { mime: 'text/html', quality: 1 },
+  { mime: 'application/xhtml+xml', quality: 1 },
 ]
 
-const getFeedMimeTypeQuality = (type: string): number => {
-  if (primaryFeedMimeTypes.includes(type)) {
-    return 1
-  }
+export const genericHtmlMimeTypes: Array<WeightedMimeType> = [
+  { mime: 'application/xml', quality: 0.9 },
+  { mime: '*/*', quality: 0.8 },
+]
 
-  if (feedMimeTypes.includes(type)) {
-    return 0.9
-  }
+export const createAcceptHeader = (types: ReadonlyArray<WeightedMimeType>): string => {
+  const ranges = types.map((type) => {
+    if (type.quality === 1) {
+      return type.mime
+    }
 
-  // Any text is text/plain, so it ranks below every type that can carry a feed structure.
-  if (type === 'text/plain') {
-    return 0.1
-  }
-
-  return 0.8
-}
-
-const formatMediaRange = (type: string, quality: number): string => {
-  if (quality === 1) {
-    return type
-  }
-
-  return `${type};q=${quality}`
-}
-
-const feedAcceptTypes = new Set([
-  ...primaryFeedMimeTypes,
-  ...feedMimeTypes,
-  ...genericFeedMimeTypes,
-])
-
-// Never add */*: Rails reads any Accept with */* as a browser and answers an extensionless
-// feed URL with HTML.
-export const feedAcceptHeader = [...feedAcceptTypes]
-  .map((type) => {
-    return formatMediaRange(type, getFeedMimeTypeQuality(type))
+    return `${type.mime};q=${type.quality}`
   })
-  .join(', ')
 
-export const htmlAcceptHeader = `${htmlMimeTypes.join(', ')}, application/xml;q=0.9, */*;q=0.8`
+  return ranges.join(', ')
+}

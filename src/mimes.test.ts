@@ -1,25 +1,60 @@
 import { describe, expect, it } from 'bun:test'
-import { feedAcceptHeader, feedMimeTypes, genericFeedMimeTypes, htmlAcceptHeader } from './mimes.js'
+import {
+  createAcceptHeader,
+  feedMimeTypes,
+  genericFeedMimeTypes,
+  genericHtmlMimeTypes,
+  htmlMimeTypes,
+} from './mimes.js'
 
-describe('feedMimeTypes and genericFeedMimeTypes', () => {
-  it('should list each type once across both lists', () => {
-    const types = [...feedMimeTypes, ...genericFeedMimeTypes]
+describe('createAcceptHeader', () => {
+  it('should write a quality of 1 without a q parameter', () => {
+    const value = [{ mime: 'application/atom+xml', quality: 1 }]
+    const expected = 'application/atom+xml'
 
-    expect(new Set(types).size).toBe(types.length)
+    expect(createAcceptHeader(value)).toBe(expected)
+  })
+
+  it('should write a quality below 1 as a q parameter', () => {
+    const value = [{ mime: 'application/xml', quality: 0.8 }]
+    const expected = 'application/xml;q=0.8'
+
+    expect(createAcceptHeader(value)).toBe(expected)
+  })
+
+  it('should keep the given order', () => {
+    const value = [
+      { mime: 'text/plain', quality: 0.1 },
+      { mime: 'application/rss+xml', quality: 1 },
+    ]
+    const expected = 'text/plain;q=0.1, application/rss+xml'
+
+    expect(createAcceptHeader(value)).toBe(expected)
+  })
+
+  it('should return an empty string for an empty list', () => {
+    expect(createAcceptHeader([])).toBe('')
   })
 })
 
-describe('feedAcceptHeader', () => {
-  it('should list each feed and generic type exactly once', () => {
-    const types = feedAcceptHeader.split(', ').map((range) => {
-      return range.split(';')[0]
+describe('feedMimeTypes and genericFeedMimeTypes', () => {
+  it('should list each type once across both lists', () => {
+    const mimes = [...feedMimeTypes, ...genericFeedMimeTypes].map((type) => {
+      return type.mime
     })
-    const expected = [...feedMimeTypes, ...genericFeedMimeTypes]
 
-    expect(types.sort()).toEqual(expected.sort())
+    expect(new Set(mimes).size).toBe(mimes.length)
   })
 
-  it('should rank the main feed types first, then variants, then generic types', () => {
+  it('should not accept any type through a wildcard', () => {
+    const mimes = [...feedMimeTypes, ...genericFeedMimeTypes].map((type) => {
+      return type.mime
+    })
+
+    expect(mimes).not.toContain('*/*')
+  })
+
+  it('should build the feed Accept header', () => {
     const expected = [
       'application/atom+xml',
       'application/rss+xml',
@@ -42,18 +77,14 @@ describe('feedAcceptHeader', () => {
       'text/plain;q=0.1',
     ].join(', ')
 
-    expect(feedAcceptHeader).toBe(expected)
-  })
-
-  it('should not accept any type through a wildcard', () => {
-    expect(feedAcceptHeader).not.toContain('*/*')
+    expect(createAcceptHeader([...feedMimeTypes, ...genericFeedMimeTypes])).toBe(expected)
   })
 })
 
-describe('htmlAcceptHeader', () => {
-  it('should prefer HTML and fall back to any type like a browser', () => {
+describe('htmlMimeTypes and genericHtmlMimeTypes', () => {
+  it('should build the HTML Accept header', () => {
     const expected = 'text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8'
 
-    expect(htmlAcceptHeader).toBe(expected)
+    expect(createAcceptHeader([...htmlMimeTypes, ...genericHtmlMimeTypes])).toBe(expected)
   })
 })
