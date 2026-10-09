@@ -71,7 +71,9 @@ const feedAcceptTypes = new Set([
 // Never add */*: Rails reads any Accept with */* as a browser and answers an extensionless
 // feed URL with HTML.
 export const feedAcceptHeader = [...feedAcceptTypes]
-  .map((type) => formatMediaRange(type, getFeedMimeTypeQuality(type)))
+  .map((type) => {
+    return formatMediaRange(type, getFeedMimeTypeQuality(type))
+  })
   .join(', ')
 
 export const htmlAcceptHeader = `${htmlMimeTypes.join(', ')}, application/xml;q=0.9, */*;q=0.8`

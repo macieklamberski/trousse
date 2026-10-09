@@ -11,7 +11,9 @@ describe('feedMimeTypes and genericFeedMimeTypes', () => {
 
 describe('feedAcceptHeader', () => {
   it('should list each feed and generic type exactly once', () => {
-    const types = feedAcceptHeader.split(', ').map((range) => range.split(';')[0])
+    const types = feedAcceptHeader.split(', ').map((range) => {
+      return range.split(';')[0]
+    })
     const expected = [...feedMimeTypes, ...genericFeedMimeTypes]
 
     expect(types.sort()).toEqual(expected.sort())
