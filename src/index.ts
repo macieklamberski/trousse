@@ -42,6 +42,13 @@ export {
   isAnyOf,
   startsWithAnyOf,
 } from './matching.js'
+export {
+  feedAcceptHeader,
+  feedMimeTypes,
+  genericFeedMimeTypes,
+  htmlAcceptHeader,
+  htmlMimeTypes,
+} from './mimes.js'
 export { omit, pick, toMap, trimObject } from './objects.js'
 export { sleep } from './timers.js'
 export type {
