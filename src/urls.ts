@@ -160,6 +160,8 @@ const ipv6Regex = /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i
 
 const wwwPrefixRegex = /^(?:www\.)+(?=.*\.)/
 const ipv6BracketsRegex = /^\[|\]$/g
+// A dot, a letter, then up to five letters or digits: `.xml` and `.ashx`, not the `.0` of `/rss/2.0`.
+const fileExtensionRegex = /\.[a-z][a-z0-9]{0,5}$/i
 
 // Only an unreserved character means the same encoded and literal. A reserved one like `+` or `,`
 // can carry meaning to the server once decoded.
@@ -632,6 +634,47 @@ export const stripWww = (hostname: string): string => {
 // passes. URL.hostname wraps an IPv6 address in brackets, so they are accepted here.
 export const isIpAddress = (hostname: string): boolean => {
   return ipv4Regex.test(hostname) || ipv6Regex.test(hostname.replace(ipv6BracketsRegex, ''))
+}
+
+// The forms one address is commonly reachable under: each scheme, with and without `www.`, with
+// and without a trailing slash. A path ending in a file extension gets no trailing slash variant.
+export const createUrlVariants = (url: string): Array<string> => {
+  const parsed = parseUrl(url)
+
+  if (!parsed || !isHttpUrl(parsed)) {
+    return []
+  }
+
+  const hostname = stripWww(parsed.hostname)
+  const hostnames = [hostname]
+
+  if (hostname.includes('.') && !isIpAddress(hostname)) {
+    hostnames.push(`www.${hostname}`)
+  }
+
+  const hasTrailingSlash = parsed.pathname.endsWith('/')
+  const pathname = hasTrailingSlash ? parsed.pathname.slice(0, -1) : parsed.pathname
+  const pathnames = [pathname]
+
+  if (pathname && (hasTrailingSlash || !fileExtensionRegex.test(pathname))) {
+    pathnames.push(`${pathname}/`)
+  }
+
+  const variants: Array<string> = []
+
+  for (const scheme of ['https:', 'http:']) {
+    for (const variantHostname of hostnames) {
+      for (const variantPathname of pathnames) {
+        const variant = new URL(parsed.href)
+        variant.protocol = scheme
+        variant.hostname = variantHostname
+        variant.pathname = variantPathname
+        variants.push(variant.href)
+      }
+    }
+  }
+
+  return variants
 }
 
 // Two-label public suffixes take the form generic-second-level under a country code: co.uk,

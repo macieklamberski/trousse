@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import type { NormalizeOptions } from './types.js'
 import {
   addMissingScheme,
+  createUrlVariants,
   decodeSegment,
   fixMalformedScheme,
   getPathSegments,
@@ -2735,6 +2736,184 @@ describe('isIpAddress', () => {
 
   it('should reject a single-label host', () => {
     expect(isIpAddress('localhost')).toBe(false)
+  })
+})
+
+describe('createUrlVariants', () => {
+  it('should return every scheme, www and trailing slash variant', () => {
+    const expected = [
+      'https://example.com/feed',
+      'https://example.com/feed/',
+      'https://www.example.com/feed',
+      'https://www.example.com/feed/',
+      'http://example.com/feed',
+      'http://example.com/feed/',
+      'http://www.example.com/feed',
+      'http://www.example.com/feed/',
+    ]
+
+    expect(createUrlVariants('https://example.com/feed')).toEqual(expected)
+  })
+
+  it('should return the same variants for a URL with www and a trailing slash', () => {
+    const expected = [
+      'https://example.com/feed',
+      'https://example.com/feed/',
+      'https://www.example.com/feed',
+      'https://www.example.com/feed/',
+      'http://example.com/feed',
+      'http://example.com/feed/',
+      'http://www.example.com/feed',
+      'http://www.example.com/feed/',
+    ]
+
+    expect(createUrlVariants('http://www.example.com/feed/')).toEqual(expected)
+  })
+
+  it('should skip the trailing slash after a file extension', () => {
+    const expected = [
+      'https://example.com/feed.xml',
+      'https://www.example.com/feed.xml',
+      'http://example.com/feed.xml',
+      'http://www.example.com/feed.xml',
+    ]
+
+    expect(createUrlVariants('https://example.com/feed.xml')).toEqual(expected)
+  })
+
+  it('should skip the trailing slash after an uncommon file extension', () => {
+    const expected = [
+      'https://example.com/news.ashx',
+      'https://www.example.com/news.ashx',
+      'http://example.com/news.ashx',
+      'http://www.example.com/news.ashx',
+    ]
+
+    expect(createUrlVariants('https://example.com/news.ashx')).toEqual(expected)
+  })
+
+  it('should keep the trailing slash a URL has after a file extension', () => {
+    const expected = [
+      'https://example.com/feed.xml',
+      'https://example.com/feed.xml/',
+      'https://www.example.com/feed.xml',
+      'https://www.example.com/feed.xml/',
+      'http://example.com/feed.xml',
+      'http://example.com/feed.xml/',
+      'http://www.example.com/feed.xml',
+      'http://www.example.com/feed.xml/',
+    ]
+
+    expect(createUrlVariants('https://example.com/feed.xml/')).toEqual(expected)
+  })
+
+  it('should add the trailing slash after a segment ending in a version number', () => {
+    const expected = [
+      'https://example.com/rss/2.0',
+      'https://example.com/rss/2.0/',
+      'https://www.example.com/rss/2.0',
+      'https://www.example.com/rss/2.0/',
+      'http://example.com/rss/2.0',
+      'http://example.com/rss/2.0/',
+      'http://www.example.com/rss/2.0',
+      'http://www.example.com/rss/2.0/',
+    ]
+
+    expect(createUrlVariants('https://example.com/rss/2.0')).toEqual(expected)
+  })
+
+  it('should add the trailing slash when only a directory has a dot', () => {
+    const expected = [
+      'https://example.com/v1.beta/feed',
+      'https://example.com/v1.beta/feed/',
+      'https://www.example.com/v1.beta/feed',
+      'https://www.example.com/v1.beta/feed/',
+      'http://example.com/v1.beta/feed',
+      'http://example.com/v1.beta/feed/',
+      'http://www.example.com/v1.beta/feed',
+      'http://www.example.com/v1.beta/feed/',
+    ]
+
+    expect(createUrlVariants('https://example.com/v1.beta/feed')).toEqual(expected)
+  })
+
+  it('should return one path variant for the root path', () => {
+    const expected = [
+      'https://example.com/',
+      'https://www.example.com/',
+      'http://example.com/',
+      'http://www.example.com/',
+    ]
+
+    expect(createUrlVariants('https://example.com')).toEqual(expected)
+  })
+
+  it('should keep the query', () => {
+    const expected = [
+      'https://example.com/feed?format=rss',
+      'https://example.com/feed/?format=rss',
+      'https://www.example.com/feed?format=rss',
+      'https://www.example.com/feed/?format=rss',
+      'http://example.com/feed?format=rss',
+      'http://example.com/feed/?format=rss',
+      'http://www.example.com/feed?format=rss',
+      'http://www.example.com/feed/?format=rss',
+    ]
+
+    expect(createUrlVariants('https://example.com/feed?format=rss')).toEqual(expected)
+  })
+
+  it('should keep the port', () => {
+    const expected = [
+      'https://example.com:8080/feed.xml',
+      'https://www.example.com:8080/feed.xml',
+      'http://example.com:8080/feed.xml',
+      'http://www.example.com:8080/feed.xml',
+    ]
+
+    expect(createUrlVariants('https://example.com:8080/feed.xml')).toEqual(expected)
+  })
+
+  it('should keep the credentials', () => {
+    const expected = [
+      'https://user:secret@example.com/feed.xml',
+      'https://user:secret@www.example.com/feed.xml',
+      'http://user:secret@example.com/feed.xml',
+      'http://user:secret@www.example.com/feed.xml',
+    ]
+
+    expect(createUrlVariants('https://user:secret@example.com/feed.xml')).toEqual(expected)
+  })
+
+  it('should keep a subdomain under the www variant', () => {
+    const expected = [
+      'https://blog.example.com/feed.xml',
+      'https://www.blog.example.com/feed.xml',
+      'http://blog.example.com/feed.xml',
+      'http://www.blog.example.com/feed.xml',
+    ]
+
+    expect(createUrlVariants('https://blog.example.com/feed.xml')).toEqual(expected)
+  })
+
+  it('should skip the www variant for an IP address', () => {
+    const expected = ['https://192.0.2.1/feed.xml', 'http://192.0.2.1/feed.xml']
+
+    expect(createUrlVariants('https://192.0.2.1/feed.xml')).toEqual(expected)
+  })
+
+  it('should skip the www variant for a single-label host', () => {
+    const expected = ['https://localhost/feed.xml', 'http://localhost/feed.xml']
+
+    expect(createUrlVariants('https://localhost/feed.xml')).toEqual(expected)
+  })
+
+  it('should return an empty array for a scheme other than http and https', () => {
+    expect(createUrlVariants('ftp://example.com/feed.xml')).toEqual([])
+  })
+
+  it('should return an empty array for a string that is not a URL', () => {
+    expect(createUrlVariants('not a url')).toEqual([])
   })
 })
 
