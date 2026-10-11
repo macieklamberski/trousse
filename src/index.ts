@@ -66,6 +66,7 @@ export type {
 export {
   addMissingProtocol,
   addMissingScheme,
+  createUrlVariants,
   decodeSegment,
   fixMalformedProtocol,
   fixMalformedScheme,
