@@ -2054,6 +2054,42 @@ describe('normalizeUrl', () => {
 
       expect(normalizeUrl(value, options)).toBe(expected)
     })
+
+    it('should collapse a leading run of slashes', () => {
+      const value = 'https://example.com//p/662741/feed'
+      const expected = 'example.com/p/662741/feed'
+
+      expect(normalizeUrl(value, defaultOptions)).toBe(expected)
+    })
+
+    it('should keep the slashes of a url carried in the path', () => {
+      const value = 'https://example.com/web/20140327055211/https://example.org/feed'
+      const expected = 'example.com/web/20140327055211/https://example.org/feed'
+
+      expect(normalizeUrl(value, defaultOptions)).toBe(expected)
+    })
+
+    it('should keep the slashes of a url carried in the path with an encoded colon', () => {
+      const value = 'https://example.com/l/abc/https%3A//example.org/feed'
+      const expected = 'example.com/l/abc/https%3A//example.org/feed'
+
+      expect(normalizeUrl(value, defaultOptions)).toBe(expected)
+    })
+
+    it('should keep the slashes after a lowercase encoded colon', () => {
+      const value = 'https://example.com/l/abc/https%3a//example.org/feed'
+      const expected = 'example.com/l/abc/https%3A//example.org/feed'
+
+      expect(normalizeUrl(value, defaultOptions)).toBe(expected)
+    })
+
+    it('should collapse 200 KB of slashes within a second', () => {
+      const value = `https://example.com/${'/'.repeat(200_000)}feed`
+      const start = performance.now()
+
+      expect(normalizeUrl(value, defaultOptions)).toBe('example.com/feed')
+      expect(performance.now() - start).toBeLessThan(1000)
+    })
   })
 
   describe('hash/fragment stripping', () => {
