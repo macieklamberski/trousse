@@ -174,6 +174,9 @@ const plusRegex = /\+/g
 const httpSchemeRegex = /^http:\/\//i
 const httpsSchemeRegex = /^https:\/\//i
 
+// A run after `scheme:` or `scheme%3A` belongs to a url carried in the path, `/web/{ts}/https://…`.
+const repeatedSlashesRegex = /(?<!:|%3a)\/{2,}/gi
+
 const leadingWhitespaceChars = [' ', '\t', '\n']
 const relativeLeadChars = ['/', '.', '?', '#']
 const localhostRegex = /^localhost(?:[:/?#]|$)/i
@@ -551,7 +554,7 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
     }
 
     if (options.collapseSlashes) {
-      pathname = pathname.replace(/\/+/g, '/')
+      pathname = pathname.replace(repeatedSlashesRegex, '/')
     }
 
     if (options.stripTrailingSlash && pathname.length > 1 && pathname.endsWith('/')) {

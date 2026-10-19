@@ -49,7 +49,7 @@ export type NormalizeOptions = {
   stripWww?: boolean // Strip www. prefix
   stripTrailingSlash?: boolean // /feed/ → /feed, against RFC 3986 §3.3
   stripRootSlash?: boolean // example.com/ → example.com, against RFC 9110 §4.2.3
-  collapseSlashes?: boolean // /// → /, against RFC 3986 §3.3
+  collapseSlashes?: boolean // /// → /, except after a scheme in the path, against RFC 3986 §3.3
   stripHash?: boolean // Strip #fragment, never sent to the server, RFC 3986 §3.5
   sortQueryParams?: boolean // Sort query params alphabetically, a server may read them in order
   stripQueryParams?: ReadonlyArray<string> // Query params to strip, cached per array, so never mutate it
