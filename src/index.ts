@@ -69,6 +69,7 @@ export {
   createUrlVariants,
   decodeSegment,
   fixMalformedProtocol,
+  fixMalformedQuery,
   fixMalformedScheme,
   getPathSegments,
   getRegistrableDomain,

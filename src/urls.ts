@@ -253,6 +253,66 @@ export const fixMalformedScheme = (url: string): string => {
   return url
 }
 
+// A url carried inside another one, as a value or bare, holds its own `?` and `&`. The scheme can
+// arrive percent-encoded, as in `?url=https%3A//host/a?b=1`.
+const nestedSchemeRegex = /[a-z][a-z\d+.-]*(?::|%3A)(?:\/\/|%2F%2F)/i
+
+// Repairs a query glued onto a url. The first `&` before any `?` opens the query, whatever follows
+// it, and a `?` inside a `name=value` pair becomes `&`. A `?` after a name with no `=` stays, and
+// nothing from a nested scheme on is touched.
+export const fixMalformedQuery = (url: string): string => {
+  const hashIndex = url.indexOf('#')
+  const head = hashIndex === -1 ? url : url.slice(0, hashIndex)
+  const fragment = hashIndex === -1 ? '' : url.slice(hashIndex)
+  const authorityIndex = head.indexOf('//')
+  const nestedFrom = authorityIndex === -1 ? 0 : authorityIndex + 2
+  const nestedIndex = head.slice(nestedFrom).search(nestedSchemeRegex)
+  const limit = nestedIndex === -1 ? head.length : nestedFrom + nestedIndex
+  const markIndex = head.indexOf('?')
+  const ampersandIndex = head.indexOf('&')
+  const isGlued =
+    ampersandIndex !== -1 &&
+    ampersandIndex < limit &&
+    (markIndex === -1 || ampersandIndex < markIndex)
+
+  if (!isGlued && (markIndex === -1 || head.indexOf('?', markIndex + 1) === -1)) {
+    return url
+  }
+
+  const queryIndex = isGlued ? ampersandIndex : markIndex
+  // An `&` directly before the `?` opens an empty tail, as in `{id}&?rel=0`.
+  const queryStart = isGlued && head[queryIndex + 1] === '?' ? queryIndex + 2 : queryIndex + 1
+  let query = ''
+  let hasValue = false
+
+  for (let index = queryStart; index < head.length; index++) {
+    const character = head[index]
+
+    if (index >= limit) {
+      query += head.slice(index)
+      break
+    }
+
+    if (character === '?' && hasValue) {
+      query += '&'
+      hasValue = false
+      continue
+    }
+
+    if (character === '&') {
+      hasValue = false
+    }
+
+    if (character === '=') {
+      hasValue = true
+    }
+
+    query += character
+  }
+
+  return `${head.slice(0, queryIndex)}?${query}${fragment}`
+}
+
 // Feed pseudo-schemes, replaced as in `feed://host` or unwrapped as in `feed:https://host`.
 // `feed:` is provisional in the IANA registry, the others are unregistered.
 // See: https://www.iana.org/assignments/uri-schemes/prov/feed.
