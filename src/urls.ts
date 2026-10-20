@@ -268,40 +268,46 @@ export const fixMalformedQuery = (url: string): string => {
   }
 
   const hashIndex = url.indexOf('#')
-  const head = hashIndex === -1 ? url : url.slice(0, hashIndex)
-  const fragment = hashIndex === -1 ? '' : url.slice(hashIndex)
+  const hasFragment = hashIndex !== -1
+  const head = hasFragment ? url.slice(0, hashIndex) : url
+  const fragment = hasFragment ? url.slice(hashIndex) : ''
+
+  // Nothing from a nested url on is read: it keeps its own `?` and `&`.
   const authorityEnd = head.indexOf('//') + 2
-  const nestedIndex = head.slice(authorityEnd).search(nestedUrlRegex)
-  const limit = nestedIndex === -1 ? head.length : authorityEnd + nestedIndex
+  const nestedOffset = head.slice(authorityEnd).search(nestedUrlRegex)
+  const hasNestedUrl = nestedOffset !== -1
+  const ownEnd = hasNestedUrl ? authorityEnd + nestedOffset : head.length
+
   const markIndex = head.indexOf('?')
+  const hasMark = markIndex !== -1 && markIndex < ownEnd
+  const secondMarkIndex = hasMark ? head.indexOf('?', markIndex + 1) : -1
+  const hasSecondMark = secondMarkIndex !== -1 && secondMarkIndex < ownEnd
+
   // An `&` before the path is part of the credentials or the host, as in `https://a&b@host/`.
   const pathIndex = head.indexOf('/', authorityEnd)
-  const ampersandIndex = pathIndex === -1 ? -1 : head.indexOf('&', pathIndex)
-  const isGlued =
-    ampersandIndex !== -1 &&
-    ampersandIndex < limit &&
-    (markIndex === -1 || (pathIndex < markIndex && ampersandIndex < markIndex))
+  const pathEnd = hasMark ? markIndex : ownEnd
+  const hasPath = pathIndex !== -1 && pathIndex < pathEnd
+  const glueIndex = hasPath ? head.indexOf('&', pathIndex) : -1
+  const isGlued = glueIndex !== -1 && glueIndex < pathEnd
 
-  if (!isGlued && (markIndex === -1 || head.indexOf('?', markIndex + 1) === -1)) {
+  if (!isGlued && !hasSecondMark) {
     return url
   }
 
-  const queryIndex = isGlued ? ampersandIndex : markIndex
+  const queryIndex = isGlued ? glueIndex : markIndex
   // An `&` directly before the `?` opens an empty tail, as in `{id}&?rel=0`.
-  const queryStart = isGlued && head[queryIndex + 1] === '?' ? queryIndex + 2 : queryIndex + 1
+  const isEmptyTail = isGlued && head[glueIndex + 1] === '?'
+  const queryStart = queryIndex + (isEmptyTail ? 2 : 1)
   let query = ''
   let hasValue = false
 
-  for (let index = queryStart; index < head.length; index++) {
+  for (let index = queryStart; index < ownEnd; index++) {
     const character = head[index]
-
-    if (index >= limit) {
-      query += head.slice(index)
-      break
-    }
-
     // Behind a glued tail the publisher's own `?` still starts parameters, as in `{id}&t?rel=0`.
-    if (character === '?' && (hasValue || (isGlued && index === markIndex))) {
+    const isOwnMark = isGlued && index === markIndex
+    const isSeparator = character === '?' && (hasValue || isOwnMark)
+
+    if (isSeparator) {
       query += '&'
       hasValue = false
       continue
@@ -318,7 +324,7 @@ export const fixMalformedQuery = (url: string): string => {
     query += character
   }
 
-  return `${head.slice(0, queryIndex)}?${query}${fragment}`
+  return `${head.slice(0, queryIndex)}?${query}${head.slice(ownEnd)}${fragment}`
 }
 
 // Feed pseudo-schemes, replaced as in `feed://host` or unwrapped as in `feed:https://host`.
