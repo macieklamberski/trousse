@@ -4,6 +4,7 @@ import {
   addMissingScheme,
   createUrlVariants,
   decodeSegment,
+  fixMalformedQuery,
   fixMalformedScheme,
   getPathSegments,
   getRegistrableDomain,
@@ -902,6 +903,195 @@ describe('fixMalformedScheme', () => {
 
   it('should return empty string unchanged', () => {
     expect(fixMalformedScheme('')).toBe('')
+  })
+})
+
+describe('fixMalformedQuery', () => {
+  describe('ampersand glued onto the path', () => {
+    it('should open the query at the first pair', () => {
+      const value = 'https://example.com/v/abc123&hl=en&fs=1'
+      const expected = 'https://example.com/v/abc123?hl=en&fs=1'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should join a later query to the opened one', () => {
+      const value = 'https://example.com/v/abc123&hl=en&fs=1?rel=0'
+      const expected = 'https://example.com/v/abc123?hl=en&fs=1&rel=0'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should open an empty query at a trailing ampersand', () => {
+      const value = 'https://example.com/v/abc123&'
+      const expected = 'https://example.com/v/abc123?'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should open the query at a name with no value', () => {
+      const value = 'https://example.com/v/abc123&feature'
+      const expected = 'https://example.com/v/abc123?feature'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should drop an ampersand directly before the query', () => {
+      const value = 'https://example.com/v/abc123&?rel=0'
+      const expected = 'https://example.com/v/abc123?rel=0'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should repair a scheme-relative url', () => {
+      const value = '//example.com/embed/abc123&t=6s'
+      const expected = '//example.com/embed/abc123?t=6s'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should keep the fragment', () => {
+      const value = 'https://example.com/embed/abc123&autoplay=1#t=30'
+      const expected = 'https://example.com/embed/abc123?autoplay=1#t=30'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should join the query after a name with no value', () => {
+      const value = 'https://example.com/embed/abc123&t?autoplay=0&loop=1'
+      const expected = 'https://example.com/embed/abc123?t&autoplay=0&loop=1'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should leave an ampersand in the credentials alone', () => {
+      const value = 'https://user&name@example.com/feed'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave an ampersand in a url with no path alone', () => {
+      const value = 'https://example.com:8080&a=1'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should return its own output unchanged', () => {
+      const value = 'https://example.com/v/abc123?hl=en&fs=1&rel=0'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+  })
+
+  describe('question mark inside a value', () => {
+    it('should turn it into an ampersand', () => {
+      const value = 'https://example.com/embed/abc123?list=PL123?ecver=2'
+      const expected = 'https://example.com/embed/abc123?list=PL123&ecver=2'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should turn every one into an ampersand', () => {
+      const value = 'https://example.com/player?a=1?b=2?c=3'
+      const expected = 'https://example.com/player?a=1&b=2&c=3'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should leave a question mark in the fragment alone', () => {
+      const value = 'https://example.com/player?a=1#b?c=2'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+  })
+
+  describe('question mark after a name with no value', () => {
+    it('should leave it alone', () => {
+      const value = 'https://example.com/document/d/abc123/pub?embedded?start=false&loop=false'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave a doubled question mark alone', () => {
+      const value = 'https://example.com/embed/abc123??list=TL123&rel=0'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+  })
+
+  describe('nested url', () => {
+    it('should leave the query of a url held in a value alone', () => {
+      const value = 'https://example.com/frame?url=http://example.org/a?b=1'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave the query of a bare nested url alone', () => {
+      const value = 'https://example.com/player/?http://example.org/a.swf?url=x&color=1'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave the query of a url with a percent-encoded colon alone', () => {
+      const value =
+        'https://example.com/player/?url=https%3A//example.org/tracks/1?secret_token=s-1'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave the query of a url with percent-encoded slashes alone', () => {
+      const value =
+        'https://example.com/player/?url=https%3A%2F%2Fexample.org/tracks/1?secret_token=s-1'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave an ampersand after a nested url in the path alone', () => {
+      const value = 'https://example.com/https://example.org/a&b=1'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave the query of a scheme-relative url held in a value alone', () => {
+      const value = 'https://example.com/player/?url=//example.org/tracks/1?secret_token=s-1'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+  })
+
+  describe('well-formed urls', () => {
+    const wellFormedUrls = [
+      'https://example.com/feed?format=rss&page=2',
+      'https://example.com/feed',
+      '/path/to/feed?a=1',
+      '',
+    ]
+
+    it.each(wellFormedUrls)('should return %s unchanged', (value) => {
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+  })
+
+  describe('value that is not an http url', () => {
+    it('should leave a data url alone', () => {
+      const value = 'data:text/html,a&b?c=d?e'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave a relative path alone', () => {
+      const value = '/v/abc123&hl=en'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+  })
+
+  it('should repair 200 KB of question marks within a second', () => {
+    const value = `https://example.com/player?a=1${'?b=2'.repeat(50_000)}`
+    const start = performance.now()
+
+    expect(fixMalformedQuery(value)).toBe(`https://example.com/player?a=1${'&b=2'.repeat(50_000)}`)
+    expect(performance.now() - start).toBeLessThan(1000)
   })
 })
 

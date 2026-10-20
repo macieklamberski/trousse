@@ -253,6 +253,80 @@ export const fixMalformedScheme = (url: string): string => {
   return url
 }
 
+// A url carried inside another one, as a value or bare, holds its own `?` and `&`. The scheme can
+// arrive percent-encoded, as in `?url=https%3A//host/a?b=1`, or be left off, as in `?url=//host/a`.
+const nestedUrlRegex = /[a-z][a-z\d+.-]*(?::|%3A)(?:\/\/|%2F%2F)|(?<=[=?&])(?:\/\/|%2F%2F)/i
+const httpOrSchemeRelativeRegex = /^(?:https?:)?\/\//i
+
+// Repairs a query glued onto a url. The first `&` in the path before any `?` opens the query,
+// whatever follows it, and a `?` inside a `name=value` pair becomes `&`. A `?` after a name with no
+// `=` stays, and nothing from a nested url on is touched.
+export const fixMalformedQuery = (url: string): string => {
+  // A `data:` or `javascript:` value carries no query, so its `&` and `?` are content.
+  if (!httpOrSchemeRelativeRegex.test(url)) {
+    return url
+  }
+
+  const hashIndex = url.indexOf('#')
+  const hasFragment = hashIndex !== -1
+  const head = hasFragment ? url.slice(0, hashIndex) : url
+  const fragment = hasFragment ? url.slice(hashIndex) : ''
+
+  // Nothing from a nested url on is read: it keeps its own `?` and `&`.
+  const authorityEnd = head.indexOf('//') + 2
+  const nestedOffset = head.slice(authorityEnd).search(nestedUrlRegex)
+  const hasNestedUrl = nestedOffset !== -1
+  const ownEnd = hasNestedUrl ? authorityEnd + nestedOffset : head.length
+
+  const markIndex = head.indexOf('?')
+  const hasMark = markIndex !== -1 && markIndex < ownEnd
+  const secondMarkIndex = hasMark ? head.indexOf('?', markIndex + 1) : -1
+  const hasSecondMark = secondMarkIndex !== -1 && secondMarkIndex < ownEnd
+
+  // An `&` before the path is part of the credentials or the host, as in `https://a&b@host/`.
+  const pathIndex = head.indexOf('/', authorityEnd)
+  const pathEnd = hasMark ? markIndex : ownEnd
+  const hasPath = pathIndex !== -1 && pathIndex < pathEnd
+  const glueIndex = hasPath ? head.indexOf('&', pathIndex) : -1
+  const isGlued = glueIndex !== -1 && glueIndex < pathEnd
+
+  if (!isGlued && !hasSecondMark) {
+    return url
+  }
+
+  const queryIndex = isGlued ? glueIndex : markIndex
+  // An `&` directly before the `?` opens an empty tail, as in `{id}&?rel=0`.
+  const isEmptyTail = isGlued && head[glueIndex + 1] === '?'
+  const queryStart = queryIndex + (isEmptyTail ? 2 : 1)
+  let query = ''
+  let hasValue = false
+
+  for (let index = queryStart; index < ownEnd; index++) {
+    const character = head[index]
+    // Behind a glued tail the publisher's own `?` still starts parameters, as in `{id}&t?rel=0`.
+    const isOwnMark = isGlued && index === markIndex
+    const isSeparator = character === '?' && (hasValue || isOwnMark)
+
+    if (isSeparator) {
+      query += '&'
+      hasValue = false
+      continue
+    }
+
+    if (character === '&') {
+      hasValue = false
+    }
+
+    if (character === '=') {
+      hasValue = true
+    }
+
+    query += character
+  }
+
+  return `${head.slice(0, queryIndex)}?${query}${head.slice(ownEnd)}${fragment}`
+}
+
 // Feed pseudo-schemes, replaced as in `feed://host` or unwrapped as in `feed:https://host`.
 // `feed:` is provisional in the IANA registry, the others are unregistered.
 // See: https://www.iana.org/assignments/uri-schemes/prov/feed.
