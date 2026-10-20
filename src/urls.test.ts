@@ -956,6 +956,31 @@ describe('fixMalformedQuery', () => {
 
       expect(fixMalformedQuery(value)).toBe(expected)
     })
+
+    it('should join the query after a name with no value', () => {
+      const value = 'https://example.com/embed/abc123&t?autoplay=0&loop=1'
+      const expected = 'https://example.com/embed/abc123?t&autoplay=0&loop=1'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should leave an ampersand in the credentials alone', () => {
+      const value = 'https://user&name@example.com/feed'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave an ampersand in a url with no path alone', () => {
+      const value = 'https://example.com:8080&a=1'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should return its own output unchanged', () => {
+      const value = 'https://example.com/v/abc123?hl=en&fs=1&rel=0'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
   })
 
   describe('question mark inside a value', () => {
@@ -1026,6 +1051,12 @@ describe('fixMalformedQuery', () => {
 
       expect(fixMalformedQuery(value)).toBe(value)
     })
+
+    it('should leave the query of a scheme-relative url held in a value alone', () => {
+      const value = 'https://example.com/player/?url=//example.org/tracks/1?secret_token=s-1'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
   })
 
   describe('well-formed urls', () => {
@@ -1037,6 +1068,20 @@ describe('fixMalformedQuery', () => {
     ]
 
     it.each(wellFormedUrls)('should return %s unchanged', (value) => {
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+  })
+
+  describe('value that is not an http url', () => {
+    it('should leave a data url alone', () => {
+      const value = 'data:text/html,a&b?c=d?e'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave a relative path alone', () => {
+      const value = '/v/abc123&hl=en'
+
       expect(fixMalformedQuery(value)).toBe(value)
     })
   })

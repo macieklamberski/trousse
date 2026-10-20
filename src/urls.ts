@@ -254,26 +254,33 @@ export const fixMalformedScheme = (url: string): string => {
 }
 
 // A url carried inside another one, as a value or bare, holds its own `?` and `&`. The scheme can
-// arrive percent-encoded, as in `?url=https%3A//host/a?b=1`.
-const nestedSchemeRegex = /[a-z][a-z\d+.-]*(?::|%3A)(?:\/\/|%2F%2F)/i
+// arrive percent-encoded, as in `?url=https%3A//host/a?b=1`, or be left off, as in `?url=//host/a`.
+const nestedUrlRegex = /[a-z][a-z\d+.-]*(?::|%3A)(?:\/\/|%2F%2F)|(?<=[=?&])(?:\/\/|%2F%2F)/i
+const httpOrSchemeRelativeRegex = /^(?:https?:)?\/\//i
 
-// Repairs a query glued onto a url. The first `&` before any `?` opens the query, whatever follows
-// it, and a `?` inside a `name=value` pair becomes `&`. A `?` after a name with no `=` stays, and
-// nothing from a nested scheme on is touched.
+// Repairs a query glued onto a url. The first `&` in the path before any `?` opens the query,
+// whatever follows it, and a `?` inside a `name=value` pair becomes `&`. A `?` after a name with no
+// `=` stays, and nothing from a nested url on is touched.
 export const fixMalformedQuery = (url: string): string => {
+  // A `data:` or `javascript:` value carries no query, so its `&` and `?` are content.
+  if (!httpOrSchemeRelativeRegex.test(url)) {
+    return url
+  }
+
   const hashIndex = url.indexOf('#')
   const head = hashIndex === -1 ? url : url.slice(0, hashIndex)
   const fragment = hashIndex === -1 ? '' : url.slice(hashIndex)
-  const authorityIndex = head.indexOf('//')
-  const nestedFrom = authorityIndex === -1 ? 0 : authorityIndex + 2
-  const nestedIndex = head.slice(nestedFrom).search(nestedSchemeRegex)
-  const limit = nestedIndex === -1 ? head.length : nestedFrom + nestedIndex
+  const authorityEnd = head.indexOf('//') + 2
+  const nestedIndex = head.slice(authorityEnd).search(nestedUrlRegex)
+  const limit = nestedIndex === -1 ? head.length : authorityEnd + nestedIndex
   const markIndex = head.indexOf('?')
-  const ampersandIndex = head.indexOf('&')
+  // An `&` before the path is part of the credentials or the host, as in `https://a&b@host/`.
+  const pathIndex = head.indexOf('/', authorityEnd)
+  const ampersandIndex = pathIndex === -1 ? -1 : head.indexOf('&', pathIndex)
   const isGlued =
     ampersandIndex !== -1 &&
     ampersandIndex < limit &&
-    (markIndex === -1 || ampersandIndex < markIndex)
+    (markIndex === -1 || (pathIndex < markIndex && ampersandIndex < markIndex))
 
   if (!isGlued && (markIndex === -1 || head.indexOf('?', markIndex + 1) === -1)) {
     return url
@@ -293,7 +300,8 @@ export const fixMalformedQuery = (url: string): string => {
       break
     }
 
-    if (character === '?' && hasValue) {
+    // Behind a glued tail the publisher's own `?` still starts parameters, as in `{id}&t?rel=0`.
+    if (character === '?' && (hasValue || (isGlued && index === markIndex))) {
       query += '&'
       hasValue = false
       continue
