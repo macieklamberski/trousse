@@ -137,6 +137,37 @@ export const decodeSegment = (segment: string | undefined): string | undefined =
   } catch {}
 }
 
+// Every value of a query parameter whose name matches in any case, `?V=` for `v`, in query order.
+export const getQueryParams = (
+  params: URLSearchParams | undefined,
+  name: string,
+): Array<string> => {
+  const values: Array<string> = []
+
+  if (!params) {
+    return values
+  }
+
+  const lowercaseName = name.toLowerCase()
+
+  for (const [key, value] of params) {
+    if (key.toLowerCase() === lowercaseName) {
+      values.push(value)
+    }
+  }
+
+  return values
+}
+
+// The first value of a query parameter whose name matches in any case, as `URLSearchParams.get`
+// reads one in exact case.
+export const getQueryParam = (
+  params: URLSearchParams | undefined,
+  name: string,
+): string | undefined => {
+  return getQueryParams(params, name)[0]
+}
+
 // Keyed by the array itself, so an array changed after its first use keeps its old set.
 const strippedParamsCache = new WeakMap<ReadonlyArray<string>, Set<string>>()
 
