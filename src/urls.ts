@@ -257,10 +257,15 @@ export const fixMalformedScheme = (url: string): string => {
 // arrive percent-encoded, as in `?url=https%3A//host/a?b=1`, or be left off, as in `?url=//host/a`.
 const nestedUrlRegex = /[a-z][a-z\d+.-]*(?::|%3A)(?:\/\/|%2F%2F)|(?<=[=?&])(?:\/\/|%2F%2F)/i
 const httpOrSchemeRelativeRegex = /^(?:https?:)?\/\//i
+// The lookbehind starts a match only at the head of a whitespace run, so a long run is read once.
+const lostSeparatorRegex = /(?<!\s)\s+(?=[A-Za-z_][\w.-]*=)/g
+const slashClosedValueRegex = /(=[^&/=]+)\/+(?=&|$)/g
 
 // Repairs a query glued onto a url. The first `&` in the path before any `?` opens the query,
 // whatever follows it, and a `?` inside a `name=value` pair becomes `&`. A `?` after a name with no
-// `=` stays, and nothing from a nested url on is touched.
+// `=` stays, and nothing from a nested url on is touched. Whitespace in place of the `&` before a
+// pair, as in `h=abc123 portrait=0`, becomes `&`, and a `/` closing a value with no other slash, as
+// in `set_id=123/&text=`, is dropped. A query carrying a url keeps its whitespace and slashes.
 export const fixMalformedQuery = (url: string): string => {
   // A `data:` or `javascript:` value carries no query, so its `&` and `?` are content.
   if (!httpOrSchemeRelativeRegex.test(url)) {
@@ -280,8 +285,6 @@ export const fixMalformedQuery = (url: string): string => {
 
   const markIndex = head.indexOf('?')
   const hasMark = markIndex !== -1 && markIndex < ownEnd
-  const secondMarkIndex = hasMark ? head.indexOf('?', markIndex + 1) : -1
-  const hasSecondMark = secondMarkIndex !== -1 && secondMarkIndex < ownEnd
 
   // An `&` before the path is part of the credentials or the host, as in `https://a&b@host/`.
   const pathIndex = head.indexOf('/', authorityEnd)
@@ -290,7 +293,7 @@ export const fixMalformedQuery = (url: string): string => {
   const glueIndex = hasPath ? head.indexOf('&', pathIndex) : -1
   const isGlued = glueIndex !== -1 && glueIndex < pathEnd
 
-  if (!isGlued && !hasSecondMark) {
+  if (!isGlued && !hasMark) {
     return url
   }
 
@@ -322,6 +325,10 @@ export const fixMalformedQuery = (url: string): string => {
     }
 
     query += character
+  }
+
+  if (!hasNestedUrl) {
+    query = query.replace(lostSeparatorRegex, '&').replace(slashClosedValueRegex, '$1')
   }
 
   return `${head.slice(0, queryIndex)}?${query}${head.slice(ownEnd)}${fragment}`

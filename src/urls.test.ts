@@ -1019,6 +1019,76 @@ describe('fixMalformedQuery', () => {
     })
   })
 
+  describe('whitespace in place of an ampersand', () => {
+    it('should turn it into an ampersand', () => {
+      const value = 'https://example.com/video/123?h=abc123 portrait=0&color=fff'
+      const expected = 'https://example.com/video/123?h=abc123&portrait=0&color=fff'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should turn a run of whitespace into one ampersand', () => {
+      const value = 'https://example.com/video/123?h=abc123 \n portrait=0'
+      const expected = 'https://example.com/video/123?h=abc123&portrait=0'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should repair it in a query glued onto the path', () => {
+      const value = 'https://example.com/v/abc123&hl=en fs=1'
+      const expected = 'https://example.com/v/abc123?hl=en&fs=1'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should leave whitespace inside a value that no parameter follows alone', () => {
+      const value = 'https://example.com/player?fonts=Arial Black&skin=f6f6f6'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave whitespace in the fragment alone', () => {
+      const value = 'https://example.com/player?id=123#t=1 start=2'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+  })
+
+  describe('slash closing a value', () => {
+    it('should drop it before the next pair', () => {
+      const value = 'https://example.com/slideshow?set_id=123/&text='
+      const expected = 'https://example.com/slideshow?set_id=123&text='
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should drop it at the end of the query', () => {
+      const value = 'https://example.com/player.swf?clip_id=123//'
+      const expected = 'https://example.com/player.swf?clip_id=123'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should drop it before the fragment', () => {
+      const value = 'https://example.com/player.swf?clip_id=123/#t=30'
+      const expected = 'https://example.com/player.swf?clip_id=123#t=30'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should keep the closing slash of a value that holds a path', () => {
+      const value = 'https://example.com/player?path=albums/2024/'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave a slash in the path alone', () => {
+      const value = 'https://example.com/feed/'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+  })
+
   describe('nested url', () => {
     it('should leave the query of a url held in a value alone', () => {
       const value = 'https://example.com/frame?url=http://example.org/a?b=1'
@@ -1057,6 +1127,12 @@ describe('fixMalformedQuery', () => {
 
       expect(fixMalformedQuery(value)).toBe(value)
     })
+
+    it('should leave whitespace and slashes in a query carrying a url alone', () => {
+      const value = 'https://example.com/player/?url=https%3A//example.org/tracks/1/ visual=true'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
   })
 
   describe('well-formed urls', () => {
@@ -1091,6 +1167,15 @@ describe('fixMalformedQuery', () => {
     const start = performance.now()
 
     expect(fixMalformedQuery(value)).toBe(`https://example.com/player?a=1${'&b=2'.repeat(50_000)}`)
+    expect(performance.now() - start).toBeLessThan(1000)
+  })
+
+  it('should read 200 KB of whitespace and slashes within a second', () => {
+    const value = `https://example.com/player?a=${' '.repeat(100_000)}${'=x/'.repeat(30_000)}`
+    const start = performance.now()
+
+    fixMalformedQuery(value)
+
     expect(performance.now() - start).toBeLessThan(1000)
   })
 })
