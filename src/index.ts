@@ -72,6 +72,8 @@ export {
   fixMalformedQuery,
   fixMalformedScheme,
   getPathSegments,
+  getQueryParam,
+  getQueryParams,
   getRegistrableDomain,
   getSubdomain,
   isHostOf,
