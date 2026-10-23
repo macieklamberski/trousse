@@ -3396,7 +3396,11 @@ describe('createUrlSpellings', () => {
 
   it('should swap %3A in the query to a colon', () => {
     const value = 'https://example.com/search?q=tag%3Anews'
-    const expected = [value, 'https://example.com/search?q=tag:news']
+    const expected = [
+      value,
+      'https://example.com/search?q=tag:news',
+      'https://example.com/search?q=tag%3anews',
+    ]
 
     expect(createUrlSpellings(value)).toEqual(expected)
   })
@@ -3412,6 +3416,55 @@ describe('createUrlSpellings', () => {
     const expected = [value, 'https://example.com/caf%C3%A9/feed?q=a%2Cb']
 
     expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should lowercase uppercase percent-escape hex in the path and the query', () => {
+    const value = 'https://example.com/caf%C3%A9/feed?q=a%2Cb'
+    const expected = [value, 'https://example.com/caf%c3%a9/feed?q=a%2cb']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should give both hex cases for a url mixing them', () => {
+    const value = 'https://example.com/caf%C3%a9/feed'
+    const expected = [
+      value,
+      'https://example.com/caf%C3%A9/feed',
+      'https://example.com/caf%c3%a9/feed',
+    ]
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should include the lowercase-hex colon in the query for an uppercase-hex url', () => {
+    const value = 'https://example.com/search?q=a%3Ab'
+
+    expect(createUrlSpellings(value)).toContain('https://example.com/search?q=a%3ab')
+  })
+
+  it('should include the uppercase-hex colon in the query for a lowercase-hex url', () => {
+    const value = 'https://example.com/search?q=a%3ab'
+
+    expect(createUrlSpellings(value)).toContain('https://example.com/search?q=a%3Ab')
+  })
+
+  it('should lowercase the colon a query swap encodes in a url with an escape', () => {
+    const value = 'https://example.com/caf%C3%A9/feed?q=a:b'
+
+    expect(createUrlSpellings(value)).toContain('https://example.com/caf%c3%a9/feed?q=a%3ab')
+  })
+
+  it('should give no lowercase-hex spelling to a url without an escape', () => {
+    const value = 'https://example.com/search?q=a:b'
+    const expected = [value, 'https://example.com/search?q=a%3Ab']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should return at most 24 spellings for a mixed-case url with every kind in the query', () => {
+    const value = 'https://example.com/caf%C3%a9/feed?q=a+b:c@d'
+
+    expect(createUrlSpellings(value)).toHaveLength(24)
   })
 
   it('should combine every spelling of two kinds in the query', () => {
@@ -3514,7 +3567,7 @@ describe('createUrlSpellings', () => {
   })
 
   it('should return the url alone when nothing can be spelled another way', () => {
-    const value = 'https://example.com/feed?q=a%2Cb'
+    const value = 'https://example.com/feed?q=a,b'
 
     expect(createUrlSpellings(value)).toEqual([value])
   })
