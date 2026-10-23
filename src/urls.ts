@@ -881,9 +881,22 @@ const sameQuerySpellings: Array<[string, string]> = [
 
 const percentEscapeRegex = /%[0-9a-f]{2}/gi
 
+// A url written without an escape gets no lowercase form, so it costs no extra lookup.
+const addLowercaseHexSpellings = (url: string, spellings: Array<string>): Array<string> => {
+  if (url.search(percentEscapeRegex) === -1) {
+    return [...new Set(spellings)]
+  }
+
+  const lowercaseHexSpellings = spellings.map((spelling) => {
+    return spelling.replace(percentEscapeRegex, (hex) => hex.toLowerCase())
+  })
+
+  return [...new Set([...spellings, ...lowercaseHexSpellings])]
+}
+
 // The url, then every combination of the spellings that serve the same feed: percent-escape hex as
-// written or uppercased, and each pair of `sameQuerySpellings` written or encoded across the query.
-// The path keeps its spelling apart from the hex case.
+// written, uppercased or lowercased, and each pair of `sameQuerySpellings` written or encoded across
+// the query. The path keeps its spelling apart from the hex case.
 export const createUrlSpellings = (url: string): Array<string> => {
   const uppercaseHexUrl = url.replace(percentEscapeRegex, (hex) => hex.toUpperCase())
   let spellings = [...new Set([url, uppercaseHexUrl])]
@@ -892,7 +905,7 @@ export const createUrlSpellings = (url: string): Array<string> => {
   const queryIndex = url.indexOf('?')
 
   if (queryIndex === -1 || queryIndex > queryEnd) {
-    return spellings
+    return addLowercaseHexSpellings(url, spellings)
   }
 
   for (const [written, encoded] of sameQuerySpellings) {
@@ -912,7 +925,7 @@ export const createUrlSpellings = (url: string): Array<string> => {
     spellings = [...new Set(swapped)]
   }
 
-  return [...new Set([url, ...spellings])]
+  return addLowercaseHexSpellings(url, [url, ...spellings])
 }
 
 // Two-label public suffixes take the form generic-second-level under a country code: co.uk,
