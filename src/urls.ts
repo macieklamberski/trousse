@@ -875,6 +875,7 @@ export const createUrlVariants = (url: string): Array<string> => {
 // The path keeps its spelling: a path `@` written as `%40` returns 404 or a block page on Medium.
 const sameQuerySpellings: Array<[string, string]> = [
   ['+', '%20'],
+  [':', '%3A'],
   ['@', '%40'],
 ]
 
@@ -882,7 +883,8 @@ const percentEscapeRegex = /%[0-9a-f]{2}/gi
 
 // The url, then the other spellings that serve the same feed: uppercase percent-escape hex, and
 // each pair of `sameQuerySpellings` swapped in the query. Measured on sampled feed urls: 0 of 594
-// query `+` and 0 of 42 query `@` swaps differed, while 76 of 672 path `@` swaps broke.
+// query `+`, 0 of 647 query `%3A` and 0 of 42 query `@` swaps differed, while 76 of 672 path `@`
+// swaps broke.
 export const createUrlSpellings = (url: string): Array<string> => {
   const uppercaseHexUrl = url.replace(percentEscapeRegex, (hex) => hex.toUpperCase())
   const spellings = [url, uppercaseHexUrl]

@@ -3387,6 +3387,26 @@ describe('createUrlSpellings', () => {
     expect(createUrlSpellings(value)).toEqual(expected)
   })
 
+  it('should swap a colon in the query to %3A', () => {
+    const value = 'https://example.com/search?q=tag:news'
+    const expected = [value, 'https://example.com/search?q=tag%3Anews']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should swap %3A in the query to a colon', () => {
+    const value = 'https://example.com/search?q=tag%3Anews'
+    const expected = [value, 'https://example.com/search?q=tag:news']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should leave a colon in the path as written', () => {
+    const value = 'https://example.com/tag:news/feed'
+
+    expect(createUrlSpellings(value)).toEqual([value])
+  })
+
   it('should uppercase lowercase percent-escape hex in the path and the query', () => {
     const value = 'https://example.com/caf%c3%a9/feed?q=a%2cb'
     const expected = [value, 'https://example.com/caf%C3%A9/feed?q=a%2Cb']
