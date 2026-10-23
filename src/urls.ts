@@ -365,6 +365,60 @@ export const fixMalformedQuery = (url: string): string => {
   return `${head.slice(0, queryIndex)}?${query}${head.slice(ownEnd)}${fragment}`
 }
 
+// A space as written or escaped, and a tab or line break escaped, since a url parser drops one
+// written. `+` reads as a space in a query only. The lookbehind starts a match only at the head of
+// a run, so a long run is read once.
+const segmentEdgeSpace = '(?:\\s|%(?:09|0A|0D|20))'
+const valueEdgeSpace = '(?:\\s|\\+|%(?:09|0A|0D|20))'
+const segmentEdgeSpaceRegex = new RegExp(
+  `^${segmentEdgeSpace}+|(?<!${segmentEdgeSpace})${segmentEdgeSpace}+$`,
+  'gi',
+)
+const valueEdgeSpaceRegex = new RegExp(
+  `^${valueEdgeSpace}+|(?<!${valueEdgeSpace})${valueEdgeSpace}+$`,
+  'gi',
+)
+
+// A value of whitespace alone stays, so no segment collapses into its neighbours.
+const trimEdgeSpace = (value: string, regex: RegExp): string => {
+  return value.replace(regex, '') || value
+}
+
+const trimPairValue = (pair: string): string => {
+  const equalsIndex = pair.indexOf('=')
+
+  if (equalsIndex === -1) {
+    return pair
+  }
+
+  const value = trimEdgeSpace(pair.slice(equalsIndex + 1), valueEdgeSpaceRegex)
+
+  return `${pair.slice(0, equalsIndex + 1)}${value}`
+}
+
+// The url with whitespace stripped from both ends of every path segment and query value, as in
+// `user_id=123@N03 &tags=` or `/photos/name%20/`. Names, the host and the fragment stay as written.
+export const trimUrlValues = (url: string): string => {
+  // A `data:` or `javascript:` value carries no path or query to trim.
+  if (!httpOrSchemeRelativeRegex.test(url)) {
+    return url
+  }
+
+  const hashIndex = url.indexOf('#')
+  const head = hashIndex === -1 ? url : url.slice(0, hashIndex)
+  const fragment = hashIndex === -1 ? '' : url.slice(hashIndex)
+  const markIndex = head.indexOf('?')
+  const beforeQuery = markIndex === -1 ? head : head.slice(0, markIndex)
+  const pathIndex = beforeQuery.indexOf('/', beforeQuery.indexOf('//') + 2)
+  const authority = pathIndex === -1 ? beforeQuery : beforeQuery.slice(0, pathIndex)
+  const segments = pathIndex === -1 ? [] : beforeQuery.slice(pathIndex).split('/')
+  const path = segments.map((segment) => trimEdgeSpace(segment, segmentEdgeSpaceRegex)).join('/')
+  const pairs = markIndex === -1 ? [] : head.slice(markIndex + 1).split('&')
+  const query = markIndex === -1 ? '' : `?${pairs.map(trimPairValue).join('&')}`
+
+  return `${authority}${path}${query}${fragment}`
+}
+
 // Feed pseudo-schemes, replaced as in `feed://host` or unwrapped as in `feed:https://host`.
 // `feed:` is provisional in the IANA registry, the others are unregistered.
 // See: https://www.iana.org/assignments/uri-schemes/prov/feed.

@@ -21,6 +21,7 @@ import {
   resolveFeedScheme,
   resolveUrl,
   stripWww,
+  trimUrlValues,
   upgradeScheme,
 } from './urls.js'
 
@@ -1249,6 +1250,121 @@ describe('fixMalformedQuery', () => {
     const start = performance.now()
 
     fixMalformedQuery(value)
+
+    expect(performance.now() - start).toBeLessThan(1000)
+  })
+})
+
+describe('trimUrlValues', () => {
+  it('should trim a space written before the next pair', () => {
+    const value = 'https://example.com/slideshow?user_id=123@N03 &tags='
+    const expected = 'https://example.com/slideshow?user_id=123@N03&tags='
+
+    expect(trimUrlValues(value)).toBe(expected)
+  })
+
+  it('should trim an escaped space at the end of a value', () => {
+    const value = 'https://example.com/playlist?list=PL123%20'
+    const expected = 'https://example.com/playlist?list=PL123'
+
+    expect(trimUrlValues(value)).toBe(expected)
+  })
+
+  it('should trim an escaped space at the start of a value', () => {
+    const value = 'https://example.com/watch?v=%20abc123'
+    const expected = 'https://example.com/watch?v=abc123'
+
+    expect(trimUrlValues(value)).toBe(expected)
+  })
+
+  it('should trim a plus at the end of a value', () => {
+    const value = 'https://example.com/watch?v=abc123+&t=10'
+    const expected = 'https://example.com/watch?v=abc123&t=10'
+
+    expect(trimUrlValues(value)).toBe(expected)
+  })
+
+  it('should trim an escaped tab and line break at the end of a value', () => {
+    const value = 'https://example.com/watch?v=abc123%09%0A'
+    const expected = 'https://example.com/watch?v=abc123'
+
+    expect(trimUrlValues(value)).toBe(expected)
+  })
+
+  it('should trim an escaped space at the end of a path segment', () => {
+    const value = 'https://example.com/photos/name%20/'
+    const expected = 'https://example.com/photos/name/'
+
+    expect(trimUrlValues(value)).toBe(expected)
+  })
+
+  it('should trim a space written at the start of a path segment', () => {
+    const value = 'https://example.com/photos/ name/123'
+    const expected = 'https://example.com/photos/name/123'
+
+    expect(trimUrlValues(value)).toBe(expected)
+  })
+
+  it('should keep a plus at the end of a path segment', () => {
+    const value = 'https://example.com/tags/c++/'
+
+    expect(trimUrlValues(value)).toBe(value)
+  })
+
+  it('should keep whitespace inside a value', () => {
+    const value = 'https://example.com/search%20page?q=two%20words'
+
+    expect(trimUrlValues(value)).toBe(value)
+  })
+
+  it('should keep a value of whitespace alone', () => {
+    const value = 'https://example.com/a/%20/b?q=%20'
+
+    expect(trimUrlValues(value)).toBe(value)
+  })
+
+  it('should keep a name followed by whitespace', () => {
+    const value = 'https://example.com/watch?v%20=abc123'
+
+    expect(trimUrlValues(value)).toBe(value)
+  })
+
+  it('should keep a pair with no value', () => {
+    const value = 'https://example.com/watch?autoplay&v=abc123'
+
+    expect(trimUrlValues(value)).toBe(value)
+  })
+
+  it('should keep the fragment as written', () => {
+    const value = 'https://example.com/watch?v=abc123#t=10%20'
+
+    expect(trimUrlValues(value)).toBe(value)
+  })
+
+  it('should trim a scheme-relative url', () => {
+    const value = '//example.com/embed/abc123%20?rel=0'
+    const expected = '//example.com/embed/abc123?rel=0'
+
+    expect(trimUrlValues(value)).toBe(expected)
+  })
+
+  it('should keep a url with no path', () => {
+    const value = 'https://example.com'
+
+    expect(trimUrlValues(value)).toBe(value)
+  })
+
+  it('should keep a value that is not an http url', () => {
+    const value = 'javascript:alert(1)?a=b%20'
+
+    expect(trimUrlValues(value)).toBe(value)
+  })
+
+  it('should read a long run of whitespace inside a value in linear time', () => {
+    const value = `https://example.com/a?v=a${' '.repeat(300000)}b`
+    const start = performance.now()
+
+    trimUrlValues(value)
 
     expect(performance.now() - start).toBeLessThan(1000)
   })
