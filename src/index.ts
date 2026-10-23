@@ -66,8 +66,11 @@ export type {
 export {
   addMissingProtocol,
   addMissingScheme,
+  composeQuery,
+  createUrlSpellings,
   createUrlVariants,
   decodeSegment,
+  encodePathSegment,
   fixMalformedProtocol,
   fixMalformedQuery,
   fixMalformedScheme,

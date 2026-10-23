@@ -2,8 +2,11 @@ import { describe, expect, it } from 'bun:test'
 import type { NormalizeOptions } from './types.js'
 import {
   addMissingScheme,
+  composeQuery,
+  createUrlSpellings,
   createUrlVariants,
   decodeSegment,
+  encodePathSegment,
   fixMalformedQuery,
   fixMalformedScheme,
   getPathSegments,
@@ -359,6 +362,55 @@ describe('decodeSegment', () => {
   })
 })
 
+describe('encodePathSegment', () => {
+  it('should escape the characters that would open a segment, a query or a fragment', () => {
+    const value = '123/../x?autoplay=1#t'
+    const expected = '123%2F..%2Fx%3Fautoplay=1%23t'
+
+    expect(encodePathSegment(value)).toBe(expected)
+  })
+
+  it('should escape whitespace', () => {
+    const value = 'off\tnow later'
+    const expected = 'off%09now%20later'
+
+    expect(encodePathSegment(value)).toBe(expected)
+  })
+
+  it('should escape a backslash, which a url parser reads as a slash', () => {
+    const value = '..\\..\\x'
+    const expected = '..%5C..%5Cx'
+
+    expect(encodePathSegment(value)).toBe(expected)
+  })
+
+  it('should leave the characters a path segment may hold as written', () => {
+    const value = '35408001@N04:urn=a&b'
+
+    expect(encodePathSegment(value)).toBe(value)
+  })
+
+  it('should leave an already percent-encoded value as written', () => {
+    const value = 'caf%C3%A9'
+
+    expect(encodePathSegment(value)).toBe(value)
+  })
+
+  it('should leave a non-ASCII value as written', () => {
+    const value = 'ニュース'
+
+    expect(encodePathSegment(value)).toBe(value)
+  })
+
+  it('should leave a whole value of two dots as written', () => {
+    expect(encodePathSegment('..')).toBe('..')
+  })
+
+  it('should leave a whole value of one dot as written', () => {
+    expect(encodePathSegment('.')).toBe('.')
+  })
+})
+
 describe('getQueryParam', () => {
   it('should read a parameter by its name', () => {
     const value = new URLSearchParams('v=dQw4w9WgXcQ')
@@ -428,6 +480,72 @@ describe('getQueryParams', () => {
 
   it('should return an empty array for undefined params', () => {
     expect(getQueryParams(undefined, 'q')).toEqual([])
+  })
+})
+
+describe('composeQuery', () => {
+  it('should prefix a single parameter with a question mark', () => {
+    const value = { start: '90' }
+    const expected = '?start=90'
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should join several parameters in the order given', () => {
+    const value = { start: '90', list: 'PLabc', index: '4' }
+    const expected = '?start=90&list=PLabc&index=4'
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should keep a slash, an at sign and a non-ASCII character as written', () => {
+    const value = { clipt: 'a/b', user_id: '17367418@N03', title: 'zürich' }
+    const expected = '?clipt=a/b&user_id=17367418@N03&title=zürich'
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should escape a percent sign in a value, so a decoded escape is not decoded twice', () => {
+    const value = { media_url: 'https://example.com/a%2Cb.mp3' }
+    const expected = '?media_url=https://example.com/a%252Cb.mp3'
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should escape a plus sign in a value, so it is not read back as a space', () => {
+    const value = { tags: 'c++' }
+    const expected = '?tags=c%2B%2B'
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should escape an ampersand, a hash and whitespace in a value', () => {
+    const value = { vid: 'a&b=1#c d\te' }
+    const expected = '?vid=a%26b=1%23c%20d%09e'
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should escape an ampersand, a hash, a percent sign, a plus sign and whitespace in a name', () => {
+    const value = { 'a&b#c d%e+f': '1' }
+    const expected = '?a%26b%23c%20d%25e%2Bf=1'
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should state a parameter whose value is empty', () => {
+    const value = { theme: '' }
+    const expected = '?theme='
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should return an empty string for an empty record', () => {
+    expect(composeQuery({})).toBe('')
+  })
+
+  it('should return an empty string when nothing is passed', () => {
+    expect(composeQuery()).toBe('')
   })
 })
 
@@ -3237,6 +3355,96 @@ describe('isIpAddress', () => {
 
   it('should reject a single-label host', () => {
     expect(isIpAddress('localhost')).toBe(false)
+  })
+})
+
+describe('createUrlSpellings', () => {
+  it('should swap every plus sign in the query to %20 at once', () => {
+    const value = 'https://example.com/search?q=a+b+c&tag=x+y'
+    const expected = [value, 'https://example.com/search?q=a%20b%20c&tag=x%20y']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should swap every %20 in the query to a plus sign at once', () => {
+    const value = 'https://example.com/search?q=a%20b%20c'
+    const expected = [value, 'https://example.com/search?q=a+b+c']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should swap an at sign in the query to %40', () => {
+    const value = 'https://example.com/feed?user=alice@example.org'
+    const expected = [value, 'https://example.com/feed?user=alice%40example.org']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should swap %40 in the query to an at sign', () => {
+    const value = 'https://example.com/feed?user=alice%40example.org'
+    const expected = [value, 'https://example.com/feed?user=alice@example.org']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should uppercase lowercase percent-escape hex in the path and the query', () => {
+    const value = 'https://example.com/caf%c3%a9/feed?q=a%2cb'
+    const expected = [value, 'https://example.com/caf%C3%A9/feed?q=a%2Cb']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should swap each kind on its own, not in combination', () => {
+    const value = 'https://example.com/feed?q=a+b&user=alice@example.org'
+    const expected = [
+      value,
+      'https://example.com/feed?q=a%20b&user=alice@example.org',
+      'https://example.com/feed?q=a+b&user=alice%40example.org',
+    ]
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should give both directions when the query holds both spellings', () => {
+    const value = 'https://example.com/search?q=a+b%20c'
+    const expected = [
+      value,
+      'https://example.com/search?q=a%20b%20c',
+      'https://example.com/search?q=a+b+c',
+    ]
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should leave an at sign in the path as written', () => {
+    const value = 'https://example.com/@alice/feed'
+
+    expect(createUrlSpellings(value)).toEqual([value])
+  })
+
+  it('should leave a plus sign and %20 in the path as written', () => {
+    const value = 'https://example.com/a+b/c%20d/feed'
+
+    expect(createUrlSpellings(value)).toEqual([value])
+  })
+
+  it('should leave the fragment as written', () => {
+    const value = 'https://example.com/feed?q=a+b#c+d'
+    const expected = [value, 'https://example.com/feed?q=a%20b#c+d']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should leave a question mark in the fragment as written', () => {
+    const value = 'https://example.com/feed#a?b+c'
+
+    expect(createUrlSpellings(value)).toEqual([value])
+  })
+
+  it('should return the url alone when nothing can be spelled another way', () => {
+    const value = 'https://example.com/feed?q=a%2Cb'
+
+    expect(createUrlSpellings(value)).toEqual([value])
   })
 })
 
