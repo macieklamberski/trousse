@@ -881,31 +881,38 @@ const sameQuerySpellings: Array<[string, string]> = [
 
 const percentEscapeRegex = /%[0-9a-f]{2}/gi
 
-// The url, then the other spellings that serve the same feed: uppercase percent-escape hex, and
-// each pair of `sameQuerySpellings` swapped in the query. Measured on sampled feed urls: 0 of 594
-// query `+`, 0 of 647 query `%3A` and 0 of 42 query `@` swaps differed, while 76 of 672 path `@`
-// swaps broke.
+// The url, then every combination of the spellings that serve the same feed: percent-escape hex as
+// written or uppercased, and each pair of `sameQuerySpellings` written or encoded across the query.
+// The path keeps its spelling apart from the hex case.
 export const createUrlSpellings = (url: string): Array<string> => {
   const uppercaseHexUrl = url.replace(percentEscapeRegex, (hex) => hex.toUpperCase())
-  const spellings = [url, uppercaseHexUrl]
+  let spellings = [...new Set([url, uppercaseHexUrl])]
   const hashIndex = url.indexOf('#')
   const queryEnd = hashIndex === -1 ? url.length : hashIndex
   const queryIndex = url.indexOf('?')
 
   if (queryIndex === -1 || queryIndex > queryEnd) {
-    return [...new Set(spellings)]
+    return spellings
   }
-
-  const head = url.slice(0, queryIndex)
-  const query = url.slice(queryIndex, queryEnd)
-  const fragment = url.slice(queryEnd)
 
   for (const [written, encoded] of sameQuerySpellings) {
-    spellings.push(`${head}${query.replaceAll(written, encoded)}${fragment}`)
-    spellings.push(`${head}${query.replaceAll(encoded, written)}${fragment}`)
+    const swapped = spellings.flatMap((spelling) => {
+      const fragmentIndex = spelling.indexOf('#')
+      const spellingQueryEnd = fragmentIndex === -1 ? spelling.length : fragmentIndex
+      const head = spelling.slice(0, queryIndex)
+      const query = spelling.slice(queryIndex, spellingQueryEnd)
+      const fragment = spelling.slice(spellingQueryEnd)
+
+      return [
+        `${head}${query.replaceAll(encoded, written)}${fragment}`,
+        `${head}${query.replaceAll(written, encoded)}${fragment}`,
+      ]
+    })
+
+    spellings = [...new Set(swapped)]
   }
 
-  return [...new Set(spellings)]
+  return [...new Set([url, ...spellings])]
 }
 
 // Two-label public suffixes take the form generic-second-level under a country code: co.uk,

@@ -3414,12 +3414,49 @@ describe('createUrlSpellings', () => {
     expect(createUrlSpellings(value)).toEqual(expected)
   })
 
-  it('should swap each kind on its own, not in combination', () => {
+  it('should combine every spelling of two kinds in the query', () => {
     const value = 'https://example.com/feed?q=a+b&user=alice@example.org'
     const expected = [
       value,
-      'https://example.com/feed?q=a%20b&user=alice@example.org',
       'https://example.com/feed?q=a+b&user=alice%40example.org',
+      'https://example.com/feed?q=a%20b&user=alice@example.org',
+      'https://example.com/feed?q=a%20b&user=alice%40example.org',
+    ]
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should combine every spelling of three kinds in the query', () => {
+    const value = 'https://example.com/feed?q=a+b:c@d'
+    const expected = [
+      value,
+      'https://example.com/feed?q=a+b:c%40d',
+      'https://example.com/feed?q=a+b%3Ac@d',
+      'https://example.com/feed?q=a+b%3Ac%40d',
+      'https://example.com/feed?q=a%20b:c@d',
+      'https://example.com/feed?q=a%20b:c%40d',
+      'https://example.com/feed?q=a%20b%3Ac@d',
+      'https://example.com/feed?q=a%20b%3Ac%40d',
+    ]
+
+    expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should include the encoded colons with plus signs for a query written with colons and %20', () => {
+    const value = 'https://example.com/search?q=by:spyed%20sort:time%20meta:all'
+
+    expect(createUrlSpellings(value)).toContain(
+      'https://example.com/search?q=by%3Aspyed+sort%3Atime+meta%3Aall',
+    )
+  })
+
+  it('should combine the hex case with the query spellings and leave the rest of the path', () => {
+    const value = 'https://example.com/caf%c3%a9/a+b:c@d/feed?q=a+b'
+    const expected = [
+      value,
+      'https://example.com/caf%c3%a9/a+b:c@d/feed?q=a%20b',
+      'https://example.com/caf%C3%A9/a+b:c@d/feed?q=a+b',
+      'https://example.com/caf%C3%A9/a+b:c@d/feed?q=a%20b',
     ]
 
     expect(createUrlSpellings(value)).toEqual(expected)
@@ -3429,11 +3466,26 @@ describe('createUrlSpellings', () => {
     const value = 'https://example.com/search?q=a+b%20c'
     const expected = [
       value,
-      'https://example.com/search?q=a%20b%20c',
       'https://example.com/search?q=a+b+c',
+      'https://example.com/search?q=a%20b%20c',
     ]
 
     expect(createUrlSpellings(value)).toEqual(expected)
+  })
+
+  it('should return one spelling per combination however often each kind repeats', () => {
+    const value = `https://example.com/search?q=${'a+b:'.repeat(1000)}`
+
+    expect(createUrlSpellings(value)).toHaveLength(4)
+  })
+
+  it('should finish a 200 KB query of plus signs and colons within a second', () => {
+    const value = `https://example.com/search?q=${'+:'.repeat(100_000)}`
+    const start = performance.now()
+
+    createUrlSpellings(value)
+
+    expect(performance.now() - start).toBeLessThan(1000)
   })
 
   it('should leave an at sign in the path as written', () => {
