@@ -87,6 +87,7 @@ export {
   resolveFeedScheme,
   resolveUrl,
   stripWww,
+  trimUrlValues,
   upgradeProtocol,
   upgradeScheme,
 } from './urls.js'
