@@ -864,6 +864,27 @@ describe('fixMalformedScheme', () => {
     expect(fixMalformedScheme(value)).toBe(expected)
   })
 
+  const encodedSpaceCases: Array<[string, string]> = [
+    ['http://%20www.example.com/coop', 'http://www.example.com/coop'],
+    ['http://%C2%A0example.com/', 'http://example.com/'],
+    ['http://%20https://itunes.apple.com/app/id1230', 'https://itunes.apple.com/app/id1230'],
+    ['http://%20https//www.example.com/store/', 'https://www.example.com/store/'],
+    ['http://%20%20example.com', 'http://example.com'],
+  ]
+
+  it.each(encodedSpaceCases)(
+    'should drop a percent-encoded space after the scheme (%s)',
+    (value, expected) => {
+      expect(fixMalformedScheme(value)).toBe(expected)
+    },
+  )
+
+  it('should keep a percent-encoded space later in the url', () => {
+    const value = 'https://example.com/%20page?q=a%20b'
+
+    expect(fixMalformedScheme(value)).toBe(value)
+  })
+
   const wrongSeparatorCases: Array<[string, string]> = [
     ['http=//example.com', 'http://example.com'],
     ['http.//example.com', 'http://example.com'],
