@@ -137,6 +137,65 @@ export const decodeSegment = (segment: string | undefined): string | undefined =
   } catch {}
 }
 
+const escapeRunRegex = /(?:%[0-9A-Fa-f]{2})+/g
+
+// The byte count of the UTF-8 sequence a lead byte starts, or 0 for a byte no sequence starts with.
+// See: https://www.rfc-editor.org/rfc/rfc3629#section-4.
+const getSequenceLength = (byte: number): number => {
+  if (byte < 0x80) {
+    return 1
+  }
+
+  if (byte >= 0xc2 && byte < 0xe0) {
+    return 2
+  }
+
+  if (byte >= 0xe0 && byte < 0xf0) {
+    return 3
+  }
+
+  if (byte >= 0xf0 && byte < 0xf5) {
+    return 4
+  }
+
+  return 0
+}
+
+const decodeEscapeRun = (run: string): string => {
+  try {
+    return decodeURIComponent(run)
+  } catch {}
+
+  const count = run.length / 3
+  let decoded = ''
+  let index = 0
+
+  while (index < count) {
+    const start = index * 3
+    const length = getSequenceLength(Number.parseInt(run.slice(start + 1, start + 3), 16))
+
+    if (length && index + length <= count) {
+      try {
+        decoded += decodeURIComponent(run.slice(start, start + length * 3))
+        index += length
+        continue
+      } catch {}
+    }
+
+    decoded += run.slice(start, start + 3)
+    index += 1
+  }
+
+  return decoded
+}
+
+// Decodes every escape that forms valid UTF-8 and keeps the rest as written, where
+// `decodeURIComponent` throws and `URLSearchParams` writes U+FFFD. A `%` without two hex digits, or
+// a byte of a legacy charset such as `%E9` for é in Latin-1, stays, so the url keeps its bytes.
+export const decodePercent = (value: string): string => {
+  return value.replace(escapeRunRegex, decodeEscapeRun)
+}
+
 const pathSegmentEscapeRegex = /[/?#\\\s]/g
 
 // A decoded value written into a url path stays one segment. Only the characters that would open

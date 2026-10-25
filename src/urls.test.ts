@@ -5,6 +5,7 @@ import {
   composeQuery,
   createUrlSpellings,
   createUrlVariants,
+  decodePercent,
   decodeSegment,
   encodePathSegment,
   fixMalformedQuery,
@@ -359,6 +360,60 @@ describe('decodeSegment', () => {
 
   it('should return undefined for undefined', () => {
     expect(decodeSegment(undefined)).toBeUndefined()
+  })
+})
+
+describe('decodePercent', () => {
+  it('should decode a percent-encoded url', () => {
+    const value = 'https%3A%2F%2Fexample.com%2Fcaf%C3%A9%3Fq%3D1'
+    const expected = 'https://example.com/café?q=1'
+
+    expect(decodePercent(value)).toBe(expected)
+  })
+
+  it('should keep a percent sign without two hex digits', () => {
+    const value = 'https://www.sweetwater.com/store/search.php?s=ultimate%ears'
+
+    expect(decodePercent(value)).toBe(value)
+  })
+
+  it('should keep the bytes of a Windows-1251 path', () => {
+    const value = 'http%3A%2F%2Fru.wikipedia.org%2Fwiki%2F%C0%EC%E2%F0%EE%F1%E8%E9'
+    const expected = 'http://ru.wikipedia.org/wiki/%C0%EC%E2%F0%EE%F1%E8%E9'
+
+    expect(decodePercent(value)).toBe(expected)
+  })
+
+  it('should decode the valid sequences around an invalid one', () => {
+    const value = 'caf%C3%A9%2F%E0%A4%2Fna%C3%AFve'
+    const expected = 'café/%E0%A4/naïve'
+
+    expect(decodePercent(value)).toBe(expected)
+  })
+
+  it('should decode a four-byte sequence beside a byte no sequence starts with', () => {
+    expect(decodePercent('%F0%9F%98%80%FF')).toBe('😀%FF')
+  })
+
+  it('should keep a sequence cut short at the end', () => {
+    expect(decodePercent('https://example.com/%E2%80')).toBe('https://example.com/%E2%80')
+  })
+
+  it('should keep an overlong encoding and a surrogate', () => {
+    expect(decodePercent('%C0%AF')).toBe('%C0%AF')
+    expect(decodePercent('%ED%A0%80')).toBe('%ED%A0%80')
+  })
+
+  it('should decode an escaped percent sign once', () => {
+    expect(decodePercent('100%25off')).toBe('100%off')
+  })
+
+  it('should keep a plus sign', () => {
+    expect(decodePercent('a+b%20c')).toBe('a+b c')
+  })
+
+  it('should return a value without escapes unchanged', () => {
+    expect(decodePercent('photography')).toBe('photography')
   })
 })
 
