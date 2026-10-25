@@ -305,9 +305,13 @@ const validUrlRegex = /^https?:\/\/(?:www\.|[a-vx-z0-9])/i
 // hostname. A run of dots alone is a label boundary, so the host `tp.media` is not `tp://media`.
 const schemeSeparator = String.raw`\.*[:\s=\\/][:\s=.\\/]*`
 
+// A space a CMS left after the scheme also comes percent-encoded, as `%20` or `%C2%A0`. No host
+// starts with one, so `http://%20example.com` is the space form of `http:// example.com`.
+const separatorChar = String.raw`(?:[:\s=.\\/]|%20|%c2%a0)`
+
 // After the leading scheme a lone `/` is a path separator, not a typo, so the relative path
 // `/hp/support` is not `hp://support`. That separator needs a colon or at least two characters.
-const leadingSchemeSeparator = String.raw`\.*(?::[:\s=.\\/]*|[\s=\\/][:\s=.\\/]+)`
+const leadingSchemeSeparator = String.raw`\.*(?::${separatorChar}*|[\s=\\/]${separatorChar}+)`
 
 // Doubled/nested scheme pattern - captures the INNER scheme which takes precedence.
 // Matches: http:http://, https:https://, http://https//, htp://ttps://, etc. An inner match
