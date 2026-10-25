@@ -69,6 +69,7 @@ export {
   composeQuery,
   createUrlSpellings,
   createUrlVariants,
+  decodePercent,
   decodeSegment,
   encodePathSegment,
   fixMalformedProtocol,
