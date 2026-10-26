@@ -280,6 +280,12 @@ describe('includesAnyOf', () => {
     expect(includesAnyOf(value, patterns)).toBe(true)
   })
 
+  it('should accept a single pattern', () => {
+    const value = 'application/rss+xml; charset=utf-8'
+
+    expect(includesAnyOf(value, 'rss+xml')).toBe(true)
+  })
+
   it('should return true when value includes pattern with case-insensitive match', () => {
     const value = 'APPLICATION/RSS+XML'
     const patterns = ['application/rss+xml']
@@ -432,6 +438,16 @@ describe('startsWithAnyOf', () => {
     expect(startsWithAnyOf(value, patterns)).toBe(true)
   })
 
+  it('should accept a single pattern', () => {
+    const value = 'feed.xml'
+
+    expect(startsWithAnyOf(value, 'feed')).toBe(true)
+  })
+
+  it('should return false for an undefined value', () => {
+    expect(startsWithAnyOf(undefined, ['feed'])).toBe(false)
+  })
+
   it('should return false when value does not start with any pattern', () => {
     const value = 'index.html'
     const patterns = ['feed', 'rss']
@@ -524,6 +540,16 @@ describe('endsWithAnyOf', () => {
     const patterns = ['.xml', '.rss']
 
     expect(endsWithAnyOf(value, patterns)).toBe(true)
+  })
+
+  it('should accept a single pattern', () => {
+    const value = '/blog/feed.xml'
+
+    expect(endsWithAnyOf(value, '.xml')).toBe(true)
+  })
+
+  it('should return false for an undefined value', () => {
+    expect(endsWithAnyOf(undefined, ['.xml'])).toBe(false)
   })
 
   it('should return false when value does not end with any pattern', () => {

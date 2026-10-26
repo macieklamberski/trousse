@@ -1,10 +1,15 @@
 import { decodeHTMLStrict } from 'entities'
+import { isNullish } from './is.js'
 import { endsWithAnyOf, isAnyOf } from './matching.js'
-import type { NormalizeOptions, RegistrableDomainOptions } from './types.js'
+import type { NormalizeOptions, Nullish, RegistrableDomainOptions } from './types.js'
 
 const httpSchemes = ['http:', 'https:']
 
-export const parseUrl = (value: string | URL, base?: string | URL): URL | undefined => {
+export const parseUrl = (value: Nullish<string | URL>, base?: string | URL): URL | undefined => {
+  if (isNullish(value)) {
+    return
+  }
+
   if (value instanceof URL && base === undefined) {
     return value
   }
@@ -241,12 +246,12 @@ const queryPartEscapeRegex = /[&#%+\s]/g
 // Name and value pairs joined into a query ready to append, or an empty string for none. Query
 // readers hand back a decoded value, so a `%` or `+` it holds is escaped again, along with what
 // would end a pair or the query and whitespace. An `@` stays as written.
-export const composeQuery = (params?: Record<string, string>): string => {
+export const composeQuery = (params?: Record<string, string | number>): string => {
   const escapePart = (part: string) => {
     return part.replace(queryPartEscapeRegex, (character) => encodeURIComponent(character))
   }
   const pairs = Object.entries(params ?? {}).map(([name, value]) => {
-    return `${escapePart(name)}=${escapePart(value)}`
+    return `${escapePart(name)}=${escapePart(String(value))}`
   })
 
   return pairs.length > 0 ? `?${pairs.join('&')}` : ''

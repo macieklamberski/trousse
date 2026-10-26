@@ -21,6 +21,10 @@ const testRegexAnyCase = (regex: RegExp, lowerValue: string, value: string): boo
   return testRegex(regex, lowerValue) || (lowerValue !== value && testRegex(regex, value))
 }
 
+const toPatternList = (patterns: Pattern | ReadonlyArray<Pattern>): ReadonlyArray<Pattern> => {
+  return typeof patterns === 'string' || patterns instanceof RegExp ? [patterns] : patterns
+}
+
 // Escapes a literal for a regex source string, valid inside and outside a character class under
 // every flag. RegExp.escape also escapes a leading letter or digit and whitespace, and Node 18 and
 // 20 lack it. See: https://tc39.es/ecma262/#sec-regexp.escape.
@@ -48,9 +52,8 @@ export const isAnyOf = (
 
   const parsedValue = parser ? parser(value) : value.toLowerCase().trim()
   const originalValue = parser ? parsedValue : value.trim()
-  const list = typeof patterns === 'string' || patterns instanceof RegExp ? [patterns] : patterns
 
-  return list.some((pattern) => {
+  return toPatternList(patterns).some((pattern) => {
     if (pattern instanceof RegExp) {
       return testRegexAnyCase(pattern, parsedValue, originalValue)
     }
@@ -78,7 +81,7 @@ export const getAnyOf = <T extends string>(
 
 export const includesAnyOf = (
   value: string | undefined,
-  patterns: ReadonlyArray<Pattern>,
+  patterns: Pattern | ReadonlyArray<Pattern>,
   parser?: (value: string) => string,
 ): boolean => {
   if (isNullish(value)) {
@@ -88,7 +91,7 @@ export const includesAnyOf = (
   const parsedValue = parser ? parser(value) : value.toLowerCase()
   const originalValue = parser ? parsedValue : value
 
-  return patterns.some((pattern) => {
+  return toPatternList(patterns).some((pattern) => {
     if (pattern instanceof RegExp) {
       return testRegexAnyCase(pattern, parsedValue, originalValue)
     }
@@ -97,10 +100,17 @@ export const includesAnyOf = (
   })
 }
 
-export const startsWithAnyOf = (value: string, patterns: ReadonlyArray<Pattern>): boolean => {
+export const startsWithAnyOf = (
+  value: string | undefined,
+  patterns: Pattern | ReadonlyArray<Pattern>,
+): boolean => {
+  if (isNullish(value)) {
+    return false
+  }
+
   const lowerValue = value.toLowerCase()
 
-  return patterns.some((pattern) => {
+  return toPatternList(patterns).some((pattern) => {
     if (pattern instanceof RegExp) {
       return testRegexAnyCase(pattern, lowerValue, value)
     }
@@ -109,10 +119,17 @@ export const startsWithAnyOf = (value: string, patterns: ReadonlyArray<Pattern>)
   })
 }
 
-export const endsWithAnyOf = (value: string, patterns: ReadonlyArray<Pattern>): boolean => {
+export const endsWithAnyOf = (
+  value: string | undefined,
+  patterns: Pattern | ReadonlyArray<Pattern>,
+): boolean => {
+  if (isNullish(value)) {
+    return false
+  }
+
   const lowerValue = value.toLowerCase()
 
-  return patterns.some((pattern) => {
+  return toPatternList(patterns).some((pattern) => {
     if (pattern instanceof RegExp) {
       return testRegexAnyCase(pattern, lowerValue, value)
     }
