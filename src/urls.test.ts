@@ -50,6 +50,14 @@ describe('parseUrl', () => {
     expect(parseUrl('https://example.com/path')?.hostname).toBe('example.com')
   })
 
+  it('should return undefined for an undefined value', () => {
+    expect(parseUrl(undefined)).toBeUndefined()
+  })
+
+  it('should return undefined for a null value even with a base', () => {
+    expect(parseUrl(null, 'https://example.com/')).toBeUndefined()
+  })
+
   it('should return a URL instance as-is', () => {
     const value = new URL('https://example.com/path')
 
@@ -542,6 +550,13 @@ describe('composeQuery', () => {
   it('should prefix a single parameter with a question mark', () => {
     const value = { start: '90' }
     const expected = '?start=90'
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should write a number value as its digits', () => {
+    const value = { width: 640, height: 360 }
+    const expected = '?width=640&height=360'
 
     expect(composeQuery(value)).toBe(expected)
   })
