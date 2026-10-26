@@ -28,7 +28,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "biome/use-any-of.grit"
   ],
   "engines": {
     "node": ">=18"
