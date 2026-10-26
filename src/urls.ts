@@ -14,15 +14,7 @@ export const parseUrl = (value: Nullish<string | URL>, base?: string | URL): URL
     return value
   }
 
-  // URL.parse returns null for invalid input, which skips the cost of a thrown error. Node 18 and
-  // 20 lack it, so the constructor stays as the fallback.
-  if (URL.parse) {
-    return URL.parse(value, base) ?? undefined
-  }
-
-  try {
-    return new URL(value, base)
-  } catch {}
+  return URL.parse(value, base) ?? undefined
 }
 
 export const getPathSegments = (value: string | URL): Array<string> => {
