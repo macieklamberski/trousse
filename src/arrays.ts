@@ -10,5 +10,9 @@ export const omitEmpty = <T>(array: Array<T | null | undefined>): Array<T> | und
     }
   }
 
-  return result.length ? result : undefined
+  if (!result.length) {
+    return
+  }
+
+  return result
 }
