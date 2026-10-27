@@ -37,7 +37,7 @@ export const isPlainObject = (value: unknown): value is Record<string, unknown> 
 const whitespaceOnlyRegex = /^\p{White_Space}*$/u
 
 export const isNonEmptyString = (value: unknown): value is string => {
-  if (!isString(value) || value === '') {
+  if (!isString(value) || !value) {
     return false
   }
 

@@ -399,7 +399,7 @@ const slashClosedValueRegex = /(=[^&/=]+)\/+(?=&|$)/g
 const isGlueTail = (head: string, glueIndex: number, pathEnd: number, ownEnd: number): boolean => {
   const tail = head.slice(glueIndex + 1, pathEnd).split('&')[0] ?? ''
 
-  if (tail === '' || tail.includes('=')) {
+  if (!tail || tail.includes('=')) {
     return true
   }
 
@@ -886,7 +886,7 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
     }
 
     // A bare `?` reads as an empty search, and writing an empty search drops it.
-    if (options.stripEmptyQuery && parsed.search === '') {
+    if (options.stripEmptyQuery && !parsed.search) {
       parsed.search = ''
     }
 
