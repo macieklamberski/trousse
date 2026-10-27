@@ -327,7 +327,7 @@ describe('getSubdomain', () => {
   })
 
   it('should lowercase the hostname of a URL with another scheme', () => {
-    expect(getSubdomain('javascript://FOO.EXBLOG.JP/', 'exblog.jp')).toBe('foo')
+    expect(getSubdomain('javascript://BLOG.EXBLOG.JP/', 'exblog.jp')).toBe('blog')
   })
 
   it('should return undefined for the bare domain', () => {
