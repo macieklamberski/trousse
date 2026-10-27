@@ -40,6 +40,7 @@ export {
   getAnyOf,
   includesAnyOf,
   isAnyOf,
+  matchGroups,
   startsWithAnyOf,
 } from './matching.js'
 export {

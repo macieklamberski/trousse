@@ -6,8 +6,13 @@ import {
   getAnyOf,
   includesAnyOf,
   isAnyOf,
+  matchGroups,
   startsWithAnyOf,
 } from './matching.js'
+
+const communityRegex = /^\/community\/(?<community>[a-z0-9_]+)(?:\/library\/(?<libraryId>\d+))?$/i
+const unnamedCommunityRegex = /^\/community\/([a-z]+)$/
+const globalIdRegex = /id=(?<id>\d+)/g
 
 const normalizeMimeType = (type: string): string => {
   return type.split(';')[0].trim().toLowerCase()
@@ -817,5 +822,56 @@ describe('escapeRegex', () => {
 
   it('should return an empty string for an empty value', () => {
     expect(escapeRegex('')).toBe('')
+  })
+})
+
+describe('matchGroups', () => {
+  it('should return the named groups of a match', () => {
+    const value = '/community/aurora/library/42'
+    const expected = {
+      community: 'aurora',
+      libraryId: '42',
+    }
+
+    expect(matchGroups<'community' | 'libraryId'>(value, communityRegex)).toEqual(expected)
+  })
+
+  it('should read a group the match skipped as undefined', () => {
+    const value = '/community/aurora'
+    const result = matchGroups<'community' | 'libraryId'>(value, communityRegex)
+
+    expect(result.libraryId).toBeUndefined()
+  })
+
+  it('should return no groups when the regex does not match', () => {
+    const value = '/library/42'
+
+    expect(matchGroups(value, communityRegex)).toEqual({})
+  })
+
+  it('should return no groups for a missing value', () => {
+    expect(matchGroups(undefined, communityRegex)).toEqual({})
+  })
+
+  it('should return no groups for a regex without named groups', () => {
+    const value = '/community/aurora'
+    expect(matchGroups(value, unnamedCommunityRegex)).toEqual({})
+  })
+
+  it('should match a global regex from the start on every call', () => {
+    const value = 'id=7'
+    const expected = { id: '7' }
+
+    matchGroups(value, globalIdRegex)
+
+    expect(matchGroups(value, globalIdRegex)).toEqual(expected)
+  })
+
+  it('should reject a group name the type argument leaves out', () => {
+    const value = '/community/aurora'
+    // @ts-expect-error The type argument names no `librayId` group.
+    const { librayId } = matchGroups<'community' | 'libraryId'>(value, communityRegex)
+
+    expect(librayId).toBeUndefined()
   })
 })

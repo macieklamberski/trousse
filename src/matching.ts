@@ -25,6 +25,24 @@ const toPatternList = (patterns: Pattern | ReadonlyArray<Pattern>): ReadonlyArra
   return typeof patterns === 'string' || patterns instanceof RegExp ? [patterns] : patterns
 }
 
+// Named groups as optional strings. The built-in type of `groups` claims a string for every key,
+// though a group the match skipped reads undefined. The type argument lists the names, so reading
+// a name it leaves out fails to compile; nothing ties the list to the regex, which its tests cover.
+export const matchGroups = <Name extends string = string>(
+  value: string | undefined,
+  regex: RegExp,
+): Partial<Record<Name, string>> => {
+  if (isNullish(value)) {
+    return {}
+  }
+
+  regex.lastIndex = 0
+
+  const groups = regex.exec(value)?.groups ?? {}
+
+  return groups as Partial<Record<Name, string>>
+}
+
 // Escapes a literal for a regex source string, valid inside and outside a character class under
 // every flag. RegExp.escape also escapes a leading letter or digit and whitespace, and Node 18 and
 // 20 lack it. See: https://tc39.es/ecma262/#sec-regexp.escape.
