@@ -55,27 +55,8 @@ describe('feedMimeTypes and genericFeedMimeTypes', () => {
   })
 
   it('should build the feed Accept header', () => {
-    const expected = [
-      'application/atom+xml',
-      'application/rss+xml',
-      'application/feed+json',
-      'application/rdf+xml',
-      'application/rss;q=0.9',
-      'text/rss;q=0.9',
-      'text/rss+xml;q=0.9',
-      'application/x-rss+xml;q=0.9',
-      'application/atom;q=0.9',
-      'application/x.atom+xml;q=0.9',
-      'application/x-atom+xml;q=0.9',
-      'text/atom+xml;q=0.9',
-      'text/atom;q=0.9',
-      'text/rdf;q=0.9',
-      'text/rdf+xml;q=0.9',
-      'application/xml;q=0.8',
-      'text/xml;q=0.8',
-      'application/json;q=0.8',
-      'text/plain;q=0.1',
-    ].join(', ')
+    const expected =
+      'application/atom+xml, application/rss+xml, application/feed+json, application/rdf+xml, application/rss;q=0.9, text/rss;q=0.9, text/rss+xml;q=0.9, application/x-rss+xml;q=0.9, application/atom;q=0.9, application/x.atom+xml;q=0.9, application/x-atom+xml;q=0.9, text/atom+xml;q=0.9, text/atom;q=0.9, text/rdf;q=0.9, text/rdf+xml;q=0.9, application/xml;q=0.8, text/xml;q=0.8, application/json;q=0.8, text/plain;q=0.1'
 
     expect(createAcceptHeader([...feedMimeTypes, ...genericFeedMimeTypes])).toBe(expected)
   })
