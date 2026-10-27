@@ -615,11 +615,11 @@ export const addMissingScheme = (url: string, scheme: 'http' | 'https' = 'https'
   const slashIndex = url.indexOf('/')
   const dotIndex = url.indexOf('.')
 
-  if (dotIndex === -1 || (slashIndex !== -1 && dotIndex > slashIndex)) {
-    // Exception: localhost is valid without a dot.
-    if (!localhostRegex.test(url)) {
-      return url
-    }
+  const hasDotInHost = dotIndex !== -1 && (slashIndex === -1 || dotIndex < slashIndex)
+
+  // Exception: localhost is valid without a dot.
+  if (!hasDotInHost && !localhostRegex.test(url)) {
+    return url
   }
 
   const firstChar = url.charAt(0)

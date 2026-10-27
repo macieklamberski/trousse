@@ -273,13 +273,13 @@ describe('coerceDate', () => {
 
 describe('coerceSingular', () => {
   it('should return the first element of an array', () => {
-    expect(coerceSingular([1, 2, 3])).toEqual(1)
+    expect(coerceSingular([1, 2, 3])).toBe(1)
     expect(coerceSingular(['a', 'b', 'c'])).toBe('a')
     expect(coerceSingular([{ key: 'value' }, { another: 'object' }])).toEqual({ key: 'value' })
   })
 
   it('should return the value itself when not an array', () => {
-    expect(coerceSingular(42)).toEqual(42)
+    expect(coerceSingular(42)).toBe(42)
     expect(coerceSingular('string')).toBe('string')
     expect(coerceSingular(true)).toBe(true)
     expect(coerceSingular({ key: 'value' })).toEqual({ key: 'value' })
