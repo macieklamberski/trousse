@@ -82,12 +82,16 @@ describe('isBoolean', () => {
 
 describe('isFunction', () => {
   it('should return true for arrow functions', () => {
-    expect(isFunction(() => {})).toBe(true)
+    const result = isFunction(() => {})
+
+    expect(result).toBe(true)
   })
 
   it('should return true for function declarations and built-ins', () => {
     // biome-ignore lint/complexity/useArrowFunction: It's for testing purposes.
-    expect(isFunction(function () {})).toBe(true)
+    const result = isFunction(function () {})
+
+    expect(result).toBe(true)
     expect(isFunction(Math.sin)).toBe(true)
   })
 
@@ -153,7 +157,9 @@ describe('isPresent', () => {
   })
 
   it('should return true for function values', () => {
-    expect(isPresent(() => {})).toBe(true)
+    const result = isPresent(() => {})
+
+    expect(result).toBe(true)
   })
 
   it('should return true for Date objects', () => {
@@ -223,7 +229,9 @@ describe('isObject', () => {
   })
 
   it('should return false for functions', () => {
-    expect(isObject(() => {})).toBe(false)
+    const result = isObject(() => {})
+
+    expect(result).toBe(false)
   })
 })
 
@@ -232,7 +240,10 @@ describe('isPlainObject', () => {
     expect(isPlainObject({})).toBe(true)
     expect(isPlainObject({ a: 1 })).toBe(true)
     expect(isPlainObject({ a: null, b: undefined })).toBe(true)
-    expect(isPlainObject({ toString: () => 'custom' })).toBe(true)
+
+    const result = isPlainObject({ toString: () => 'custom' })
+
+    expect(result).toBe(true)
   })
 
   it('should return true for an object with its own constructor key', () => {
@@ -262,9 +273,12 @@ describe('isPlainObject', () => {
   })
 
   it('should return false for functions', () => {
-    expect(isPlainObject(() => {})).toBe(false)
+    const arrowResult = isPlainObject(() => {})
     // biome-ignore lint/complexity/useArrowFunction: It's for testing purposes.
-    expect(isPlainObject(function () {})).toBe(false)
+    const expressionResult = isPlainObject(function () {})
+
+    expect(arrowResult).toBe(false)
+    expect(expressionResult).toBe(false)
     expect(isPlainObject(Math.sin)).toBe(false)
   })
 
@@ -364,9 +378,12 @@ describe('isNonEmptyString', () => {
   })
 
   it('should return false for functions', () => {
-    expect(isNonEmptyString(() => {})).toBe(false)
+    const arrowResult = isNonEmptyString(() => {})
     // biome-ignore lint/complexity/useArrowFunction: It's for testing purposes.
-    expect(isNonEmptyString(function () {})).toBe(false)
+    const expressionResult = isNonEmptyString(function () {})
+
+    expect(arrowResult).toBe(false)
+    expect(expressionResult).toBe(false)
   })
 
   it('should return false for symbols', () => {
