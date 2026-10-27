@@ -391,23 +391,15 @@ const slashClosedValueRegex = /(=[^&/=]+)\/+(?=&|$)/g
 // `=` stays, and nothing from a nested url on is touched. Whitespace in place of the `&` before a
 // pair, as in `h=abc123 portrait=0`, becomes `&`, and a `/` closing a value with no other slash, as
 // in `set_id=123/&text=`, is dropped. A query carrying a url keeps its whitespace and slashes.
-// A tail after a path `&` that holds a `=` is a pair, and an empty tail is a trailing `&` or `&?`:
-// both are glue. A tail with a slash, a hyphen or a dot is the rest of a slug or a file name, as in
-// `/company/pack-&-cool-ltd` or `/a&b/img.jpg`. A bare word is glue only when a pair follows it
-// somewhere, as in `{id}&t?autoplay=0`: alone it is a slug such as `/resource/R&B` more often than
-// a flag, which a corpus sample of 100,130 feeds showed one slug and no flag for.
-const isGlueTail = (head: string, glueIndex: number, pathEnd: number, ownEnd: number): boolean => {
+// A parameter name is a bare word. A tail after a path `&` that holds no `=` but a slash, a hyphen
+// or a dot is the rest of a slug or a file name, as in `/company/pack-&-cool-ltd` or
+// `/a&b/img.jpg`, so the `&` is content, not glue. An empty tail or a bare name is still glue: a
+// player id followed by a flag, as in `/v/{id}&feature`, is the shape 268 feeds carry, and a slug
+// such as `/resource/R&B` is the rarer price.
+const isGlueTail = (head: string, glueIndex: number, pathEnd: number): boolean => {
   const tail = head.slice(glueIndex + 1, pathEnd).split('&')[0] ?? ''
 
-  if (!tail || tail.includes('=')) {
-    return true
-  }
-
-  if (slugTailRegex.test(tail)) {
-    return false
-  }
-
-  return head.slice(glueIndex + 1, ownEnd).includes('=')
+  return tail.includes('=') || !slugTailRegex.test(tail)
 }
 
 export const fixMalformedQuery = (url: string): string => {
@@ -435,8 +427,7 @@ export const fixMalformedQuery = (url: string): string => {
   const pathEnd = hasMark ? markIndex : ownEnd
   const hasPath = pathIndex !== -1 && pathIndex < pathEnd
   const glueIndex = hasPath ? head.indexOf('&', pathIndex) : -1
-  const isGlued =
-    glueIndex !== -1 && glueIndex < pathEnd && isGlueTail(head, glueIndex, pathEnd, ownEnd)
+  const isGlued = glueIndex !== -1 && glueIndex < pathEnd && isGlueTail(head, glueIndex, pathEnd)
 
   if (!isGlued && !hasMark) {
     return url
