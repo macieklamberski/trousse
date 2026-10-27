@@ -4,6 +4,7 @@ export const omitEmpty = <T>(array: Array<T | null | undefined>): Array<T> | und
   const result: Array<T> = []
 
   for (const item of array) {
+    // biome-ignore lint/plugin/noEmptyStringTest: item is a generic T, so a bare test would also drop 0 and false.
     if (isPresent(item) && item !== '') {
       result.push(item)
     }
