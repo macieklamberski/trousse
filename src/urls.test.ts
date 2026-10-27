@@ -1213,9 +1213,21 @@ describe('fixMalformedQuery', () => {
       expect(fixMalformedQuery(value)).toBe(expected)
     })
 
-    it('should open the query at a name with no value', () => {
+    it('should leave a bare word with no pair after it alone', () => {
       const value = 'https://example.com/v/abc123&feature'
-      const expected = 'https://example.com/v/abc123?feature'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave a bare word inside a slug alone', () => {
+      const value = 'https://example.com/resource/R&B'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should open the query at a bare word a pair follows', () => {
+      const value = 'https://example.com/v/abc123&feature&hl=en'
+      const expected = 'https://example.com/v/abc123?feature&hl=en'
 
       expect(fixMalformedQuery(value)).toBe(expected)
     })
