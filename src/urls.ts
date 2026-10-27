@@ -381,6 +381,7 @@ export const fixMalformedScheme = (url: string): string => {
 // arrive percent-encoded, as in `?url=https%3A//host/a?b=1`, or be left off, as in `?url=//host/a`.
 const nestedUrlRegex = /[a-z][a-z\d+.-]*(?::|%3A)(?:\/\/|%2F%2F)|(?<=[=?&])(?:\/\/|%2F%2F)/i
 const httpOrSchemeRelativeRegex = /^(?:https?:)?\/\//i
+const slugTailRegex = /[/.-]/
 // The lookbehind starts a match only at the head of a whitespace run, so a long run is read once.
 const lostSeparatorRegex = /(?<!\s)\s+(?=[A-Za-z_][\w.-]*=)/g
 const slashClosedValueRegex = /(=[^&/=]+)\/+(?=&|$)/g
@@ -390,6 +391,15 @@ const slashClosedValueRegex = /(=[^&/=]+)\/+(?=&|$)/g
 // `=` stays, and nothing from a nested url on is touched. Whitespace in place of the `&` before a
 // pair, as in `h=abc123 portrait=0`, becomes `&`, and a `/` closing a value with no other slash, as
 // in `set_id=123/&text=`, is dropped. A query carrying a url keeps its whitespace and slashes.
+// A parameter name is a bare word. A tail after a path `&` that holds no `=` but a slash, a hyphen
+// or a dot is the rest of a slug or a file name, as in `/company/pack-&-cool-ltd` or
+// `/a&b/img.jpg`, so the `&` is content, not glue. An empty tail or a bare name is still glue.
+const isGlueTail = (head: string, glueIndex: number, pathEnd: number): boolean => {
+  const tail = head.slice(glueIndex + 1, pathEnd).split('&')[0] ?? ''
+
+  return tail.includes('=') || !slugTailRegex.test(tail)
+}
+
 export const fixMalformedQuery = (url: string): string => {
   // A `data:` or `javascript:` value carries no query, so its `&` and `?` are content.
   if (!httpOrSchemeRelativeRegex.test(url)) {
@@ -415,7 +425,7 @@ export const fixMalformedQuery = (url: string): string => {
   const pathEnd = hasMark ? markIndex : ownEnd
   const hasPath = pathIndex !== -1 && pathIndex < pathEnd
   const glueIndex = hasPath ? head.indexOf('&', pathIndex) : -1
-  const isGlued = glueIndex !== -1 && glueIndex < pathEnd
+  const isGlued = glueIndex !== -1 && glueIndex < pathEnd && isGlueTail(head, glueIndex, pathEnd)
 
   if (!isGlued && !hasMark) {
     return url

@@ -1248,6 +1248,25 @@ describe('fixMalformedQuery', () => {
       expect(fixMalformedQuery(value)).toBe(expected)
     })
 
+    it('should leave an ampersand inside a slug alone', () => {
+      const value = 'https://example.com/company/pack-&-cool-ltd'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should leave an ampersand in a folder name before a file alone', () => {
+      const value = 'https://example.com/x/a&b/img.jpg'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+
+    it('should still open the query at a slug followed by a pair', () => {
+      const value = 'https://example.com/company/pack-&utm_source=feed'
+      const expected = 'https://example.com/company/pack-?utm_source=feed'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
     it('should leave an ampersand in the credentials alone', () => {
       const value = 'https://user&name@example.com/feed'
 
