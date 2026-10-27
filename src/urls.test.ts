@@ -555,21 +555,32 @@ describe('composeQuery', () => {
   })
 
   it('should write a number value as its digits', () => {
-    const value = { width: 640, height: 360 }
+    const value = {
+      width: 640,
+      height: 360,
+    }
     const expected = '?width=640&height=360'
 
     expect(composeQuery(value)).toBe(expected)
   })
 
   it('should join several parameters in the order given', () => {
-    const value = { start: '90', list: 'PLabc', index: '4' }
+    const value = {
+      start: '90',
+      list: 'PLabc',
+      index: '4',
+    }
     const expected = '?start=90&list=PLabc&index=4'
 
     expect(composeQuery(value)).toBe(expected)
   })
 
   it('should keep a slash, an at sign and a non-ASCII character as written', () => {
-    const value = { clipt: 'a/b', user_id: '17367418@N03', title: 'zürich' }
+    const value = {
+      clipt: 'a/b',
+      user_id: '17367418@N03',
+      title: 'zürich',
+    }
     const expected = '?clipt=a/b&user_id=17367418@N03&title=zürich'
 
     expect(composeQuery(value)).toBe(expected)
@@ -2503,7 +2514,10 @@ describe('normalizeUrl', () => {
 
     it('should let stripScheme win over stripProtocol', () => {
       const value = 'https://example.com/feed'
-      const options = { stripScheme: false, stripProtocol: true }
+      const options = {
+        stripScheme: false,
+        stripProtocol: true,
+      }
 
       expect(normalizeUrl(value, options)).toBe(value)
     })
@@ -2526,7 +2540,10 @@ describe('normalizeUrl', () => {
 
     it('should strip authentication when stripAuthentication is true', () => {
       const value = 'https://user:pass@example.com/feed'
-      const options = { stripAuthentication: true, stripScheme: false }
+      const options = {
+        stripAuthentication: true,
+        stripScheme: false,
+      }
       const expected = 'https://example.com/feed'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2543,7 +2560,10 @@ describe('normalizeUrl', () => {
 
     it('should preserve www when stripWww is false', () => {
       const value = 'https://www.example.com/feed'
-      const options = { ...defaultOptions, stripWww: false }
+      const options = {
+        ...defaultOptions,
+        stripWww: false,
+      }
       const expected = 'www.example.com/feed'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2565,7 +2585,10 @@ describe('normalizeUrl', () => {
 
     it('should give the same result when normalizing a repeated www prefix twice', () => {
       const value = 'https://www.www.example.com/feed'
-      const options = { ...defaultOptions, stripScheme: false }
+      const options = {
+        ...defaultOptions,
+        stripScheme: false,
+      }
       const once = normalizeUrl(value, options)
 
       expect(normalizeUrl(once, options)).toBe(once)
@@ -2659,7 +2682,10 @@ describe('normalizeUrl', () => {
 
     it('should keep www on a top-level domain written with a trailing dot', () => {
       const value = 'https://www.com./feed'
-      const options = { stripHostTrailingDot: true, stripWww: true }
+      const options = {
+        stripHostTrailingDot: true,
+        stripWww: true,
+      }
       const expected = 'https://www.com/feed'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2711,7 +2737,10 @@ describe('normalizeUrl', () => {
 
     it('should preserve root slash when stripRootSlash is false', () => {
       const value = 'https://example.com/'
-      const options = { ...defaultOptions, stripRootSlash: false }
+      const options = {
+        ...defaultOptions,
+        stripRootSlash: false,
+      }
       const expected = 'example.com/'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2749,7 +2778,10 @@ describe('normalizeUrl', () => {
 
     it('should preserve multiple slashes when collapseSlashes is false', () => {
       const value = 'https://example.com/path//to///feed'
-      const options = { ...defaultOptions, collapseSlashes: false }
+      const options = {
+        ...defaultOptions,
+        collapseSlashes: false,
+      }
       const expected = 'example.com/path//to///feed'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2802,7 +2834,10 @@ describe('normalizeUrl', () => {
 
     it('should preserve hash when stripHash is false', () => {
       const value = 'https://example.com/feed#section'
-      const options = { ...defaultOptions, stripHash: false }
+      const options = {
+        ...defaultOptions,
+        stripHash: false,
+      }
       const expected = 'example.com/feed#section'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2826,7 +2861,10 @@ describe('normalizeUrl', () => {
 
     it('should preserve query order when sortQueryParams is false', () => {
       const value = 'https://example.com/feed?z=3&a=1&m=2'
-      const options = { ...defaultOptions, sortQueryParams: false }
+      const options = {
+        ...defaultOptions,
+        sortQueryParams: false,
+      }
       const expected = 'example.com/feed?z=3&a=1&m=2'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2864,7 +2902,10 @@ describe('normalizeUrl', () => {
 
     it('should sort by decoded key', () => {
       const value = 'https://example.com/feed?b=1&%61=2'
-      const options = { ...defaultOptions, normalizeEncoding: false }
+      const options = {
+        ...defaultOptions,
+        normalizeEncoding: false,
+      }
       const expected = 'example.com/feed?%61=2&b=1'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2902,7 +2943,10 @@ describe('normalizeUrl', () => {
 
     it('should use custom stripped params when array is provided', () => {
       const value = 'https://example.com/feed?custom=1&keep=2'
-      const options = { ...defaultOptions, stripQueryParams: ['custom'] }
+      const options = {
+        ...defaultOptions,
+        stripQueryParams: ['custom'],
+      }
       const expected = 'example.com/feed?keep=2'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2911,7 +2955,10 @@ describe('normalizeUrl', () => {
     it('should accept a readonly array of stripped params', () => {
       const value = 'https://example.com/feed?custom=1&keep=2'
       const stripQueryParams = ['custom'] as const
-      const options = { ...defaultOptions, stripQueryParams }
+      const options = {
+        ...defaultOptions,
+        stripQueryParams,
+      }
       const expected = 'example.com/feed?keep=2'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2919,7 +2966,10 @@ describe('normalizeUrl', () => {
 
     it('should strip uppercase tracking parameters', () => {
       const value = 'https://example.com/feed?UTM_SOURCE=twitter&FBCLID=abc&id=123'
-      const options = { ...defaultOptions, stripQueryParams: ['utm_source', 'fbclid'] }
+      const options = {
+        ...defaultOptions,
+        stripQueryParams: ['utm_source', 'fbclid'],
+      }
       const expected = 'example.com/feed?id=123'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2927,7 +2977,10 @@ describe('normalizeUrl', () => {
 
     it('should strip mixed case tracking parameters', () => {
       const value = 'https://example.com/feed?Utm_Source=twitter&FbClId=abc&id=123'
-      const options = { ...defaultOptions, stripQueryParams: ['utm_source', 'fbclid'] }
+      const options = {
+        ...defaultOptions,
+        stripQueryParams: ['utm_source', 'fbclid'],
+      }
       const expected = 'example.com/feed?id=123'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2935,7 +2988,10 @@ describe('normalizeUrl', () => {
 
     it('should strip params case-insensitively with multiple variants', () => {
       const value = 'https://example.com/feed?CUSTOM=1&Custom=2&custom=3&keep=4'
-      const options = { ...defaultOptions, stripQueryParams: ['custom'] }
+      const options = {
+        ...defaultOptions,
+        stripQueryParams: ['custom'],
+      }
       const expected = 'example.com/feed?keep=4'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2955,7 +3011,10 @@ describe('normalizeUrl', () => {
 
     it('should strip empty query left after stripping all params', () => {
       const value = 'https://example.com/feed?utm_source=twitter'
-      const options = { ...defaultOptions, stripQueryParams: ['utm_source'] }
+      const options = {
+        ...defaultOptions,
+        stripQueryParams: ['utm_source'],
+      }
       const expected = 'example.com/feed'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2963,7 +3022,10 @@ describe('normalizeUrl', () => {
 
     it('should preserve raw encoding of the params it keeps', () => {
       const value = 'https://example.com/feed?utm_source=twitter&path=a/b&when=12:00'
-      const options = { ...defaultOptions, stripQueryParams: ['utm_source'] }
+      const options = {
+        ...defaultOptions,
+        stripQueryParams: ['utm_source'],
+      }
       const expected = 'example.com/feed?path=a/b&when=12:00'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2987,7 +3049,10 @@ describe('normalizeUrl', () => {
 
     it('should keep a valueless param that is not stripped', () => {
       const value = 'https://example.com/feed?utm_source=twitter&atom'
-      const options = { ...defaultOptions, stripQueryParams: ['utm_source'] }
+      const options = {
+        ...defaultOptions,
+        stripQueryParams: ['utm_source'],
+      }
       const expected = 'example.com/feed?atom'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -2995,7 +3060,10 @@ describe('normalizeUrl', () => {
 
     it('should match a param for stripping by its decoded key', () => {
       const value = 'https://example.com/feed?utm%5Fsource=twitter&id=123'
-      const options = { ...defaultOptions, stripQueryParams: ['utm_source'] }
+      const options = {
+        ...defaultOptions,
+        stripQueryParams: ['utm_source'],
+      }
       const expected = 'example.com/feed?id=123'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3005,7 +3073,10 @@ describe('normalizeUrl', () => {
   describe('query string stripping', () => {
     it('should strip entire query string when stripQuery is true', () => {
       const value = 'https://example.com/feed?a=1&b=2&c=3'
-      const options = { ...defaultOptions, stripQuery: true }
+      const options = {
+        ...defaultOptions,
+        stripQuery: true,
+      }
       const expected = 'example.com/feed'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3029,7 +3100,10 @@ describe('normalizeUrl', () => {
 
     it('should remove empty query string when sortQueryParams is false', () => {
       const value = 'https://example.com/feed?'
-      const options = { ...defaultOptions, sortQueryParams: false }
+      const options = {
+        ...defaultOptions,
+        sortQueryParams: false,
+      }
       const expected = 'example.com/feed'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3037,7 +3111,10 @@ describe('normalizeUrl', () => {
 
     it('should remove empty query string followed by a fragment', () => {
       const value = 'https://example.com/feed?#top'
-      const options = { ...defaultOptions, stripHash: false }
+      const options = {
+        ...defaultOptions,
+        stripHash: false,
+      }
       const expected = 'example.com/feed#top'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3045,7 +3122,11 @@ describe('normalizeUrl', () => {
 
     it('should preserve empty query string when stripEmptyQuery is false', () => {
       const value = 'https://example.com/feed?'
-      const options = { ...defaultOptions, sortQueryParams: false, stripEmptyQuery: false }
+      const options = {
+        ...defaultOptions,
+        sortQueryParams: false,
+        stripEmptyQuery: false,
+      }
       const expected = 'example.com/feed?'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3062,7 +3143,10 @@ describe('normalizeUrl', () => {
 
     it('should lowercase query param names when lowercaseQuery is true', () => {
       const value = 'https://example.com/feed?Format=rss'
-      const options = { ...defaultOptions, lowercaseQuery: true }
+      const options = {
+        ...defaultOptions,
+        lowercaseQuery: true,
+      }
       const expected = 'example.com/feed?format=rss'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3070,7 +3154,10 @@ describe('normalizeUrl', () => {
 
     it('should lowercase query param values when lowercaseQuery is true', () => {
       const value = 'https://example.com/feed?format=RSS'
-      const options = { ...defaultOptions, lowercaseQuery: true }
+      const options = {
+        ...defaultOptions,
+        lowercaseQuery: true,
+      }
       const expected = 'example.com/feed?format=rss'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3078,7 +3165,10 @@ describe('normalizeUrl', () => {
 
     it('should lowercase both names and values when lowercaseQuery is true', () => {
       const value = 'https://example.com/feed?Format=RSS'
-      const options = { ...defaultOptions, lowercaseQuery: true }
+      const options = {
+        ...defaultOptions,
+        lowercaseQuery: true,
+      }
       const expected = 'example.com/feed?format=rss'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3086,7 +3176,10 @@ describe('normalizeUrl', () => {
 
     it('should handle multiple query params', () => {
       const value = 'https://example.com/feed?A=X&B=Y'
-      const options = { ...defaultOptions, lowercaseQuery: true }
+      const options = {
+        ...defaultOptions,
+        lowercaseQuery: true,
+      }
       const expected = 'example.com/feed?a=x&b=y'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3094,7 +3187,10 @@ describe('normalizeUrl', () => {
 
     it('should handle empty query value', () => {
       const value = 'https://example.com/feed?Key='
-      const options = { ...defaultOptions, lowercaseQuery: true }
+      const options = {
+        ...defaultOptions,
+        lowercaseQuery: true,
+      }
       const expected = 'example.com/feed?key='
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3102,7 +3198,11 @@ describe('normalizeUrl', () => {
 
     it('should work with sortQueryParams', () => {
       const value = 'https://example.com/feed?Z=1&A=2'
-      const options = { ...defaultOptions, lowercaseQuery: true, sortQueryParams: true }
+      const options = {
+        ...defaultOptions,
+        lowercaseQuery: true,
+        sortQueryParams: true,
+      }
       const expected = 'example.com/feed?a=2&z=1'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3110,7 +3210,10 @@ describe('normalizeUrl', () => {
 
     it('should preserve raw encoding while lowercasing', () => {
       const value = 'https://example.com/feed?Path=A/B&When=12:00'
-      const options = { ...defaultOptions, lowercaseQuery: true }
+      const options = {
+        ...defaultOptions,
+        lowercaseQuery: true,
+      }
       const expected = 'example.com/feed?path=a/b&when=12:00'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3118,7 +3221,10 @@ describe('normalizeUrl', () => {
 
     it('should leave percent escapes alone when lowercasing', () => {
       const value = 'https://example.com/feed?Q=A%2FB'
-      const options = { ...defaultOptions, lowercaseQuery: true }
+      const options = {
+        ...defaultOptions,
+        lowercaseQuery: true,
+      }
       const expected = 'example.com/feed?q=a%2Fb'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3184,7 +3290,10 @@ describe('normalizeUrl', () => {
 
     it('should preserve encoding when normalizeEncoding is false', () => {
       const value = 'https://example.com/path%2Dto%2Dfeed'
-      const options = { ...defaultOptions, normalizeEncoding: false }
+      const options = {
+        ...defaultOptions,
+        normalizeEncoding: false,
+      }
       const expected = 'example.com/path%2Dto%2Dfeed'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3215,7 +3324,10 @@ describe('normalizeUrl', () => {
 
     it('should skip unicode normalization when normalizeUnicode is false', () => {
       const value = 'https://example.com/cafe\u0301'
-      const options = { ...defaultOptions, normalizeUnicode: false }
+      const options = {
+        ...defaultOptions,
+        normalizeUnicode: false,
+      }
       const expected = 'example.com/cafe%CC%81'
 
       expect(normalizeUrl(value, options)).toBe(expected)
@@ -3342,7 +3454,10 @@ describe('normalizeUrl', () => {
 
     it('should handle hash with special characters', () => {
       const value = 'https://example.com/feed#section/sub?param=1'
-      const options = { ...defaultOptions, stripHash: false }
+      const options = {
+        ...defaultOptions,
+        stripHash: false,
+      }
       const expected = 'example.com/feed#section/sub?param=1'
 
       expect(normalizeUrl(value, options)).toBe(expected)

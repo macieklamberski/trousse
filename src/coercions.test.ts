@@ -295,7 +295,11 @@ describe('coerceSingular', () => {
   })
 
   it('should handle array-like objects correctly', () => {
-    const arrayLike = { 0: 'first', 1: 'second', length: 2 }
+    const arrayLike = {
+      0: 'first',
+      1: 'second',
+      length: 2,
+    }
 
     expect(coerceSingular(arrayLike)).toEqual(arrayLike)
   })
