@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import type { NormalizeOptions } from './types.js'
 import {
   addMissingScheme,
+  composeFragment,
   composeQuery,
   createUrlSpellings,
   createUrlVariants,
@@ -10,9 +11,13 @@ import {
   encodePathSegment,
   fixMalformedQuery,
   fixMalformedScheme,
+  getFragmentParam,
+  getFragmentParams,
+  getFragmentParamValues,
   getPathSegments,
   getQueryParam,
   getQueryParams,
+  getQueryParamValues,
   getRegistrableDomain,
   getSubdomain,
   isHostOf,
@@ -505,10 +510,40 @@ describe('getQueryParam', () => {
     expect(getQueryParam(value, 'id')).toBe('10')
   })
 
+  it('should read the query of a url', () => {
+    const value = new URL('https://example.com/watch?v=dQw4w9WgXcQ#t=30')
+
+    expect(getQueryParam(value, 'v')).toBe('dQw4w9WgXcQ')
+  })
+
+  it('should read bare query text', () => {
+    expect(getQueryParam('v=dQw4w9WgXcQ&t=30', 't')).toBe('30')
+  })
+
+  it('should read bare query text opening with a question mark', () => {
+    expect(getQueryParam('?v=dQw4w9WgXcQ', 'v')).toBe('dQw4w9WgXcQ')
+  })
+
+  it('should read a string as query text, not as a url', () => {
+    expect(getQueryParam('https://example.com/watch?v=dQw4w9WgXcQ', 'v')).toBeUndefined()
+  })
+
+  it('should trim whitespace around a value', () => {
+    const value = new URLSearchParams('v=%20dQw4w9WgXcQ%0A')
+
+    expect(getQueryParam(value, 'v')).toBe('dQw4w9WgXcQ')
+  })
+
   it('should read an empty value', () => {
     const value = new URLSearchParams('live')
 
     expect(getQueryParam(value, 'live')).toBe('')
+  })
+
+  it('should read a whitespace-only value as empty', () => {
+    const value = new URLSearchParams('v=%20')
+
+    expect(getQueryParam(value, 'v')).toBe('')
   })
 
   it('should return undefined for a missing parameter', () => {
@@ -517,32 +552,201 @@ describe('getQueryParam', () => {
     expect(getQueryParam(value, 'list')).toBeUndefined()
   })
 
-  it('should return undefined for undefined params', () => {
+  it('should return undefined for an undefined source', () => {
     expect(getQueryParam(undefined, 'v')).toBeUndefined()
   })
 })
 
-describe('getQueryParams', () => {
+describe('getQueryParamValues', () => {
   it('should read every value of a parameter in any case, in query order', () => {
     const value = new URLSearchParams('q=rust&Q=wasm&limit=10')
 
-    expect(getQueryParams(value, 'q')).toEqual(['rust', 'wasm'])
+    expect(getQueryParamValues(value, 'q')).toEqual(['rust', 'wasm'])
   })
 
   it('should read a bracketed name', () => {
     const value = new URLSearchParams('list[]=a&LIST[]=b&other=c')
 
-    expect(getQueryParams(value, 'list[]')).toEqual(['a', 'b'])
+    expect(getQueryParamValues(value, 'list[]')).toEqual(['a', 'b'])
+  })
+
+  it('should read the query of a url', () => {
+    const value = new URL('https://example.com/search?q=rust&q=wasm')
+
+    expect(getQueryParamValues(value, 'q')).toEqual(['rust', 'wasm'])
+  })
+
+  it('should read bare query text', () => {
+    expect(getQueryParamValues('q=rust&q=wasm', 'q')).toEqual(['rust', 'wasm'])
+  })
+
+  it('should trim each value and keep an empty one', () => {
+    const value = new URLSearchParams('q=%20rust&q=&q=wasm%20')
+
+    expect(getQueryParamValues(value, 'q')).toEqual(['rust', '', 'wasm'])
   })
 
   it('should return an empty array for a missing parameter', () => {
     const value = new URLSearchParams('limit=10')
 
-    expect(getQueryParams(value, 'q')).toEqual([])
+    expect(getQueryParamValues(value, 'q')).toEqual([])
   })
 
-  it('should return an empty array for undefined params', () => {
-    expect(getQueryParams(undefined, 'q')).toEqual([])
+  it('should return an empty array for an undefined source', () => {
+    expect(getQueryParamValues(undefined, 'q')).toEqual([])
+  })
+})
+
+describe('getQueryParams', () => {
+  it('should read the first value of each name, keyed by the names passed', () => {
+    const value = new URL('https://example.com/watch?t=30&list=a&list=b')
+    const expected = {
+      t: '30',
+      list: 'a',
+    }
+
+    expect(getQueryParams(value, ['t', 'list'])).toEqual(expected)
+  })
+
+  it('should key a name matched in another case by the name passed', () => {
+    const value = new URLSearchParams('START=90')
+    const expected = { start: '90' }
+
+    expect(getQueryParams(value, ['start'])).toEqual(expected)
+  })
+
+  it('should read bare query text', () => {
+    const value = 'v=dQw4w9WgXcQ&t=30'
+    const expected = { t: '30' }
+
+    expect(getQueryParams(value, ['t'])).toEqual(expected)
+  })
+
+  it('should trim each value', () => {
+    const value = new URLSearchParams('t=%2030%20')
+    const expected = { t: '30' }
+
+    expect(getQueryParams(value, ['t'])).toEqual(expected)
+  })
+
+  it('should keep an empty value as present', () => {
+    const value = new URLSearchParams('live&t=30')
+    const expected = {
+      live: '',
+      t: '30',
+    }
+
+    expect(getQueryParams(value, ['live', 't'])).toEqual(expected)
+  })
+
+  it('should leave out a missing name', () => {
+    const value = new URLSearchParams('t=30')
+    const expected = { t: '30' }
+
+    expect(getQueryParams(value, ['t', 'list'])).toEqual(expected)
+  })
+
+  it('should return an empty record for no names', () => {
+    const value = new URLSearchParams('t=30')
+
+    expect(getQueryParams(value, [])).toEqual({})
+  })
+
+  it('should return an empty record for an undefined source', () => {
+    expect(getQueryParams(undefined, ['t'])).toEqual({})
+  })
+})
+
+describe('getFragmentParam', () => {
+  it('should read the fragment of a url', () => {
+    const value = new URL('https://example.com/watch?t=10#t=30')
+
+    expect(getFragmentParam(value, 't')).toBe('30')
+  })
+
+  it('should read bare fragment text opening with a hash', () => {
+    expect(getFragmentParam('#t=30&x=1', 'x')).toBe('1')
+  })
+
+  it('should read bare fragment text without a hash', () => {
+    expect(getFragmentParam('t=30&x=1', 't')).toBe('30')
+  })
+
+  it('should read a fragment held in search params', () => {
+    const value = new URLSearchParams('t=30')
+
+    expect(getFragmentParam(value, 't')).toBe('30')
+  })
+
+  it('should read a parameter named in another case', () => {
+    expect(getFragmentParam('#T=30', 't')).toBe('30')
+  })
+
+  it('should trim whitespace around a value', () => {
+    expect(getFragmentParam('#t=%2030%20', 't')).toBe('30')
+  })
+
+  it('should read an empty value', () => {
+    expect(getFragmentParam('#autoplay', 'autoplay')).toBe('')
+  })
+
+  it('should return undefined for a url without a fragment', () => {
+    const value = new URL('https://example.com/watch?t=30')
+
+    expect(getFragmentParam(value, 't')).toBeUndefined()
+  })
+
+  it('should return undefined for an undefined source', () => {
+    expect(getFragmentParam(undefined, 't')).toBeUndefined()
+  })
+})
+
+describe('getFragmentParamValues', () => {
+  it('should read every value of a parameter in any case, in fragment order', () => {
+    expect(getFragmentParamValues('#t=30&T=60&x=1', 't')).toEqual(['30', '60'])
+  })
+
+  it('should read the fragment of a url', () => {
+    const value = new URL('https://example.com/watch#t=30&t=60')
+
+    expect(getFragmentParamValues(value, 't')).toEqual(['30', '60'])
+  })
+
+  it('should return an empty array for an undefined source', () => {
+    expect(getFragmentParamValues(undefined, 't')).toEqual([])
+  })
+})
+
+describe('getFragmentParams', () => {
+  it('should read the first value of each name, keyed by the names passed', () => {
+    const value = new URL('https://example.com/watch#T=30&x=1&x=2')
+    const expected = {
+      t: '30',
+      x: '1',
+    }
+
+    expect(getFragmentParams(value, ['t', 'x'])).toEqual(expected)
+  })
+
+  it('should read bare fragment text', () => {
+    const value = '#t=30&x=1'
+    const expected = { t: '30' }
+
+    expect(getFragmentParams(value, ['t'])).toEqual(expected)
+  })
+
+  it('should keep an empty value as present', () => {
+    const value = '#autoplay&t=30'
+    const expected = {
+      autoplay: '',
+      t: '30',
+    }
+
+    expect(getFragmentParams(value, ['autoplay', 't'])).toEqual(expected)
+  })
+
+  it('should return an empty record for an undefined source', () => {
+    expect(getFragmentParams(undefined, ['t'])).toEqual({})
   })
 })
 
@@ -614,11 +818,27 @@ describe('composeQuery', () => {
     expect(composeQuery(value)).toBe(expected)
   })
 
-  it('should state a parameter whose value is empty', () => {
-    const value = { theme: '' }
-    const expected = '?theme='
+  it('should leave out a parameter whose value is empty', () => {
+    const value = {
+      start: '90',
+      theme: '',
+    }
+    const expected = '?start=90'
 
     expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should keep a zero value', () => {
+    const value = { start: 0 }
+    const expected = '?start=0'
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
+  it('should return an empty string when every value is empty', () => {
+    const value = { theme: '' }
+
+    expect(composeQuery(value)).toBe('')
   })
 
   it('should return an empty string for an empty record', () => {
@@ -4102,5 +4322,50 @@ describe('getRegistrableDomain', () => {
 
       expect(getRegistrableDomain(value, options)).toBe('example.com')
     })
+  })
+})
+
+describe('composeFragment', () => {
+  it('should prefix a single parameter with a hash', () => {
+    const value = { t: '30' }
+    const expected = '#t=30'
+
+    expect(composeFragment(value)).toBe(expected)
+  })
+
+  it('should join several parameters in the order given', () => {
+    const value = {
+      t: '30',
+      autoplay: 1,
+    }
+    const expected = '#t=30&autoplay=1'
+
+    expect(composeFragment(value)).toBe(expected)
+  })
+
+  it('should escape a name and a value as composeQuery does', () => {
+    const value = { 'a&b c': 'x%y+z#w@v' }
+    const expected = '#a%26b%20c=x%25y%2Bz%23w@v'
+
+    expect(composeFragment(value)).toBe(expected)
+    expect(composeQuery(value)).toBe('?a%26b%20c=x%25y%2Bz%23w@v')
+  })
+
+  it('should leave out a parameter whose value is empty', () => {
+    const value = {
+      t: '30',
+      autoplay: '',
+    }
+    const expected = '#t=30'
+
+    expect(composeFragment(value)).toBe(expected)
+  })
+
+  it('should return an empty string for an empty record', () => {
+    expect(composeFragment({})).toBe('')
+  })
+
+  it('should return an empty string when nothing is passed', () => {
+    expect(composeFragment()).toBe('')
   })
 })

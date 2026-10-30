@@ -33,6 +33,9 @@ export type MaybePromise<T> = T | Promise<T>
 
 export type Pattern = string | RegExp
 
+// A string is bare query or fragment text, never a url.
+export type ParamSource = URL | URLSearchParams | string
+
 export type RegistrableDomainOptions = {
   suffixes?: ReadonlyArray<string> // Public Suffix List rules, cached per array, so never mutate it
 }

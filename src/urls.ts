@@ -1,7 +1,7 @@
 import { decodeHTMLStrict } from 'entities'
 import { isNullish } from './is.js'
 import { endsWithAnyOf, isAnyOf } from './matching.js'
-import type { NormalizeOptions, Nullish, RegistrableDomainOptions } from './types.js'
+import type { NormalizeOptions, Nullish, ParamSource, RegistrableDomainOptions } from './types.js'
 
 const httpSchemes = ['http:', 'https:']
 
@@ -210,11 +210,31 @@ export const encodePathSegment = (value: string): string => {
   return value.replace(pathSegmentEscapeRegex, (character) => encodeURIComponent(character))
 }
 
-// Every value of a query parameter whose name matches in any case, `?V=` for `v`, in query order.
-export const getQueryParams = (
-  params: URLSearchParams | undefined,
-  name: string,
-): Array<string> => {
+const readQuerySource = (source: ParamSource | undefined): URLSearchParams | undefined => {
+  if (source instanceof URL) {
+    return source.searchParams
+  }
+
+  if (typeof source === 'string') {
+    return new URLSearchParams(source)
+  }
+
+  return source
+}
+
+const readFragmentSource = (source: ParamSource | undefined): URLSearchParams | undefined => {
+  if (source instanceof URL) {
+    return new URLSearchParams(source.hash.slice(1))
+  }
+
+  if (typeof source === 'string') {
+    return new URLSearchParams(source.startsWith('#') ? source.slice(1) : source)
+  }
+
+  return source
+}
+
+const readParamValues = (params: URLSearchParams | undefined, name: string): Array<string> => {
   const values: Array<string> = []
 
   if (!params) {
@@ -225,36 +245,120 @@ export const getQueryParams = (
 
   for (const [key, value] of params) {
     if (key.toLowerCase() === lowercaseName) {
-      values.push(value)
+      values.push(value.trim())
     }
   }
 
   return values
 }
 
-// The first value of a query parameter whose name matches in any case, as `URLSearchParams.get`
-// reads one in exact case.
-export const getQueryParam = (
+const readParams = (
   params: URLSearchParams | undefined,
+  names: ReadonlyArray<string>,
+): Record<string, string> => {
+  const picked: Record<string, string> = {}
+
+  for (const name of names) {
+    const value = readParamValues(params, name)[0]
+
+    if (value !== undefined) {
+      picked[name] = value
+    }
+  }
+
+  return picked
+}
+
+// Every value of a query parameter whose name matches in any case, `?V=` for `v`, in query order,
+// each trimmed. A string source is bare query text, never a url: pass a url as `URL`.
+export const getQueryParamValues = (
+  source: ParamSource | undefined,
+  name: string,
+): Array<string> => {
+  return readParamValues(readQuerySource(source), name)
+}
+
+// The first value of a query parameter whose name matches in any case, trimmed, and `''` for a
+// valueless `?live`. A string source is bare query text, never a url: pass a url as `URL`.
+export const getQueryParam = (
+  source: ParamSource | undefined,
   name: string,
 ): string | undefined => {
-  return getQueryParams(params, name)[0]
+  return getQueryParamValues(source, name)[0]
+}
+
+// The first value of each named query parameter present, matched in any case and keyed by the
+// name as passed. A string source is bare query text, never a url: pass a url as `URL`.
+export const getQueryParams = (
+  source: ParamSource | undefined,
+  names: ReadonlyArray<string>,
+): Record<string, string> => {
+  return readParams(readQuerySource(source), names)
+}
+
+// Every value of a fragment parameter, `#t=30&t=60`, read as `getQueryParamValues` reads a query.
+// A string source is bare fragment text, with or without its `#`, never a url.
+export const getFragmentParamValues = (
+  source: ParamSource | undefined,
+  name: string,
+): Array<string> => {
+  return readParamValues(readFragmentSource(source), name)
+}
+
+// The first value of a fragment parameter, read as `getQueryParam` reads a query. A string
+// source is bare fragment text, with or without its `#`, never a url.
+export const getFragmentParam = (
+  source: ParamSource | undefined,
+  name: string,
+): string | undefined => {
+  return getFragmentParamValues(source, name)[0]
+}
+
+// The first value of each named fragment parameter, read as `getQueryParams` reads a query. A
+// string source is bare fragment text, with or without its `#`, never a url.
+export const getFragmentParams = (
+  source: ParamSource | undefined,
+  names: ReadonlyArray<string>,
+): Record<string, string> => {
+  return readParams(readFragmentSource(source), names)
 }
 
 const queryPartEscapeRegex = /[&#%+\s]/g
 
-// Name and value pairs joined into a query ready to append, or an empty string for none. Query
-// readers hand back a decoded value, so a `%` or `+` it holds is escaped again, along with what
-// would end a pair or the query and whitespace. An `@` stays as written.
-export const composeQuery = (params?: Record<string, string | number>): string => {
+const composePairs = (params: Record<string, string | number> | undefined): string => {
   const escapePart = (part: string) => {
     return part.replace(queryPartEscapeRegex, (character) => encodeURIComponent(character))
   }
-  const pairs = Object.entries(params ?? {}).map(([name, value]) => {
-    return `${escapePart(name)}=${escapePart(String(value))}`
-  })
+  const pairs: Array<string> = []
 
-  return pairs.length > 0 ? `?${pairs.join('&')}` : ''
+  for (const [name, value] of Object.entries(params ?? {})) {
+    const text = String(value)
+
+    if (!text) {
+      continue
+    }
+
+    pairs.push(`${escapePart(name)}=${escapePart(text)}`)
+  }
+
+  return pairs.join('&')
+}
+
+// Name and value pairs joined into a query ready to append, or an empty string for none. A pair
+// with an empty value is left out. Query readers hand back a decoded value, so a `%` or `+` it
+// holds is escaped again, along with what would end a pair or the query and whitespace. An `@`
+// stays as written.
+export const composeQuery = (params?: Record<string, string | number>): string => {
+  const pairs = composePairs(params)
+
+  return pairs ? `?${pairs}` : ''
+}
+
+// The pairs of `composeQuery`, escaped the same way, joined into a fragment ready to append.
+export const composeFragment = (params?: Record<string, string | number>): string => {
+  const pairs = composePairs(params)
+
+  return pairs ? `#${pairs}` : ''
 }
 
 // Keyed by the array itself, so an array changed after its first use keeps its old set.
