@@ -53,6 +53,12 @@ export const imageExtensions = [
 // Image formats every browser displays in an `<img>`.
 export const webImageExtensions = ['avif', 'gif', 'jpeg', 'jpg', 'png', 'svg', 'webp']
 
+// Video formats every browser plays in a `<video>`.
+export const webVideoExtensions = ['m4v', 'mov', 'mp4', 'ogv', 'webm']
+
+// Audio formats every browser plays in an `<audio>`.
+export const webAudioExtensions = ['aac', 'flac', 'm4a', 'mp3', 'oga', 'ogg', 'opus', 'wav', 'weba']
+
 export const documentExtensions = [
   'doc',
   'docx',
