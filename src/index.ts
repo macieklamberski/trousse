@@ -18,6 +18,7 @@ export {
   installerExtensions,
   subtitleExtensions,
   videoExtensions,
+  webImageExtensions,
 } from './files.js'
 export {
   isBoolean,

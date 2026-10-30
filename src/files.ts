@@ -50,6 +50,9 @@ export const imageExtensions = [
   'webp',
 ]
 
+// Image formats every browser displays in an `<img>`.
+export const webImageExtensions = ['avif', 'gif', 'jpeg', 'jpg', 'png', 'svg', 'webp']
+
 export const documentExtensions = [
   'doc',
   'docx',
