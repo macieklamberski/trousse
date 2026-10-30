@@ -86,6 +86,8 @@ export {
   getQueryParamValues,
   getRegistrableDomain,
   getSubdomain,
+  hasFragmentParam,
+  hasQueryParam,
   isHostOf,
   isHostOrSubdomainOf,
   isHttpUrl,

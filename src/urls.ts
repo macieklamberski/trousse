@@ -244,12 +244,35 @@ const readParamValues = (params: URLSearchParams | undefined, name: string): Arr
   const lowercaseName = name.toLowerCase()
 
   for (const [key, value] of params) {
-    if (key.toLowerCase() === lowercaseName) {
-      values.push(value.trim())
+    if (key.toLowerCase() !== lowercaseName) {
+      continue
+    }
+
+    const trimmed = value.trim()
+
+    // An empty value reads as missing, so a `??` fallback after a read moves on to its next source.
+    if (trimmed) {
+      values.push(trimmed)
     }
   }
 
   return values
+}
+
+const hasParam = (params: URLSearchParams | undefined, name: string): boolean => {
+  if (!params) {
+    return false
+  }
+
+  const lowercaseName = name.toLowerCase()
+
+  for (const key of params.keys()) {
+    if (key.toLowerCase() === lowercaseName) {
+      return true
+    }
+  }
+
+  return false
 }
 
 const readParams = (
@@ -269,8 +292,15 @@ const readParams = (
   return picked
 }
 
+// Whether a query parameter whose name matches in any case is present, valueless or not, as a
+// flag such as `?live` is read. A string source is bare query text, never a url: pass a url as `URL`.
+export const hasQueryParam = (source: ParamSource | undefined, name: string): boolean => {
+  return hasParam(readQuerySource(source), name)
+}
+
 // Every value of a query parameter whose name matches in any case, `?V=` for `v`, in query order,
-// each trimmed. A string source is bare query text, never a url: pass a url as `URL`.
+// each trimmed, with an empty one left out. A string source is bare query text, never a url: pass
+// a url as `URL`.
 export const getQueryParamValues = (
   source: ParamSource | undefined,
   name: string,
@@ -278,8 +308,9 @@ export const getQueryParamValues = (
   return readParamValues(readQuerySource(source), name)
 }
 
-// The first value of a query parameter whose name matches in any case, trimmed, and `''` for a
-// valueless `?live`. A string source is bare query text, never a url: pass a url as `URL`.
+// The first non-empty value of a query parameter whose name matches in any case, trimmed. A
+// valueless flag such as `?live` reads as missing: test it with `hasQueryParam`. A string source
+// is bare query text, never a url: pass a url as `URL`.
 export const getQueryParam = (
   source: ParamSource | undefined,
   name: string,
@@ -294,6 +325,12 @@ export const getQueryParams = (
   names: ReadonlyArray<string>,
 ): Record<string, string> => {
   return readParams(readQuerySource(source), names)
+}
+
+// Whether a fragment parameter is present, read as `hasQueryParam` reads a query. A string source
+// is bare fragment text, with or without its `#`, never a url.
+export const hasFragmentParam = (source: ParamSource | undefined, name: string): boolean => {
+  return hasParam(readFragmentSource(source), name)
 }
 
 // Every value of a fragment parameter, `#t=30&t=60`, read as `getQueryParamValues` reads a query.

@@ -20,6 +20,8 @@ import {
   getQueryParamValues,
   getRegistrableDomain,
   getSubdomain,
+  hasFragmentParam,
+  hasQueryParam,
   isHostOf,
   isHostOrSubdomainOf,
   isHttpUrl,
@@ -534,16 +536,22 @@ describe('getQueryParam', () => {
     expect(getQueryParam(value, 'v')).toBe('dQw4w9WgXcQ')
   })
 
-  it('should read an empty value', () => {
+  it('should read a valueless parameter as missing', () => {
     const value = new URLSearchParams('live')
 
-    expect(getQueryParam(value, 'live')).toBe('')
+    expect(getQueryParam(value, 'live')).toBeUndefined()
   })
 
-  it('should read a whitespace-only value as empty', () => {
+  it('should read a whitespace-only value as missing', () => {
     const value = new URLSearchParams('v=%20')
 
-    expect(getQueryParam(value, 'v')).toBe('')
+    expect(getQueryParam(value, 'v')).toBeUndefined()
+  })
+
+  it('should skip an empty value for the next one of the same name', () => {
+    const value = new URLSearchParams('t=&t=30')
+
+    expect(getQueryParam(value, 't')).toBe('30')
   })
 
   it('should return undefined for a missing parameter', () => {
@@ -580,10 +588,10 @@ describe('getQueryParamValues', () => {
     expect(getQueryParamValues('q=rust&q=wasm', 'q')).toEqual(['rust', 'wasm'])
   })
 
-  it('should trim each value and keep an empty one', () => {
+  it('should trim each value and leave out an empty one', () => {
     const value = new URLSearchParams('q=%20rust&q=&q=wasm%20')
 
-    expect(getQueryParamValues(value, 'q')).toEqual(['rust', '', 'wasm'])
+    expect(getQueryParamValues(value, 'q')).toEqual(['rust', 'wasm'])
   })
 
   it('should return an empty array for a missing parameter', () => {
@@ -629,10 +637,9 @@ describe('getQueryParams', () => {
     expect(getQueryParams(value, ['t'])).toEqual(expected)
   })
 
-  it('should keep an empty value as present', () => {
+  it('should leave out an empty value', () => {
     const value = new URLSearchParams('live&t=30')
     const expected = {
-      live: '',
       t: '30',
     }
 
@@ -686,8 +693,8 @@ describe('getFragmentParam', () => {
     expect(getFragmentParam('#t=%2030%20', 't')).toBe('30')
   })
 
-  it('should read an empty value', () => {
-    expect(getFragmentParam('#autoplay', 'autoplay')).toBe('')
+  it('should read a valueless parameter as missing', () => {
+    expect(getFragmentParam('#autoplay', 'autoplay')).toBeUndefined()
   })
 
   it('should return undefined for a url without a fragment', () => {
@@ -735,10 +742,9 @@ describe('getFragmentParams', () => {
     expect(getFragmentParams(value, ['t'])).toEqual(expected)
   })
 
-  it('should keep an empty value as present', () => {
+  it('should leave out an empty value', () => {
     const value = '#autoplay&t=30'
     const expected = {
-      autoplay: '',
       t: '30',
     }
 
@@ -4416,5 +4422,45 @@ describe('composeFragment', () => {
 
   it('should return an empty string when nothing is passed', () => {
     expect(composeFragment()).toBe('')
+  })
+})
+
+describe('hasQueryParam', () => {
+  it('should find a valueless flag', () => {
+    expect(hasQueryParam('live&t=30', 'live')).toBe(true)
+  })
+
+  it('should find a name in any case', () => {
+    expect(hasQueryParam(new URL('https://example.com/?LIVE'), 'live')).toBe(true)
+  })
+
+  it('should find a parameter with a value', () => {
+    expect(hasQueryParam(new URLSearchParams('t=30'), 't')).toBe(true)
+  })
+
+  it('should return false for a missing parameter', () => {
+    expect(hasQueryParam('t=30', 'live')).toBe(false)
+  })
+
+  it('should return false for an undefined source', () => {
+    expect(hasQueryParam(undefined, 'live')).toBe(false)
+  })
+})
+
+describe('hasFragmentParam', () => {
+  it('should find a valueless flag', () => {
+    expect(hasFragmentParam('#autoplay&t=30', 'autoplay')).toBe(true)
+  })
+
+  it('should find a name in any case', () => {
+    expect(hasFragmentParam(new URL('https://example.com/#AUTOPLAY'), 'autoplay')).toBe(true)
+  })
+
+  it('should read the fragment, not the query', () => {
+    expect(hasFragmentParam(new URL('https://example.com/?autoplay#t=30'), 'autoplay')).toBe(false)
+  })
+
+  it('should return false for an undefined source', () => {
+    expect(hasFragmentParam(undefined, 'autoplay')).toBe(false)
   })
 })
