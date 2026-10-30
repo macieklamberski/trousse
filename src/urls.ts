@@ -500,6 +500,37 @@ const slashClosedValueRegex = /(=[^&/=]+)\/+(?=&|$)/g
 // `/a&b/img.jpg`, so the `&` is content, not glue. An empty tail or a bare name is still glue: a
 // player id followed by a flag, as in `/v/{id}&feature`, is the shape 268 feeds carry, and a slug
 // such as `/resource/R&B` is the rarer price.
+// A fragment written as pairs, as in `#t=98?wmode=opaque`, gets the same `?` repair as a query:
+// a `?` after a pair has its value becomes `&`. Nothing from a nested url on is touched.
+const fixFragmentPairs = (fragment: string): string => {
+  const nestedOffset = fragment.search(nestedUrlRegex)
+  const ownEnd = nestedOffset === -1 ? fragment.length : nestedOffset
+  let fixed = ''
+  let hasValue = false
+
+  for (let index = 0; index < ownEnd; index++) {
+    const character = fragment[index]
+
+    if (character === '?' && hasValue) {
+      fixed += '&'
+      hasValue = false
+      continue
+    }
+
+    if (character === '&') {
+      hasValue = false
+    }
+
+    if (character === '=') {
+      hasValue = true
+    }
+
+    fixed += character
+  }
+
+  return `${fixed}${fragment.slice(ownEnd)}`
+}
+
 const isGlueTail = (head: string, glueIndex: number, pathEnd: number): boolean => {
   const tail = head.slice(glueIndex + 1, pathEnd).split('&')[0] ?? ''
 
@@ -515,7 +546,7 @@ export const fixMalformedQuery = (url: string): string => {
   const hashIndex = url.indexOf('#')
   const hasFragment = hashIndex !== -1
   const head = hasFragment ? url.slice(0, hashIndex) : url
-  const fragment = hasFragment ? url.slice(hashIndex) : ''
+  const fragment = hasFragment ? fixFragmentPairs(url.slice(hashIndex)) : ''
 
   // Nothing from a nested url on is read: it keeps its own `?` and `&`.
   const authorityEnd = head.indexOf('//') + 2
@@ -534,7 +565,7 @@ export const fixMalformedQuery = (url: string): string => {
   const isGlued = glueIndex !== -1 && glueIndex < pathEnd && isGlueTail(head, glueIndex, pathEnd)
 
   if (!isGlued && !hasMark) {
-    return url
+    return `${head}${fragment}`
   }
 
   const queryIndex = isGlued ? glueIndex : markIndex
@@ -593,20 +624,21 @@ const trimEdgeSpace = (value: string, regex: RegExp): string => {
   return value.replace(regex, '') || value
 }
 
-const trimPairValue = (pair: string): string => {
+const trimPairValue = (pair: string, regex: RegExp): string => {
   const equalsIndex = pair.indexOf('=')
 
   if (equalsIndex === -1) {
     return pair
   }
 
-  const value = trimEdgeSpace(pair.slice(equalsIndex + 1), valueEdgeSpaceRegex)
+  const value = trimEdgeSpace(pair.slice(equalsIndex + 1), regex)
 
   return `${pair.slice(0, equalsIndex + 1)}${value}`
 }
 
-// The url with whitespace stripped from both ends of every path segment and query value, as in
-// `user_id=123@N03 &tags=` or `/photos/name%20/`. Names, the host and the fragment stay as written.
+// The url with whitespace stripped from both ends of every path segment, query value and fragment
+// pair value, as in `user_id=123@N03 &tags=`, `/photos/name%20/` or `#t=30%20`. A `+` in a fragment
+// is a literal plus, so it stays. Names and the host stay as written.
 export const trimUrlValues = (url: string): string => {
   // A `data:` or `javascript:` value carries no path or query to trim.
   if (!httpOrSchemeRelativeRegex.test(url)) {
@@ -615,7 +647,6 @@ export const trimUrlValues = (url: string): string => {
 
   const hashIndex = url.indexOf('#')
   const head = hashIndex === -1 ? url : url.slice(0, hashIndex)
-  const fragment = hashIndex === -1 ? '' : url.slice(hashIndex)
   const markIndex = head.indexOf('?')
   const beforeQuery = markIndex === -1 ? head : head.slice(0, markIndex)
   const pathIndex = beforeQuery.indexOf('/', beforeQuery.indexOf('//') + 2)
@@ -623,9 +654,17 @@ export const trimUrlValues = (url: string): string => {
   const segments = pathIndex === -1 ? [] : beforeQuery.slice(pathIndex).split('/')
   const path = segments.map((segment) => trimEdgeSpace(segment, segmentEdgeSpaceRegex)).join('/')
   const pairs = markIndex === -1 ? [] : head.slice(markIndex + 1).split('&')
-  const query = markIndex === -1 ? '' : `?${pairs.map(trimPairValue).join('&')}`
+  const query =
+    markIndex === -1
+      ? ''
+      : `?${pairs.map((pair) => trimPairValue(pair, valueEdgeSpaceRegex)).join('&')}`
+  const fragmentPairs = hashIndex === -1 ? [] : url.slice(hashIndex + 1).split('&')
+  const trimmedFragment =
+    hashIndex === -1
+      ? ''
+      : `#${fragmentPairs.map((pair) => trimPairValue(pair, segmentEdgeSpaceRegex)).join('&')}`
 
-  return `${authority}${path}${query}${fragment}`
+  return `${authority}${path}${query}${trimmedFragment}`
 }
 
 // Feed pseudo-schemes, replaced as in `feed://host` or unwrapped as in `feed:https://host`.

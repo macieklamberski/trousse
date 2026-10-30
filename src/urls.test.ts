@@ -1546,6 +1546,42 @@ describe('fixMalformedQuery', () => {
     })
   })
 
+  describe('question mark inside a fragment pair', () => {
+    it('should turn it into an ampersand', () => {
+      const value = 'https://example.com/embed/abc123#t=98?wmode=opaque'
+      const expected = 'https://example.com/embed/abc123#t=98&wmode=opaque'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should repair it behind a well-formed query', () => {
+      const value = 'https://example.com/player?a=1#t=1?b=2'
+      const expected = 'https://example.com/player?a=1#t=1&b=2'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should repair it behind a query glued onto the path', () => {
+      const value = 'https://example.com/embed/abc123&autoplay=1#t=30?rel=0'
+      const expected = 'https://example.com/embed/abc123?autoplay=1#t=30&rel=0'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should keep the question mark that opens the fragment', () => {
+      const value = 'https://example.com/embed/#?secret=abc123#?secret=def456'
+      const expected = 'https://example.com/embed/#?secret=abc123#&secret=def456'
+
+      expect(fixMalformedQuery(value)).toBe(expected)
+    })
+
+    it('should leave a nested url in the fragment alone', () => {
+      const value = 'https://example.com/viewer#panorama=https://example.org/a.jpg?b=1?c=2'
+
+      expect(fixMalformedQuery(value)).toBe(value)
+    })
+  })
+
   describe('question mark after a name with no value', () => {
     it('should leave it alone', () => {
       const value = 'https://example.com/document/d/abc123/pub?embedded?start=false&loop=false'
@@ -1801,8 +1837,21 @@ describe('trimUrlValues', () => {
     expect(trimUrlValues(value)).toBe(value)
   })
 
-  it('should keep the fragment as written', () => {
+  it('should trim an escaped space at the end of a fragment value', () => {
     const value = 'https://example.com/watch?v=abc123#t=10%20'
+    const expected = 'https://example.com/watch?v=abc123#t=10'
+
+    expect(trimUrlValues(value)).toBe(expected)
+  })
+
+  it('should keep a plus at the end of a fragment value', () => {
+    const value = 'https://example.com/search#q=c++'
+
+    expect(trimUrlValues(value)).toBe(value)
+  })
+
+  it('should keep a fragment with no pair as written', () => {
+    const value = 'https://example.com/page#section%20'
 
     expect(trimUrlValues(value)).toBe(value)
   })
