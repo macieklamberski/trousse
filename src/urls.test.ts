@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import type { NormalizeOptions } from './types.js'
+import type { NormalizeOptions, ParamOptions } from './types.js'
 import {
   addMissingScheme,
   composeFragment,
@@ -563,7 +563,39 @@ describe('getQueryParam', () => {
   it('should return undefined for an undefined source', () => {
     expect(getQueryParam(undefined, 'v')).toBeUndefined()
   })
+
+  it('should read the first value as written with decodeValues off', () => {
+    const value = new URL('https://example.com/redirect?url=a%2Bb+c&url=d')
+
+    expect(getQueryParam(value, 'url', { decodeValues: false })).toBe('a%2Bb+c')
+  })
+
+  it('should return an empty first value with preserveEmptyValues on', () => {
+    const value = new URL('https://example.com/watch?live&live=1')
+
+    expect(getQueryParam(value, 'live', { preserveEmptyValues: true })).toBe('')
+  })
 })
+
+const rawQueryCases: Array<[string, Array<string>]> = [
+  [
+    'https://example.com/redirect?url=https%3A%2F%2Fexample.org%2Fa%2Bb',
+    ['https%3A%2F%2Fexample.org%2Fa%2Bb'],
+  ],
+  [
+    'https://example.com/redirect?url=https://example.org/search?q=a+b',
+    ['https://example.org/search?q=a+b'],
+  ],
+  [
+    'https://example.com/redirect?url=https%3A%2F%2Fexample.org%2F%3Fa%3D1%26b%3D2',
+    ['https%3A%2F%2Fexample.org%2F%3Fa%3D1%26b%3D2'],
+  ],
+  [
+    'https://example.com/redirect?url=https://example.org/path?id=1',
+    ['https://example.org/path?id=1'],
+  ],
+  ['https://example.com/redirect?url=https://example.org/100%2', ['https://example.org/100%2']],
+]
 
 describe('getQueryParamValues', () => {
   it('should read every value of a parameter in any case, in query order', () => {
@@ -602,6 +634,89 @@ describe('getQueryParamValues', () => {
 
   it('should return an empty array for an undefined source', () => {
     expect(getQueryParamValues(undefined, 'q')).toEqual([])
+  })
+
+  it.each(rawQueryCases)('should read %s as written with decodeValues off', (url, expected) => {
+    expect(getQueryParamValues(new URL(url), 'url', { decodeValues: false })).toEqual(expected)
+  })
+
+  it('should match the name in any case with decodeValues off', () => {
+    const value = new URL('https://example.com/redirect?URL=a%2Bb&url=c+d')
+
+    expect(getQueryParamValues(value, 'url', { decodeValues: false })).toEqual(['a%2Bb', 'c+d'])
+  })
+
+  it('should match a percent-encoded name with decodeValues off', () => {
+    const value = new URL('https://example.com/redirect?%75rl=a%2Bb')
+
+    expect(getQueryParamValues(value, 'url', { decodeValues: false })).toEqual(['a%2Bb'])
+  })
+
+  it('should trim each value and leave out an empty one with decodeValues off', () => {
+    expect(getQueryParamValues('url= a%2Bb &url=&url', 'url', { decodeValues: false })).toEqual([
+      'a%2Bb',
+    ])
+  })
+
+  it('should read bare query text with a leading ? as written with decodeValues off', () => {
+    expect(getQueryParamValues('?url=a%2Bb+c', 'url', { decodeValues: false })).toEqual(['a%2Bb+c'])
+  })
+
+  it('should read a URLSearchParams source as its toString encodes it with decodeValues off', () => {
+    const value = new URLSearchParams('url=a%2bb%20c&url=100%2')
+
+    expect(getQueryParamValues(value, 'url', { decodeValues: false })).toEqual([
+      'a%2Bb+c',
+      '100%252',
+    ])
+  })
+
+  it('should return an empty array for an undefined source with decodeValues off', () => {
+    expect(getQueryParamValues(undefined, 'url', { decodeValues: false })).toEqual([])
+  })
+
+  it('should keep whitespace around a value with trimValues off', () => {
+    const value = new URL('https://example.com/search?q=%20rust%20')
+
+    expect(getQueryParamValues(value, 'q', { trimValues: false })).toEqual([' rust '])
+  })
+
+  it('should keep an empty value with preserveEmptyValues on', () => {
+    const value = new URL('https://example.com/search?q=&q=rust')
+
+    expect(getQueryParamValues(value, 'q', { preserveEmptyValues: true })).toEqual(['', 'rust'])
+  })
+
+  it('should read a valueless flag as an empty value with preserveEmptyValues on', () => {
+    const value = new URL('https://example.com/watch?live')
+
+    expect(getQueryParamValues(value, 'live', { preserveEmptyValues: true })).toEqual([''])
+  })
+
+  it('should keep a value emptied by trimming with preserveEmptyValues on', () => {
+    const value = new URL('https://example.com/search?a=%20')
+
+    expect(getQueryParamValues(value, 'a', { preserveEmptyValues: true })).toEqual([''])
+  })
+
+  it('should keep a whitespace value untrimmed with preserveEmptyValues on and trimValues off', () => {
+    const value = new URL('https://example.com/search?a=%20')
+    const options: ParamOptions = { preserveEmptyValues: true, trimValues: false }
+
+    expect(getQueryParamValues(value, 'a', options)).toEqual([' '])
+  })
+
+  it('should read a value as written and untrimmed with decodeValues and trimValues off', () => {
+    const options: ParamOptions = { decodeValues: false, trimValues: false }
+
+    expect(getQueryParamValues('q= a%2Bb+c ', 'q', options)).toEqual([' a%2Bb+c '])
+  })
+
+  it('should read a valueless flag as an empty value with decodeValues off and preserveEmptyValues on', () => {
+    const value = new URL('https://example.com/watch?live&t=30')
+    const options: ParamOptions = { decodeValues: false, preserveEmptyValues: true }
+
+    expect(getQueryParamValues(value, 'live', options)).toEqual([''])
   })
 })
 
@@ -662,6 +777,20 @@ describe('getQueryParams', () => {
   it('should return an empty record for an undefined source', () => {
     expect(getQueryParams(undefined, ['t'])).toEqual({})
   })
+
+  it('should read each value as written with decodeValues off', () => {
+    const value = new URL('https://example.com/redirect?url=a%2Bb&ref=c+d')
+    const expected: Record<string, string> = { url: 'a%2Bb', ref: 'c+d' }
+
+    expect(getQueryParams(value, ['url', 'ref'], { decodeValues: false })).toEqual(expected)
+  })
+
+  it('should map a name with an empty value to an empty string with preserveEmptyValues on', () => {
+    const value = new URL('https://example.com/watch?live&t=30')
+    const expected: Record<string, string> = { live: '', t: '30' }
+
+    expect(getQueryParams(value, ['live', 't'], { preserveEmptyValues: true })).toEqual(expected)
+  })
 })
 
 describe('getFragmentParam', () => {
@@ -706,7 +835,37 @@ describe('getFragmentParam', () => {
   it('should return undefined for an undefined source', () => {
     expect(getFragmentParam(undefined, 't')).toBeUndefined()
   })
+
+  it('should read the first value as written with decodeValues off', () => {
+    expect(getFragmentParam('#url=a%2Bb+c&url=d', 'url', { decodeValues: false })).toBe('a%2Bb+c')
+  })
+
+  it('should return an empty first value with preserveEmptyValues on', () => {
+    const options: ParamOptions = { preserveEmptyValues: true }
+
+    expect(getFragmentParam('#autoplay&autoplay=1', 'autoplay', options)).toBe('')
+  })
 })
+
+const rawFragmentCases: Array<[string, Array<string>]> = [
+  [
+    'https://example.com/redirect#url=https%3A%2F%2Fexample.org%2Fa%2Bb',
+    ['https%3A%2F%2Fexample.org%2Fa%2Bb'],
+  ],
+  [
+    'https://example.com/redirect#url=https://example.org/search?q=a+b',
+    ['https://example.org/search?q=a+b'],
+  ],
+  [
+    'https://example.com/redirect#url=https%3A%2F%2Fexample.org%2F%3Fa%3D1%26b%3D2',
+    ['https%3A%2F%2Fexample.org%2F%3Fa%3D1%26b%3D2'],
+  ],
+  [
+    'https://example.com/redirect#url=https://example.org/path?id=1',
+    ['https://example.org/path?id=1'],
+  ],
+  ['https://example.com/redirect#url=https://example.org/100%2', ['https://example.org/100%2']],
+]
 
 describe('getFragmentParamValues', () => {
   it('should read every value of a parameter in any case, in fragment order', () => {
@@ -721,6 +880,63 @@ describe('getFragmentParamValues', () => {
 
   it('should return an empty array for an undefined source', () => {
     expect(getFragmentParamValues(undefined, 't')).toEqual([])
+  })
+
+  it.each(rawFragmentCases)('should read %s as written with decodeValues off', (url, expected) => {
+    expect(getFragmentParamValues(new URL(url), 'url', { decodeValues: false })).toEqual(expected)
+  })
+
+  it('should match the name in any case with decodeValues off', () => {
+    const value = new URL('https://example.com/redirect#URL=a%2Bb&url=c+d')
+
+    expect(getFragmentParamValues(value, 'url', { decodeValues: false })).toEqual(['a%2Bb', 'c+d'])
+  })
+
+  it('should trim each value and leave out an empty one with decodeValues off', () => {
+    expect(getFragmentParamValues('#url= a%2Bb &url=', 'url', { decodeValues: false })).toEqual([
+      'a%2Bb',
+    ])
+  })
+
+  it('should read a URLSearchParams source as its toString encodes it with decodeValues off', () => {
+    const value = new URLSearchParams('url=a%2bb%20c')
+
+    expect(getFragmentParamValues(value, 'url', { decodeValues: false })).toEqual(['a%2Bb+c'])
+  })
+
+  it('should return an empty array for a url without a fragment with decodeValues off', () => {
+    const value = new URL('https://example.com/redirect?url=a%2Bb')
+
+    expect(getFragmentParamValues(value, 'url', { decodeValues: false })).toEqual([])
+  })
+
+  it('should keep whitespace around a value with trimValues off', () => {
+    expect(getFragmentParamValues('#t=%2030%20', 't', { trimValues: false })).toEqual([' 30 '])
+  })
+
+  it('should keep an empty value with preserveEmptyValues on', () => {
+    expect(getFragmentParamValues('#t=&t=30', 't', { preserveEmptyValues: true })).toEqual([
+      '',
+      '30',
+    ])
+  })
+
+  it('should read a valueless flag as an empty value with preserveEmptyValues on', () => {
+    const value = new URL('https://example.com/watch#autoplay')
+
+    expect(getFragmentParamValues(value, 'autoplay', { preserveEmptyValues: true })).toEqual([''])
+  })
+
+  it('should keep a whitespace value untrimmed with preserveEmptyValues on and trimValues off', () => {
+    const options: ParamOptions = { preserveEmptyValues: true, trimValues: false }
+
+    expect(getFragmentParamValues('#a=%20', 'a', options)).toEqual([' '])
+  })
+
+  it('should read a value as written and untrimmed with decodeValues and trimValues off', () => {
+    const options: ParamOptions = { decodeValues: false, trimValues: false }
+
+    expect(getFragmentParamValues('#t= a%2Bb ', 't', options)).toEqual([' a%2Bb '])
   })
 })
 
@@ -753,6 +969,22 @@ describe('getFragmentParams', () => {
 
   it('should return an empty record for an undefined source', () => {
     expect(getFragmentParams(undefined, ['t'])).toEqual({})
+  })
+
+  it('should read each value as written with decodeValues off', () => {
+    const value = new URL('https://example.com/redirect#url=a%2Bb&ref=c+d')
+    const expected: Record<string, string> = { url: 'a%2Bb', ref: 'c+d' }
+
+    expect(getFragmentParams(value, ['url', 'ref'], { decodeValues: false })).toEqual(expected)
+  })
+
+  it('should map a name with an empty value to an empty string with preserveEmptyValues on', () => {
+    const value = new URL('https://example.com/watch#autoplay&t=30')
+    const expected: Record<string, string> = { autoplay: '', t: '30' }
+
+    expect(getFragmentParams(value, ['autoplay', 't'], { preserveEmptyValues: true })).toEqual(
+      expected,
+    )
   })
 })
 

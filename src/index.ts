@@ -61,6 +61,7 @@ export type {
   MaybePromise,
   NormalizeOptions,
   Nullish,
+  ParamOptions,
   ParamSource,
   PartialNullish,
   Pattern,
