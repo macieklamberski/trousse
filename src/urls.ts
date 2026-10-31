@@ -983,8 +983,8 @@ const decodeAndNormalizeEncoding = (value: string): string => {
   }
 
   // Decodes unnecessarily percent-encoded characters and normalizes encoding to uppercase.
-  return value.replace(/%([0-9A-Fa-f]{2})/g, (_match, hex) => {
-    const charCode = Number.parseInt(hex, 16)
+  return value.replace(percentEscapeRegex, (hex) => {
+    const charCode = Number.parseInt(hex.slice(1), 16)
     const char = String.fromCharCode(charCode)
 
     if (unreservedCharsRegex.test(char)) {
@@ -992,7 +992,7 @@ const decodeAndNormalizeEncoding = (value: string): string => {
     }
 
     // Keep encoded but normalize to uppercase.
-    return `%${hex.toUpperCase()}`
+    return hex.toUpperCase()
   })
 }
 
