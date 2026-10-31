@@ -227,9 +227,15 @@ const readRawPairs = (text: string | undefined, prefix: string): ParamPairs | un
   const body = text.startsWith(prefix) ? text.slice(1) : text
 
   for (const pair of body.split('&')) {
+    if (!pair) {
+      continue
+    }
+
     const separator = pair.indexOf('=')
 
+    // A valueless flag such as `?live` reads as an empty value, as URLSearchParams reads it.
     if (separator === -1) {
+      pairs.push([decodePercent(pair.replaceAll('+', ' ')), ''])
       continue
     }
 
@@ -279,7 +285,11 @@ const readFragmentSource = (
   return source
 }
 
-const readParamValues = (params: ParamPairs | undefined, name: string): Array<string> => {
+const readParamValues = (
+  params: ParamPairs | undefined,
+  name: string,
+  options?: ParamOptions,
+): Array<string> => {
   const values: Array<string> = []
 
   if (!params) {
@@ -293,11 +303,11 @@ const readParamValues = (params: ParamPairs | undefined, name: string): Array<st
       continue
     }
 
-    const trimmed = value.trim()
+    const read = options?.trimValues === false ? value : value.trim()
 
-    // An empty value reads as missing, so a `??` fallback after a read moves on to its next source.
-    if (trimmed) {
-      values.push(trimmed)
+    // An empty value reads as missing by default, so a `??` fallback moves on to its next source.
+    if (read || options?.preserveEmptyValues) {
+      values.push(read)
     }
   }
 
@@ -323,11 +333,12 @@ const hasParam = (params: ParamPairs | undefined, name: string): boolean => {
 const readParams = (
   params: ParamPairs | undefined,
   names: ReadonlyArray<string>,
+  options?: ParamOptions,
 ): Record<string, string> => {
   const picked: Record<string, string> = {}
 
   for (const name of names) {
-    const value = readParamValues(params, name)[0]
+    const value = readParamValues(params, name, options)[0]
 
     if (value !== undefined) {
       picked[name] = value
@@ -351,7 +362,7 @@ export const getQueryParamValues = (
   name: string,
   options?: ParamOptions,
 ): Array<string> => {
-  return readParamValues(readQuerySource(source, options), name)
+  return readParamValues(readQuerySource(source, options), name, options)
 }
 
 // The first non-empty value of a query parameter whose name matches in any case, trimmed. A
@@ -372,7 +383,7 @@ export const getQueryParams = (
   names: ReadonlyArray<string>,
   options?: ParamOptions,
 ): Record<string, string> => {
-  return readParams(readQuerySource(source, options), names)
+  return readParams(readQuerySource(source, options), names, options)
 }
 
 // Whether a fragment parameter is present, read as `hasQueryParam` reads a query. A string source
@@ -388,7 +399,7 @@ export const getFragmentParamValues = (
   name: string,
   options?: ParamOptions,
 ): Array<string> => {
-  return readParamValues(readFragmentSource(source, options), name)
+  return readParamValues(readFragmentSource(source, options), name, options)
 }
 
 // The first value of a fragment parameter, read as `getQueryParam` reads a query. A string
@@ -408,7 +419,7 @@ export const getFragmentParams = (
   names: ReadonlyArray<string>,
   options?: ParamOptions,
 ): Record<string, string> => {
-  return readParams(readFragmentSource(source, options), names)
+  return readParams(readFragmentSource(source, options), names, options)
 }
 
 const queryPartEscapeRegex = /[&#%+\s]/g

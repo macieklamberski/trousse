@@ -36,11 +36,13 @@ export type Pattern = string | RegExp
 // A string is bare query or fragment text, never a url.
 export type ParamSource = URL | URLSearchParams | string
 
-// With `decodeValues: false` a value reads as the url writes it, still percent-encoded, `+` kept.
-// A URLSearchParams has already decoded its text, so its values read as `toString()` encodes them
-// again: pass a URL or a string to read the url's own spelling.
+// Values decode, trim and drop empty ones by default. A URLSearchParams has already decoded its
+// text, so with `decodeValues: false` its values read as `toString()` encodes them again: pass a
+// URL or a string to read the url's own spelling.
 export type ParamOptions = {
-  decodeValues?: boolean // Decode values as URLSearchParams does, true by default
+  decodeValues?: boolean // True by default, false keeps each `%XX` and `+` as written
+  trimValues?: boolean // True by default, false keeps whitespace around a value
+  preserveEmptyValues?: boolean // False by default, true reads an empty value or `?live` as ''
 }
 
 export type RegistrableDomainOptions = {
