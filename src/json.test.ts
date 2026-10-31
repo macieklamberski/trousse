@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { isJsonLike, isParseableJson } from './json.js'
+import { isJsonLike, isParseableJson, parseJson } from './json.js'
 
 const singleWhitespaceRegex = /^\s$/
 
@@ -182,5 +182,38 @@ describe('isParseableJson', () => {
 
   it('should reject a plain string', () => {
     expect(isParseableJson('Hello World')).toBe(false)
+  })
+})
+
+describe('parseJson', () => {
+  it('should return the parsed object', () => {
+    const value = '{"title":"Episode 12","duration":1800}'
+    const expected = { title: 'Episode 12', duration: 1800 }
+
+    expect(parseJson<typeof expected>(value)).toEqual(expected)
+  })
+
+  it('should return a parsed string', () => {
+    const value = '"https://example.com/feed"'
+
+    expect(parseJson<string>(value)).toBe('https://example.com/feed')
+  })
+
+  it('should return undefined for invalid JSON', () => {
+    const value = '{"title": "Episode 12",}'
+
+    expect(parseJson(value)).toBeUndefined()
+  })
+
+  it('should return undefined for an empty string', () => {
+    expect(parseJson('')).toBeUndefined()
+  })
+
+  it('should return undefined for undefined', () => {
+    expect(parseJson(undefined)).toBeUndefined()
+  })
+
+  it('should return undefined for null', () => {
+    expect(parseJson(null)).toBeUndefined()
   })
 })
