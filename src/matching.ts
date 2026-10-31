@@ -62,6 +62,16 @@ export const isAnyOf = (
   })
 }
 
+// Compares two values the way isAnyOf compares a value with a string pattern, so a missing side
+// never equals anything.
+export const isSameText = (value: string | undefined, other: string | undefined): boolean => {
+  if (isNullish(value) || isNullish(other)) {
+    return false
+  }
+
+  return value.toLowerCase().trim() === other.toLowerCase().trim()
+}
+
 // Returns the list entry the value matches, so a caller can emit the entry's own spelling.
 export const getAnyOf = <T extends string>(
   value: string | undefined,
