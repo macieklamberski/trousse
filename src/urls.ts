@@ -1,7 +1,13 @@
 import { decodeHTMLStrict } from 'entities'
 import { isNullish } from './is.js'
 import { endsWithAnyOf, isAnyOf } from './matching.js'
-import type { NormalizeOptions, Nullish, ParamSource, RegistrableDomainOptions } from './types.js'
+import type {
+  NormalizeOptions,
+  Nullish,
+  ParamOptions,
+  ParamSource,
+  RegistrableDomainOptions,
+} from './types.js'
 
 const httpSchemes = ['http:', 'https:']
 
@@ -210,7 +216,39 @@ export const encodePathSegment = (value: string): string => {
   return value.replace(pathSegmentEscapeRegex, (character) => encodeURIComponent(character))
 }
 
-const readQuerySource = (source: ParamSource | undefined): URLSearchParams | undefined => {
+type ParamPairs = Iterable<[string, string]>
+
+const readRawPairs = (text: string | undefined, prefix: string): ParamPairs | undefined => {
+  if (text === undefined) {
+    return
+  }
+
+  const pairs: Array<[string, string]> = []
+  const body = text.startsWith(prefix) ? text.slice(1) : text
+
+  for (const pair of body.split('&')) {
+    const separator = pair.indexOf('=')
+
+    if (separator === -1) {
+      continue
+    }
+
+    const name = decodePercent(pair.slice(0, separator).replaceAll('+', ' '))
+
+    pairs.push([name, pair.slice(separator + 1)])
+  }
+
+  return pairs
+}
+
+const readQuerySource = (
+  source: ParamSource | undefined,
+  options?: ParamOptions,
+): ParamPairs | undefined => {
+  if (options?.decodeValues === false) {
+    return readRawPairs(source instanceof URL ? source.search : source?.toString(), '?')
+  }
+
   if (source instanceof URL) {
     return source.searchParams
   }
@@ -222,7 +260,14 @@ const readQuerySource = (source: ParamSource | undefined): URLSearchParams | und
   return source
 }
 
-const readFragmentSource = (source: ParamSource | undefined): URLSearchParams | undefined => {
+const readFragmentSource = (
+  source: ParamSource | undefined,
+  options?: ParamOptions,
+): ParamPairs | undefined => {
+  if (options?.decodeValues === false) {
+    return readRawPairs(source instanceof URL ? source.hash : source?.toString(), '#')
+  }
+
   if (source instanceof URL) {
     return new URLSearchParams(source.hash.slice(1))
   }
@@ -234,7 +279,7 @@ const readFragmentSource = (source: ParamSource | undefined): URLSearchParams | 
   return source
 }
 
-const readParamValues = (params: URLSearchParams | undefined, name: string): Array<string> => {
+const readParamValues = (params: ParamPairs | undefined, name: string): Array<string> => {
   const values: Array<string> = []
 
   if (!params) {
@@ -259,14 +304,14 @@ const readParamValues = (params: URLSearchParams | undefined, name: string): Arr
   return values
 }
 
-const hasParam = (params: URLSearchParams | undefined, name: string): boolean => {
+const hasParam = (params: ParamPairs | undefined, name: string): boolean => {
   if (!params) {
     return false
   }
 
   const lowercaseName = name.toLowerCase()
 
-  for (const key of params.keys()) {
+  for (const [key] of params) {
     if (key.toLowerCase() === lowercaseName) {
       return true
     }
@@ -276,7 +321,7 @@ const hasParam = (params: URLSearchParams | undefined, name: string): boolean =>
 }
 
 const readParams = (
-  params: URLSearchParams | undefined,
+  params: ParamPairs | undefined,
   names: ReadonlyArray<string>,
 ): Record<string, string> => {
   const picked: Record<string, string> = {}
@@ -304,8 +349,9 @@ export const hasQueryParam = (source: ParamSource | undefined, name: string): bo
 export const getQueryParamValues = (
   source: ParamSource | undefined,
   name: string,
+  options?: ParamOptions,
 ): Array<string> => {
-  return readParamValues(readQuerySource(source), name)
+  return readParamValues(readQuerySource(source, options), name)
 }
 
 // The first non-empty value of a query parameter whose name matches in any case, trimmed. A
@@ -314,8 +360,9 @@ export const getQueryParamValues = (
 export const getQueryParam = (
   source: ParamSource | undefined,
   name: string,
+  options?: ParamOptions,
 ): string | undefined => {
-  return getQueryParamValues(source, name)[0]
+  return getQueryParamValues(source, name, options)[0]
 }
 
 // The first value of each named query parameter present, matched in any case and keyed by the
@@ -323,8 +370,9 @@ export const getQueryParam = (
 export const getQueryParams = (
   source: ParamSource | undefined,
   names: ReadonlyArray<string>,
+  options?: ParamOptions,
 ): Record<string, string> => {
-  return readParams(readQuerySource(source), names)
+  return readParams(readQuerySource(source, options), names)
 }
 
 // Whether a fragment parameter is present, read as `hasQueryParam` reads a query. A string source
@@ -338,8 +386,9 @@ export const hasFragmentParam = (source: ParamSource | undefined, name: string):
 export const getFragmentParamValues = (
   source: ParamSource | undefined,
   name: string,
+  options?: ParamOptions,
 ): Array<string> => {
-  return readParamValues(readFragmentSource(source), name)
+  return readParamValues(readFragmentSource(source, options), name)
 }
 
 // The first value of a fragment parameter, read as `getQueryParam` reads a query. A string
@@ -347,8 +396,9 @@ export const getFragmentParamValues = (
 export const getFragmentParam = (
   source: ParamSource | undefined,
   name: string,
+  options?: ParamOptions,
 ): string | undefined => {
-  return getFragmentParamValues(source, name)[0]
+  return getFragmentParamValues(source, name, options)[0]
 }
 
 // The first value of each named fragment parameter, read as `getQueryParams` reads a query. A
@@ -356,8 +406,9 @@ export const getFragmentParam = (
 export const getFragmentParams = (
   source: ParamSource | undefined,
   names: ReadonlyArray<string>,
+  options?: ParamOptions,
 ): Record<string, string> => {
-  return readParams(readFragmentSource(source), names)
+  return readParams(readFragmentSource(source, options), names)
 }
 
 const queryPartEscapeRegex = /[&#%+\s]/g

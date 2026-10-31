@@ -36,6 +36,13 @@ export type Pattern = string | RegExp
 // A string is bare query or fragment text, never a url.
 export type ParamSource = URL | URLSearchParams | string
 
+// With `decodeValues: false` a value reads as the url writes it, still percent-encoded, `+` kept.
+// A URLSearchParams has already decoded its text, so its values read as `toString()` encodes them
+// again: pass a URL or a string to read the url's own spelling.
+export type ParamOptions = {
+  decodeValues?: boolean // Decode values as URLSearchParams does, true by default
+}
+
 export type RegistrableDomainOptions = {
   suffixes?: ReadonlyArray<string> // Public Suffix List rules, cached per array, so never mutate it
 }
