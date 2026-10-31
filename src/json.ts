@@ -1,3 +1,6 @@
+import { isNullish } from './is.js'
+import type { Nullish } from './types.js'
+
 // Mirrors the regex \s character set exactly: ECMAScript WhiteSpace and LineTerminator.
 // See: https://tc39.es/ecma262/#sec-white-space.
 const isWhitespaceCode = (code: number): boolean => {
@@ -51,4 +54,16 @@ export const isParseableJson = (value: string): boolean => {
   } catch {
     return false
   }
+}
+
+// Returns the parsed value, or undefined when the value is missing or is not valid JSON. The type
+// argument is not checked, as with JSON.parse.
+export const parseJson = <T = unknown>(value: Nullish<string>): T | undefined => {
+  if (isNullish(value)) {
+    return
+  }
+
+  try {
+    return JSON.parse(value)
+  } catch {}
 }
