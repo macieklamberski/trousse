@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 import {
   isBoolean,
+  isFiniteNumber,
   isFunction,
+  isInteger,
   isNonEmptyString,
   isNullish,
   isNumber,
@@ -58,6 +60,54 @@ describe('isNumber', () => {
 
   it('should return false for BigInt', () => {
     expect(isNumber(BigInt(123))).toBe(false)
+  })
+})
+
+describe('isInteger', () => {
+  it('should return true for an integer', () => {
+    expect(isInteger(42)).toBe(true)
+  })
+
+  it('should return true for a float with no fraction', () => {
+    expect(isInteger(5.0)).toBe(true)
+  })
+
+  it('should return false for a float', () => {
+    expect(isInteger(1.5)).toBe(false)
+  })
+
+  it('should return false for NaN', () => {
+    expect(isInteger(Number.NaN)).toBe(false)
+  })
+
+  it('should return false for Infinity', () => {
+    expect(isInteger(Number.POSITIVE_INFINITY)).toBe(false)
+  })
+
+  it('should return false for a numeric string', () => {
+    expect(isInteger('42')).toBe(false)
+  })
+})
+
+describe('isFiniteNumber', () => {
+  it('should return true for an integer', () => {
+    expect(isFiniteNumber(42)).toBe(true)
+  })
+
+  it('should return true for a float', () => {
+    expect(isFiniteNumber(1.5)).toBe(true)
+  })
+
+  it('should return false for NaN', () => {
+    expect(isFiniteNumber(Number.NaN)).toBe(false)
+  })
+
+  it('should return false for Infinity', () => {
+    expect(isFiniteNumber(Number.NEGATIVE_INFINITY)).toBe(false)
+  })
+
+  it('should return false for a numeric string', () => {
+    expect(isFiniteNumber('42')).toBe(false)
   })
 })
 
