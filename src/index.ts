@@ -43,6 +43,7 @@ export {
   getAnyOf,
   includesAnyOf,
   isAnyOf,
+  isSameText,
   startsWithAnyOf,
 } from './matching.js'
 export {
