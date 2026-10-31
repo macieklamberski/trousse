@@ -188,7 +188,10 @@ describe('isParseableJson', () => {
 describe('parseJson', () => {
   it('should return the parsed object', () => {
     const value = '{"title":"Episode 12","duration":1800}'
-    const expected = { title: 'Episode 12', duration: 1800 }
+    const expected = {
+      title: 'Episode 12',
+      duration: 1800,
+    }
 
     expect(parseJson<typeof expected>(value)).toEqual(expected)
   })
