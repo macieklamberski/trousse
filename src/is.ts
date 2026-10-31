@@ -6,6 +6,16 @@ export const isNumber = (value: unknown): value is number => {
   return typeof value === 'number'
 }
 
+// Number.isInteger and Number.isFinite narrow nothing, so these narrow to number. Both reject NaN
+// and Infinity, which isNumber accepts.
+export const isInteger = (value: unknown): value is number => {
+  return Number.isInteger(value)
+}
+
+export const isFiniteNumber = (value: unknown): value is number => {
+  return Number.isFinite(value)
+}
+
 export const isBoolean = (value: unknown): value is boolean => {
   return typeof value === 'boolean'
 }

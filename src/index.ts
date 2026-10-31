@@ -24,7 +24,9 @@ export {
 } from './files.js'
 export {
   isBoolean,
+  isFiniteNumber,
   isFunction,
+  isInteger,
   isNonEmptyString,
   isNullish,
   isNumber,
