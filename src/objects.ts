@@ -20,7 +20,8 @@ const setKey = <T extends object>(object: T, key: keyof T, value: unknown): void
 }
 
 // Keys the object does not have are skipped rather than set to undefined, so picking from a
-// value with optional fields yields only the ones actually present.
+// value with optional fields yields only the ones actually present. An inherited member, such as
+// `toString`, is not the object's own and is skipped too.
 export const pick = <T extends object, K extends keyof T>(
   object: T,
   keys: ReadonlyArray<K>,
@@ -28,7 +29,7 @@ export const pick = <T extends object, K extends keyof T>(
   const result: Partial<Pick<T, K>> = {}
 
   for (const key of keys) {
-    if (key in object) {
+    if (Object.hasOwn(object, key)) {
       setKey(result, key, object[key])
     }
   }

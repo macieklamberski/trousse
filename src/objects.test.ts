@@ -35,6 +35,12 @@ describe('pick', () => {
     expect('title' in pick(value, ['id', 'title'])).toBe(false)
   })
 
+  it('should skip a key the object only inherits', () => {
+    const value: { id: number; toString?: () => string } = { id: 1 }
+
+    expect(pick(value, ['id', 'toString'])).toEqual({ id: 1 })
+  })
+
   it('should keep a key explicitly set to undefined', () => {
     const value: { id: number; title?: string } = { id: 1, title: undefined }
     const result = pick(value, ['id', 'title'])
