@@ -14,6 +14,7 @@ import {
   getFragmentParam,
   getFragmentParams,
   getFragmentParamValues,
+  getOrigin,
   getPathSegments,
   getQueryParam,
   getQueryParams,
@@ -102,6 +103,29 @@ describe('parseUrl', () => {
     } finally {
       Object.defineProperty(URL, 'parse', { value: nativeParse, configurable: true })
     }
+  })
+})
+
+describe('getOrigin', () => {
+  it('should return the scheme, host and port of a url', () => {
+    expect(getOrigin('https://social.example:8443/@alice/123')).toBe('https://social.example:8443')
+  })
+
+  it('should accept a URL instance', () => {
+    expect(getOrigin(new URL('https://example.com/feed.xml'))).toBe('https://example.com')
+  })
+
+  it('should return undefined for a url with no host', () => {
+    expect(getOrigin('javascript:/@alice/123')).toBeUndefined()
+  })
+
+  it('should return undefined for a scheme with an opaque origin', () => {
+    expect(getOrigin('podcast://example.com/feed.xml')).toBeUndefined()
+  })
+
+  it('should return undefined for an invalid or missing url', () => {
+    expect(getOrigin('not a url')).toBeUndefined()
+    expect(getOrigin(undefined)).toBeUndefined()
   })
 })
 

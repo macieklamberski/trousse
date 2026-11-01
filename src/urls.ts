@@ -35,6 +35,18 @@ export const getPathSegments = (value: string | URL): Array<string> => {
   return parseUrl(value)?.pathname.split('/').filter(Boolean) ?? []
 }
 
+// The origin a url can be rebuilt on. A url with no host, such as `javascript:/@user/123`, or with
+// a scheme the URL standard does not know, has an opaque origin, which serializes as `null`.
+export const getOrigin = (value: Nullish<string | URL>): string | undefined => {
+  const origin = parseUrl(value)?.origin
+
+  if (!origin || origin === 'null') {
+    return
+  }
+
+  return origin
+}
+
 // A fully qualified `example.com.` ends in a dot that no domain pattern carries.
 // See: https://www.rfc-editor.org/rfc/rfc1034#section-3.1.
 const getHostname = (url: string | URL): string | undefined => {
