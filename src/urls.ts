@@ -997,10 +997,11 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
   return parsed.href
 }
 
-// The escapes that hold a query's shape stay escaped: a pair separator, a fragment start, a
-// percent and a plus, and in a name the `=` that would end it.
-const valueShapeEscapeRegex = /(%(?:26|23|25|2B))/gi
-const nameShapeEscapeRegex = /(%(?:26|23|25|2B|3D))/gi
+// The escapes that hold a query's shape stay escaped: a pair separator, the `;` a legacy server
+// also splits pairs on, a fragment start, a percent and a plus, and in a name the `=` that would
+// end it.
+const valueShapeEscapeRegex = /(%(?:26|23|25|2B|3B))/gi
+const nameShapeEscapeRegex = /(%(?:26|23|25|2B|3B|3D))/gi
 
 const decodeQueryPart = (part: string, shapeRegex: RegExp): string => {
   return part

@@ -3850,6 +3850,39 @@ describe('normalizeUrl', () => {
       )
     })
 
+    it('should keep an escaped semicolon, which a legacy server splits pairs on', () => {
+      const value = 'https://example.com/feed?q=a%3Bb&r=c;d'
+      const expected = 'https://example.com/feed?q=a%3Bb&r=c;d'
+
+      expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(expected)
+    })
+
+    it('should keep an empty value, a bare name and repeated names in their order', () => {
+      const value = 'https://example.com/feed?a=&b&c=1&c=2'
+
+      expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(value)
+    })
+
+    it('should keep a malformed escape and a lone percent as written', () => {
+      const value = 'https://example.com/feed?q=%zz%'
+
+      expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(value)
+    })
+
+    it('should give the same query when normalized twice', () => {
+      const values = [
+        'https://x.example/rss?tag=fim+(de)+ano!&q=a%3Db',
+        'https://example.com/feed?a=%E0%A4&b=%C3%A9+x',
+        'https://example.com/feed?q=gallery%3Auser%2F1&n=a%26b%3Bc',
+      ]
+
+      for (const value of values) {
+        const once = normalizeUrl(value, { normalizeEncoding: true })
+
+        expect(normalizeUrl(once, { normalizeEncoding: true })).toBe(once)
+      }
+    })
+
     it('should keep a non-ASCII value in its UTF-8 escapes', () => {
       const value = 'https://example.com/feed?q=%c3%a9t%C3%A9'
       const expected = 'https://example.com/feed?q=%C3%A9t%C3%A9'
@@ -4403,6 +4436,38 @@ describe('createUrlSpellings', () => {
     expect(createUrlSpellings(value)).toContain(
       'https://backend.deviantart.com/rss.xml?type=deviation&q=gallery%3Ayuumei%2F24250483',
     )
+  })
+
+  it('should try the url, then the query written and encoded throughout, before any mix', () => {
+    const value = 'https://example.com/feed?q=a%3Ab/c'
+    const expected = [
+      value,
+      'https://example.com/feed?q=a:b/c',
+      'https://example.com/feed?q=a%3Ab%2Fc',
+    ]
+
+    expect(createUrlSpellings(value).slice(0, 3)).toEqual(expected)
+  })
+
+  it('should try every mix of four kinds in the query', () => {
+    const value = 'https://example.com/feed?q=a:b/c,d(e'
+
+    expect(createUrlSpellings(value)).toHaveLength(16)
+  })
+
+  it('should leave a slash in the path as written', () => {
+    const value = 'https://example.com/a/b/feed?q=c:d'
+    const spellings = createUrlSpellings(value)
+
+    for (const spelling of spellings) {
+      expect(spelling.startsWith('https://example.com/a/b/feed?')).toBe(true)
+    }
+  })
+
+  it('should swap a dollar sign and an apostrophe in the query', () => {
+    const value = "https://example.com/feed?q=a$b'c"
+
+    expect(createUrlSpellings(value)).toContain('https://example.com/feed?q=a%24b%27c')
   })
 
   it('should try only the query written and encoded throughout past four kinds', () => {
