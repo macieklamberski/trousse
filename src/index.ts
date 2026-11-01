@@ -87,6 +87,7 @@ export {
   getFragmentParam,
   getFragmentParams,
   getFragmentParamValues,
+  getOrigin,
   getPathSegments,
   getQueryParam,
   getQueryParams,
