@@ -1256,6 +1256,14 @@ const sameQuerySpellings: Array<[string, string]> = [
   ['+', '%20'],
   [':', '%3A'],
   ['@', '%40'],
+  ['/', '%2F'],
+  [',', '%2C'],
+  ['(', '%28'],
+  [')', '%29'],
+  ['*', '%2A'],
+  ['!', '%21'],
+  ["'", '%27'],
+  ['$', '%24'],
 ]
 
 const percentEscapeRegex = /%[0-9a-f]{2}/gi
@@ -1273,79 +1281,66 @@ const addLowercaseHexSpellings = (url: string, spellings: Array<string>): Array<
   return [...new Set([...spellings, ...lowercaseHexSpellings])]
 }
 
-// The pair writers a stored feed url most often comes from, measured on 333,962 stored feed queries:
-// composeQuery's escaping, a form encoder and encodeURIComponent cover 98.7% between them, and
-// encodeURIComponent with RFC 3986's marks escaped covers a handler that writes the strict form. A query
-// that mixes spellings across its pairs, as MediaWiki's does, is left to a fetch to match.
-const queryStyleEscapeRegex = /[&#%+=\s]/g
-const firstEqualsRegex = /=(.*)/s
-// The marks encodeURIComponent leaves raw and RFC 3986 escapes.
-const strictMarkRegex = /[!'()*]/g
+// A query with more than this many characters from `sameQuerySpellings` tries only all of them
+// written and all of them encoded, since each one doubles the lookups a feed not yet stored costs.
+// On 77,983 stored feed queries holding a reserved character, 99.2% spell each character one way
+// and hold at most this many, or are written or encoded throughout.
+const maxMixedQuerySpellings = 4
 
-const queryStyles: Array<(part: string) => string> = [
-  (part) => part.replace(queryStyleEscapeRegex, (character) => encodeURIComponent(character)),
-  (part) => new URLSearchParams([['', part]]).toString().slice(1),
-  (part) => encodeURIComponent(part),
-  (part) => {
-    return encodeURIComponent(part).replace(strictMarkRegex, (mark) => {
-      return `%${mark.charCodeAt(0).toString(16).toUpperCase()}`
-    })
-  },
-]
-
-const createQueryStyleSpellings = (
-  url: string,
+const respellQuery = (
+  spelling: string,
   queryIndex: number,
-  queryEnd: number,
-): Array<string> => {
-  const head = url.slice(0, queryIndex + 1)
-  const fragment = url.slice(queryEnd)
-  const pairs = url
-    .slice(queryIndex + 1, queryEnd)
-    .split('&')
-    .map((pair) =>
-      pair.split(firstEqualsRegex, 2).map((part) => decodePercent(part.replace(plusRegex, ' '))),
-    )
+  pairs: Array<[string, string]>,
+  toEncoded: boolean,
+): string => {
+  const fragmentIndex = spelling.indexOf('#')
+  const queryEnd = fragmentIndex === -1 ? spelling.length : fragmentIndex
+  let query = spelling.slice(queryIndex, queryEnd)
 
-  return queryStyles.map((style) => {
-    return `${head}${pairs.map((pair) => pair.map(style).join('=')).join('&')}${fragment}`
-  })
+  for (const [written, encoded] of pairs) {
+    query = toEncoded ? query.replaceAll(written, encoded) : query.replaceAll(encoded, written)
+  }
+
+  return `${spelling.slice(0, queryIndex)}${query}${spelling.slice(queryEnd)}`
 }
 
-// The url, then every combination of the spellings that serve the same feed: percent-escape hex as
-// written, uppercased or lowercased, each pair of `sameQuerySpellings` written or encoded across
-// the query, and the query rewritten in each of the `queryStyles`. The path keeps its spelling apart from the hex case.
+// The url, then the spellings that serve the same feed: percent-escape hex as written, uppercased
+// or lowercased, the query with every character of `sameQuerySpellings` written and then encoded,
+// and, for a query holding few of them, every mix of each one written or encoded. The path keeps
+// its spelling apart from the hex case.
 export const createUrlSpellings = (url: string): Array<string> => {
   const uppercaseHexUrl = url.replace(percentEscapeRegex, (hex) => hex.toUpperCase())
-  let spellings = [...new Set([url, uppercaseHexUrl])]
   const hashIndex = url.indexOf('#')
   const queryEnd = hashIndex === -1 ? url.length : hashIndex
   const queryIndex = url.indexOf('?')
 
   if (queryIndex === -1 || queryIndex > queryEnd) {
-    return addLowercaseHexSpellings(url, spellings)
+    return addLowercaseHexSpellings(url, [...new Set([url, uppercaseHexUrl])])
   }
 
-  for (const [written, encoded] of sameQuerySpellings) {
-    const swapped = spellings.flatMap((spelling) => {
-      const fragmentIndex = spelling.indexOf('#')
-      const spellingQueryEnd = fragmentIndex === -1 ? spelling.length : fragmentIndex
-      const head = spelling.slice(0, queryIndex)
-      const query = spelling.slice(queryIndex, spellingQueryEnd)
-      const fragment = spelling.slice(spellingQueryEnd)
+  const query = uppercaseHexUrl.slice(queryIndex, queryEnd)
+  const present = sameQuerySpellings.filter(([written, encoded]) => {
+    return query.includes(written) || query.includes(encoded)
+  })
+  const bases = [...new Set([url, uppercaseHexUrl])]
+  const throughout = bases.flatMap((base) => [
+    respellQuery(base, queryIndex, present, false),
+    respellQuery(base, queryIndex, present, true),
+  ])
+  let mixes = bases
 
-      return [
-        `${head}${query.replaceAll(encoded, written)}${fragment}`,
-        `${head}${query.replaceAll(written, encoded)}${fragment}`,
-      ]
-    })
-
-    spellings = [...new Set(swapped)]
+  if (present.length <= maxMixedQuerySpellings) {
+    for (const pair of present) {
+      mixes = mixes.flatMap((spelling) => [
+        respellQuery(spelling, queryIndex, [pair], false),
+        respellQuery(spelling, queryIndex, [pair], true),
+      ])
+    }
   }
 
-  const styled = createQueryStyleSpellings(url, queryIndex, queryEnd)
-
-  return addLowercaseHexSpellings(url, [url, ...spellings, ...styled])
+  return addLowercaseHexSpellings(url, [
+    ...new Set([url, uppercaseHexUrl, ...throughout, ...mixes]),
+  ])
 }
 
 // Two-label public suffixes take the form generic-second-level under a country code: co.uk,

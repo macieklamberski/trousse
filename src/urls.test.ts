@@ -4231,8 +4231,8 @@ describe('createUrlSpellings', () => {
     const expected = [
       value,
       'https://example.com/caf%C3%A9/feed?q=a%2Cb',
+      'https://example.com/caf%C3%A9/feed?q=a,b',
       'https://example.com/caf%c3%a9/feed?q=a,b',
-      'https://example.com/caf%c3%a9/feed?q=a%2Cb',
     ]
 
     expect(createUrlSpellings(value)).toEqual(expected)
@@ -4296,9 +4296,9 @@ describe('createUrlSpellings', () => {
     const value = 'https://example.com/feed?q=a+b&user=alice@example.org'
     const expected = [
       value,
+      'https://example.com/feed?q=a%20b&user=alice%40example.org',
       'https://example.com/feed?q=a+b&user=alice%40example.org',
       'https://example.com/feed?q=a%20b&user=alice@example.org',
-      'https://example.com/feed?q=a%20b&user=alice%40example.org',
     ]
 
     expect(createUrlSpellings(value)).toEqual(expected)
@@ -4308,13 +4308,13 @@ describe('createUrlSpellings', () => {
     const value = 'https://example.com/feed?q=a+b:c@d'
     const expected = [
       value,
+      'https://example.com/feed?q=a%20b%3Ac%40d',
       'https://example.com/feed?q=a+b:c%40d',
       'https://example.com/feed?q=a+b%3Ac@d',
       'https://example.com/feed?q=a+b%3Ac%40d',
       'https://example.com/feed?q=a%20b:c@d',
       'https://example.com/feed?q=a%20b:c%40d',
       'https://example.com/feed?q=a%20b%3Ac@d',
-      'https://example.com/feed?q=a%20b%3Ac%40d',
     ]
 
     expect(createUrlSpellings(value)).toEqual(expected)
@@ -4332,8 +4332,8 @@ describe('createUrlSpellings', () => {
     const value = 'https://example.com/caf%c3%a9/a+b:c@d/feed?q=a+b'
     const expected = [
       value,
-      'https://example.com/caf%c3%a9/a+b:c@d/feed?q=a%20b',
       'https://example.com/caf%C3%A9/a+b:c@d/feed?q=a+b',
+      'https://example.com/caf%c3%a9/a+b:c@d/feed?q=a%20b',
       'https://example.com/caf%C3%A9/a+b:c@d/feed?q=a%20b',
     ]
 
@@ -4403,6 +4403,13 @@ describe('createUrlSpellings', () => {
     expect(createUrlSpellings(value)).toContain(
       'https://backend.deviantart.com/rss.xml?type=deviation&q=gallery%3Ayuumei%2F24250483',
     )
+  })
+
+  it('should try only the query written and encoded throughout past four kinds', () => {
+    const value = 'https://example.com/feed?q=a:b/c,d(e)'
+    const expected = [value, 'https://example.com/feed?q=a%3Ab%2Fc%2Cd%28e%29']
+
+    expect(createUrlSpellings(value)).toEqual(expected)
   })
 
   it('should spell a raw query in the strict form a handler stores', () => {
