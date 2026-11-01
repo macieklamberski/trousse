@@ -1041,6 +1041,16 @@ describe('composeQuery', () => {
     expect(composeQuery(value)).toBe(expected)
   })
 
+  it('should write a name valued true as a bare flag', () => {
+    const value = {
+      'BazaR/rss': true,
+      id: '3',
+    } as const
+    const expected = '?BazaR/rss&id=3'
+
+    expect(composeQuery(value)).toBe(expected)
+  })
+
   it('should keep a slash, an at sign and a non-ASCII character as written', () => {
     const value = {
       clipt: 'a/b',
