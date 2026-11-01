@@ -436,13 +436,21 @@ export const getFragmentParams = (
 
 const queryPartEscapeRegex = /[&#%+\s]/g
 
-const composePairs = (params: Record<string, string | number> | undefined): string => {
+// A value of `true` writes the name alone, a flag such as `?xml` that `hasQueryParam` reads.
+type QueryValue = string | number | true
+
+const composePairs = (params: Record<string, QueryValue> | undefined): string => {
   const escapePart = (part: string) => {
     return part.replace(queryPartEscapeRegex, (character) => encodeURIComponent(character))
   }
   const pairs: Array<string> = []
 
   for (const [name, value] of Object.entries(params ?? {})) {
+    if (value === true) {
+      pairs.push(escapePart(name))
+      continue
+    }
+
     const text = String(value)
 
     if (!text) {
@@ -456,17 +464,17 @@ const composePairs = (params: Record<string, string | number> | undefined): stri
 }
 
 // Name and value pairs joined into a query ready to append, or an empty string for none. A pair
-// with an empty value is left out. Query readers hand back a decoded value, so a `%` or `+` it
+// with an empty value is left out, and one valued `true` is written as the name alone. Query readers hand back a decoded value, so a `%` or `+` it
 // holds is escaped again, along with what would end a pair or the query and whitespace. An `@`
 // stays as written.
-export const composeQuery = (params?: Record<string, string | number>): string => {
+export const composeQuery = (params?: Record<string, QueryValue>): string => {
   const pairs = composePairs(params)
 
   return pairs ? `?${pairs}` : ''
 }
 
 // The pairs of `composeQuery`, escaped the same way, joined into a fragment ready to append.
-export const composeFragment = (params?: Record<string, string | number>): string => {
+export const composeFragment = (params?: Record<string, QueryValue>): string => {
   const pairs = composePairs(params)
 
   return pairs ? `#${pairs}` : ''
