@@ -1274,15 +1274,23 @@ const addLowercaseHexSpellings = (url: string, spellings: Array<string>): Array<
 }
 
 // The pair writers a stored feed url most often comes from, measured on 333,962 stored feed queries:
-// composeQuery's escaping, a form encoder and encodeURIComponent cover 98.7% between them. A query
+// composeQuery's escaping, a form encoder and encodeURIComponent cover 98.7% between them, and
+// encodeURIComponent with RFC 3986's marks escaped covers a handler that writes the strict form. A query
 // that mixes spellings across its pairs, as MediaWiki's does, is left to a fetch to match.
 const queryStyleEscapeRegex = /[&#%+=\s]/g
 const firstEqualsRegex = /=(.*)/s
+// The marks encodeURIComponent leaves raw and RFC 3986 escapes.
+const strictMarkRegex = /[!'()*]/g
 
 const queryStyles: Array<(part: string) => string> = [
   (part) => part.replace(queryStyleEscapeRegex, (character) => encodeURIComponent(character)),
   (part) => new URLSearchParams([['', part]]).toString().slice(1),
   (part) => encodeURIComponent(part),
+  (part) => {
+    return encodeURIComponent(part).replace(strictMarkRegex, (mark) => {
+      return `%${mark.charCodeAt(0).toString(16).toUpperCase()}`
+    })
+  },
 ]
 
 const createQueryStyleSpellings = (

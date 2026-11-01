@@ -4405,6 +4405,14 @@ describe('createUrlSpellings', () => {
     )
   })
 
+  it('should spell a raw query in the strict form a handler stores', () => {
+    const value = 'https://alice.blogs.sapo.pt/data/rss?tag=fim%20(de)%20ano!'
+
+    expect(createUrlSpellings(value)).toContain(
+      'https://alice.blogs.sapo.pt/data/rss?tag=fim%20%28de%29%20ano%21',
+    )
+  })
+
   it('should spell an escaped reserved character in the query as written', () => {
     const value = 'https://x.blogs.sapo.pt/data/rss?tag=ponto%20verde%20%28spv%29'
 
