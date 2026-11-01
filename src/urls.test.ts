@@ -3761,12 +3761,12 @@ describe('normalizeUrl', () => {
     })
 
     it('should leave percent escapes alone when lowercasing', () => {
-      const value = 'https://example.com/feed?Q=A%2FB'
+      const value = 'https://example.com/feed?Q=A%26B'
       const options = {
         ...defaultOptions,
         lowercaseQuery: true,
       }
-      const expected = 'example.com/feed?q=a%2Fb'
+      const expected = 'example.com/feed?q=a%26b'
 
       expect(normalizeUrl(value, options)).toBe(expected)
     })
@@ -3802,15 +3802,57 @@ describe('normalizeUrl', () => {
     })
 
     it('should decode unreserved characters and uppercase hex in the query', () => {
-      const value = 'https://example.com/feed?q=%7e%41%3a'
-      const expected = 'https://example.com/feed?q=~A%3A'
+      const value = 'https://example.com/feed?q=%7e%41%e0'
+      const expected = 'https://example.com/feed?q=~A%E0'
 
       expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(expected)
     })
 
-    it('should keep reserved characters encoded in the query', () => {
-      const value = 'https://example.com/feed?q=a%26b%3Dc'
-      const expected = 'https://example.com/feed?q=a%26b%3Dc'
+    it('should keep the escapes that shape a query', () => {
+      const value = 'https://example.com/feed?a%3Db=c%26d%2Be%25f%23g'
+      const expected = 'https://example.com/feed?a%3Db=c%26d%2Be%25f%23g'
+
+      expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(expected)
+    })
+
+    it('should decode an equals sign in a value, which a form decoder reads the same', () => {
+      const value = 'https://example.com/feed?q=a%3Db'
+      const expected = 'https://example.com/feed?q=a=b'
+
+      expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(expected)
+    })
+
+    it('should decode the reserved characters a query value holds as written', () => {
+      const value =
+        'https://backend.deviantart.com/rss.xml?type=deviation&q=gallery%3Ayuumei%2F24250483'
+      const expected =
+        'https://backend.deviantart.com/rss.xml?type=deviation&q=gallery:yuumei/24250483'
+
+      expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(expected)
+    })
+
+    it('should give a query one spelling whichever characters it escapes', () => {
+      const escaped = 'https://x.blogs.sapo.pt/data/rss?tag=ponto%20verde%20%28spv%29%21%2A'
+      const raw = 'https://x.blogs.sapo.pt/data/rss?tag=ponto+verde+(spv)!*'
+
+      expect(normalizeUrl(escaped, { normalizeEncoding: true })).toBe(
+        normalizeUrl(raw, { normalizeEncoding: true }),
+      )
+    })
+
+    it('should agree on a query that mixes raw and escaped spellings across pairs', () => {
+      const mixed = 'https://w.example/index.php?title=Special:RecentChanges&target=Category%3AFoo'
+      const escaped =
+        'https://w.example/index.php?title=Special%3ARecentChanges&target=Category%3AFoo'
+
+      expect(normalizeUrl(mixed, { normalizeEncoding: true })).toBe(
+        normalizeUrl(escaped, { normalizeEncoding: true }),
+      )
+    })
+
+    it('should keep a non-ASCII value in its UTF-8 escapes', () => {
+      const value = 'https://example.com/feed?q=%c3%a9t%C3%A9'
+      const expected = 'https://example.com/feed?q=%C3%A9t%C3%A9'
 
       expect(normalizeUrl(value, { normalizeEncoding: true })).toBe(expected)
     })
@@ -3960,7 +4002,7 @@ describe('normalizeUrl', () => {
 
     it('should handle special characters in query values', () => {
       const value = 'https://example.com/feed?q=hello+world&tag=%23test'
-      const expected = 'example.com/feed?q=hello+world&tag=%23test'
+      const expected = 'example.com/feed?q=hello%20world&tag=%23test'
 
       expect(normalizeUrl(value, defaultOptions)).toBe(expected)
     })
@@ -4186,14 +4228,24 @@ describe('createUrlSpellings', () => {
 
   it('should uppercase lowercase percent-escape hex in the path and the query', () => {
     const value = 'https://example.com/caf%c3%a9/feed?q=a%2cb'
-    const expected = [value, 'https://example.com/caf%C3%A9/feed?q=a%2Cb']
+    const expected = [
+      value,
+      'https://example.com/caf%C3%A9/feed?q=a%2Cb',
+      'https://example.com/caf%c3%a9/feed?q=a,b',
+      'https://example.com/caf%c3%a9/feed?q=a%2Cb',
+    ]
 
     expect(createUrlSpellings(value)).toEqual(expected)
   })
 
   it('should lowercase uppercase percent-escape hex in the path and the query', () => {
     const value = 'https://example.com/caf%C3%A9/feed?q=a%2Cb'
-    const expected = [value, 'https://example.com/caf%c3%a9/feed?q=a%2cb']
+    const expected = [
+      value,
+      'https://example.com/caf%C3%A9/feed?q=a,b',
+      'https://example.com/caf%c3%a9/feed?q=a%2cb',
+      'https://example.com/caf%c3%a9/feed?q=a,b',
+    ]
 
     expect(createUrlSpellings(value)).toEqual(expected)
   })
@@ -4340,9 +4392,25 @@ describe('createUrlSpellings', () => {
   })
 
   it('should return the url alone when nothing can be spelled another way', () => {
-    const value = 'https://example.com/feed?q=a,b'
+    const value = 'https://example.com/feed?q=ab'
 
     expect(createUrlSpellings(value)).toEqual([value])
+  })
+
+  it('should spell a reserved character in the query both written and escaped', () => {
+    const value = 'https://backend.deviantart.com/rss.xml?type=deviation&q=gallery:yuumei/24250483'
+
+    expect(createUrlSpellings(value)).toContain(
+      'https://backend.deviantart.com/rss.xml?type=deviation&q=gallery%3Ayuumei%2F24250483',
+    )
+  })
+
+  it('should spell an escaped reserved character in the query as written', () => {
+    const value = 'https://x.blogs.sapo.pt/data/rss?tag=ponto%20verde%20%28spv%29'
+
+    expect(createUrlSpellings(value)).toContain(
+      'https://x.blogs.sapo.pt/data/rss?tag=ponto%20verde%20(spv)',
+    )
   })
 })
 
