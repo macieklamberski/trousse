@@ -3016,8 +3016,8 @@ describe('resolveUrl', () => {
     })
 
     it('should handle unicode control characters', () => {
-      expect(resolveUrl('https://example.com/fe\u200Bed')).toBeDefined()
-      expect(resolveUrl('https://example.com/\u202Efeed')).toBeDefined()
+      expect(resolveUrl('https://example.com/fe\u200Bed')).toBe('https://example.com/fe%E2%80%8Bed')
+      expect(resolveUrl('https://example.com/\u202Efeed')).toBe('https://example.com/%E2%80%AEfeed')
     })
   })
 })
