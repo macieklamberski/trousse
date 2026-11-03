@@ -522,6 +522,7 @@ const repeatedSlashesRegex = /(?<!:|%3a)\/{2,}/gi
 
 const leadingWhitespaceChars = [' ', '\t', '\n']
 const relativeLeadChars = ['/', '.', '?', '#']
+
 const localhostRegex = /^localhost(?:[:/?#]|$)/i
 const schemeColonRegex = /^[^/]*:/
 const missingColonSchemeRegex = /^https?[\s=.\\]*\/\//i
@@ -729,10 +730,12 @@ export const fixMalformedQuery = (url: string): string => {
 // a run, so a long run is read once.
 const segmentEdgeSpace = '(?:\\s|%(?:09|0A|0D|20))'
 const valueEdgeSpace = '(?:\\s|\\+|%(?:09|0A|0D|20))'
+
 const segmentEdgeSpaceRegex = new RegExp(
   `^${segmentEdgeSpace}+|(?<!${segmentEdgeSpace})${segmentEdgeSpace}+$`,
   'gi',
 )
+
 const valueEdgeSpaceRegex = new RegExp(
   `^${valueEdgeSpace}+|(?<!${valueEdgeSpace})${valueEdgeSpace}+$`,
   'gi',
