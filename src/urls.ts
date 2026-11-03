@@ -522,7 +522,6 @@ const repeatedSlashesRegex = /(?<!:|%3a)\/{2,}/gi
 
 const leadingWhitespaceChars = [' ', '\t', '\n']
 const relativeLeadChars = ['/', '.', '?', '#']
-
 const localhostRegex = /^localhost(?:[:/?#]|$)/i
 const schemeColonRegex = /^[^/]*:/
 const missingColonSchemeRegex = /^https?[\s=.\\]*\/\//i
@@ -735,7 +734,6 @@ const segmentEdgeSpaceRegex = new RegExp(
   `^${segmentEdgeSpace}+|(?<!${segmentEdgeSpace})${segmentEdgeSpace}+$`,
   'gi',
 )
-
 const valueEdgeSpaceRegex = new RegExp(
   `^${valueEdgeSpace}+|(?<!${valueEdgeSpace})${valueEdgeSpace}+$`,
   'gi',
