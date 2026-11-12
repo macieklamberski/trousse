@@ -21,7 +21,9 @@ const testRegexAnyCase = (regex: RegExp, lowerValue: string, value: string): boo
   return testRegex(regex, lowerValue) || (lowerValue !== value && testRegex(regex, value))
 }
 
-const toPatternList = (patterns: Pattern | ReadonlyArray<Pattern>): ReadonlyArray<Pattern> => {
+export const toPatternList = (
+  patterns: Pattern | ReadonlyArray<Pattern>,
+): ReadonlyArray<Pattern> => {
   return typeof patterns === 'string' || patterns instanceof RegExp ? [patterns] : patterns
 }
 

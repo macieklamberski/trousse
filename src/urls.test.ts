@@ -37,6 +37,10 @@ import {
   upgradeScheme,
 } from './urls.js'
 
+const blogspotRegex = /^blogspot\.(?:com|co\.[a-z]{2}|com\.[a-z]{2}|[a-z]{2})$/
+const blogExampleRegex = /^blog\.example\.com$/
+const optionalBlogRegex = /^(?:blog\.)?example\.com$/
+
 const defaultOptions: NormalizeOptions = {
   stripScheme: true,
   stripAuthentication: false,
@@ -216,6 +220,54 @@ describe('isHostOf', () => {
     expect(isHostOf('https://example.com./feed', 'example.com.')).toBe(true)
     expect(isHostOf('https://example.com/feed', 'example.com.')).toBe(true)
   })
+
+  it('should match a host by a pattern', () => {
+    const value = 'https://blogspot.com.br/'
+
+    expect(isHostOf(value, blogspotRegex)).toBe(true)
+  })
+
+  it('should match a host by a pattern in a list with strings', () => {
+    const value = 'https://blogspot.co.uk/'
+
+    expect(isHostOf(value, ['example.com', blogspotRegex])).toBe(true)
+  })
+
+  it('should match a host by a string in a list with patterns', () => {
+    const value = 'https://example.com/'
+
+    expect(isHostOf(value, [blogspotRegex, 'example.com'])).toBe(true)
+  })
+
+  it('should not match a subdomain by a pattern', () => {
+    const value = 'https://alice.blogspot.de/'
+
+    expect(isHostOf(value, blogspotRegex)).toBe(false)
+  })
+
+  it('should not match a www host by a pattern', () => {
+    const value = 'https://www.blogspot.de/'
+
+    expect(isHostOf(value, blogspotRegex)).toBe(false)
+  })
+
+  it('should match a pattern against an uppercase hostname', () => {
+    const value = 'javascript://BLOGSPOT.DE/'
+
+    expect(isHostOf(value, blogspotRegex)).toBe(true)
+  })
+
+  it('should return false for invalid URLs with a pattern', () => {
+    expect(isHostOf('not a url', blogspotRegex)).toBe(false)
+  })
+
+  it('should match a global pattern on every call', () => {
+    const value = 'https://blogspot.de/'
+    const globalRegex = /^blogspot\.de$/g
+
+    expect(isHostOf(value, globalRegex)).toBe(true)
+    expect(isHostOf(value, globalRegex)).toBe(true)
+  })
 })
 
 describe('isSubdomainOf', () => {
@@ -273,6 +325,66 @@ describe('isSubdomainOf', () => {
     expect(isSubdomainOf('https://a.example.com/feed', ' example.com ')).toBe(true)
     expect(isSubdomainOf('https://a.example.com/feed', 'example.com.')).toBe(true)
   })
+
+  it('should match a subdomain by a pattern', () => {
+    const value = 'https://alice.blogspot.com.br/'
+
+    expect(isSubdomainOf(value, blogspotRegex)).toBe(true)
+  })
+
+  it('should match a nested subdomain by a pattern', () => {
+    const value = 'https://a.b.blogspot.de/'
+
+    expect(isSubdomainOf(value, blogspotRegex)).toBe(true)
+  })
+
+  it('should match a www subdomain by a pattern', () => {
+    const value = 'https://www.blogspot.de/'
+
+    expect(isSubdomainOf(value, blogspotRegex)).toBe(true)
+  })
+
+  it('should match a subdomain by a pattern in a list with strings', () => {
+    const value = 'https://alice.blogspot.co.uk/'
+
+    expect(isSubdomainOf(value, ['example.com', blogspotRegex])).toBe(true)
+  })
+
+  it('should match a subdomain by a string in a list with patterns', () => {
+    const value = 'https://alice.example.com/'
+
+    expect(isSubdomainOf(value, [blogspotRegex, 'example.com'])).toBe(true)
+  })
+
+  it('should not match the bare domain by a pattern', () => {
+    const value = 'https://blogspot.com.br/'
+
+    expect(isSubdomainOf(value, blogspotRegex)).toBe(false)
+  })
+
+  it('should not match a pattern against part of a label', () => {
+    const value = 'https://myblogspot.de/'
+
+    expect(isSubdomainOf(value, blogspotRegex)).toBe(false)
+  })
+
+  it('should match a pattern against an uppercase hostname', () => {
+    const value = 'javascript://ALICE.BLOGSPOT.DE/'
+
+    expect(isSubdomainOf(value, blogspotRegex)).toBe(true)
+  })
+
+  it('should return false for invalid URLs with a pattern', () => {
+    expect(isSubdomainOf('not a url', blogspotRegex)).toBe(false)
+  })
+
+  it('should match a global pattern on every call', () => {
+    const value = 'https://alice.blogspot.de/'
+    const globalRegex = /^blogspot\.de$/g
+
+    expect(isSubdomainOf(value, globalRegex)).toBe(true)
+    expect(isSubdomainOf(value, globalRegex)).toBe(true)
+  })
 })
 
 describe('isHttpUrl', () => {
@@ -323,6 +435,30 @@ describe('isHostOrSubdomainOf', () => {
 
   it('should return false for invalid URLs', () => {
     expect(isHostOrSubdomainOf('not a url', 'example.com')).toBe(false)
+  })
+
+  it('should match the bare domain by a pattern', () => {
+    const value = 'https://blogspot.com.br/'
+
+    expect(isHostOrSubdomainOf(value, blogspotRegex)).toBe(true)
+  })
+
+  it('should match a subdomain by a pattern', () => {
+    const value = 'https://alice.blogspot.com.br/'
+
+    expect(isHostOrSubdomainOf(value, blogspotRegex)).toBe(true)
+  })
+
+  it('should match by a pattern in a list with strings', () => {
+    const value = 'https://alice.blogspot.de/'
+
+    expect(isHostOrSubdomainOf(value, ['example.com', blogspotRegex])).toBe(true)
+  })
+
+  it('should not match another domain by a pattern', () => {
+    const value = 'https://myblogspot.de/'
+
+    expect(isHostOrSubdomainOf(value, blogspotRegex)).toBe(false)
   })
 })
 
@@ -376,6 +512,80 @@ describe('getSubdomain', () => {
   it('should read a pattern with surrounding spaces or a trailing dot', () => {
     expect(getSubdomain('https://a.example.com/feed', ' example.com ')).toBe('a')
     expect(getSubdomain('https://a.example.com/feed', 'example.com.')).toBe('a')
+  })
+
+  it('should return the label in front of a domain matched by a pattern', () => {
+    const value = 'https://alice.blogspot.com.br/'
+    const expected = 'alice'
+
+    expect(getSubdomain(value, blogspotRegex)).toBe(expected)
+  })
+
+  it('should return every label in front of a domain matched by a pattern', () => {
+    const value = 'https://a.b.blogspot.de/'
+    const expected = 'a.b'
+
+    expect(getSubdomain(value, blogspotRegex)).toBe(expected)
+  })
+
+  it('should return the label in front of the longest domain a pattern matches', () => {
+    const value = 'https://alice.blog.example.com/'
+    const expected = 'alice'
+
+    expect(getSubdomain(value, optionalBlogRegex)).toBe(expected)
+  })
+
+  it('should return www in front of a domain matched by a pattern', () => {
+    const value = 'https://www.blogspot.de/'
+    const expected = 'www'
+
+    expect(getSubdomain(value, blogspotRegex)).toBe(expected)
+  })
+
+  it('should return the lowercased label in front of a domain matched by a pattern', () => {
+    const value = 'javascript://Alice.BLOGSPOT.DE/'
+    const expected = 'alice'
+
+    expect(getSubdomain(value, blogspotRegex)).toBe(expected)
+  })
+
+  it('should use the first string in a list with patterns that matches', () => {
+    const value = 'https://alice.blog.example.com/'
+    const expected = 'alice.blog'
+
+    expect(getSubdomain(value, ['example.com', blogExampleRegex])).toBe(expected)
+  })
+
+  it('should use the first pattern in a list with strings that matches', () => {
+    const value = 'https://alice.blog.example.com/'
+    const expected = 'alice'
+
+    expect(getSubdomain(value, [blogExampleRegex, 'example.com'])).toBe(expected)
+  })
+
+  it('should return undefined for the bare domain matched by a pattern', () => {
+    const value = 'https://blogspot.com.br/'
+
+    expect(getSubdomain(value, blogspotRegex)).toBeUndefined()
+  })
+
+  it('should return undefined for a pattern matching part of a label', () => {
+    const value = 'https://myblogspot.de/'
+
+    expect(getSubdomain(value, blogspotRegex)).toBeUndefined()
+  })
+
+  it('should return undefined for invalid URLs with a pattern', () => {
+    expect(getSubdomain('not a url', blogspotRegex)).toBeUndefined()
+  })
+
+  it('should read a global pattern on every call', () => {
+    const value = 'https://alice.blogspot.de/'
+    const expected = 'alice'
+    const globalRegex = /^blogspot\.de$/g
+
+    expect(getSubdomain(value, globalRegex)).toBe(expected)
+    expect(getSubdomain(value, globalRegex)).toBe(expected)
   })
 })
 

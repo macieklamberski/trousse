@@ -1,11 +1,12 @@
 import { decodeHTMLStrict } from 'entities'
 import { isNullish } from './is.js'
-import { endsWithAnyOf, isAnyOf } from './matching.js'
+import { isAnyOf, toPatternList } from './matching.js'
 import type {
   NormalizeOptions,
   Nullish,
   ParamOptions,
   ParamSource,
+  Pattern,
   RegistrableDomainOptions,
 } from './types.js'
 
@@ -75,21 +76,39 @@ const normalizeDomain = (domain: string): string => {
   return parseUrl(`http://${bare}`)?.hostname ?? bare
 }
 
-export const isHostOf = (url: string | URL, hosts: string | ReadonlyArray<string>): boolean => {
+const normalizeHostPattern = (pattern: Pattern): Pattern => {
+  return pattern instanceof RegExp ? pattern : normalizeDomain(pattern)
+}
+
+// The domains a hostname is a strict subdomain of, longest first: `b.example.com` and
+// `example.com` for `a.b.example.com`.
+const getParentDomains = (hostname: string): Array<string> => {
+  const parents: Array<string> = []
+
+  for (let index = hostname.indexOf('.'); index !== -1; index = hostname.indexOf('.', index + 1)) {
+    parents.push(hostname.slice(index + 1))
+  }
+
+  return parents
+}
+
+// A RegExp entry is tested against the whole hostname, as isAnyOf tests it, so anchor it to match
+// whole domains: `/^blogspot\.(?:com|[a-z]{2})$/` for `blogspot.com` and `blogspot.de`.
+export const isHostOf = (url: string | URL, hosts: Pattern | ReadonlyArray<Pattern>): boolean => {
   const hostname = getHostname(url)
 
   if (!hostname) {
     return false
   }
 
-  const list = typeof hosts === 'string' ? [hosts] : hosts
-
-  return isAnyOf(hostname, list.map(normalizeDomain))
+  return isAnyOf(hostname, toPatternList(hosts).map(normalizeHostPattern))
 }
 
+// A RegExp entry is tested against each parent domain of the hostname, so `/^blogspot\.[a-z]{2}$/`
+// matches `alice.blogspot.de` and not `blogspot.de` itself.
 export const isSubdomainOf = (
   url: string | URL,
-  domains: string | ReadonlyArray<string>,
+  domains: Pattern | ReadonlyArray<Pattern>,
 ): boolean => {
   const hostname = getHostname(url)
 
@@ -97,12 +116,9 @@ export const isSubdomainOf = (
     return false
   }
 
-  const list = typeof domains === 'string' ? [domains] : domains
+  const list = toPatternList(domains).map(normalizeHostPattern)
 
-  return endsWithAnyOf(
-    hostname,
-    list.map((domain) => `.${normalizeDomain(domain)}`),
-  )
+  return getParentDomains(hostname).some((parent) => isAnyOf(parent, list))
 }
 
 // See: https://fetch.spec.whatwg.org/#http-scheme.
@@ -118,17 +134,19 @@ export const isHttpUrl = (url: string | URL): boolean => {
 
 export const isHostOrSubdomainOf = (
   url: string | URL,
-  domains: string | ReadonlyArray<string>,
+  domains: Pattern | ReadonlyArray<Pattern>,
 ): boolean => {
   return isHostOf(url, domains) || isSubdomainOf(url, domains)
 }
 
 // The labels in front of the first domain the hostname is a subdomain of, lowercased: `alice` for
 // `alice.podbean.com`, `a.b` for `a.b.example.com`. A URL of another scheme keeps the case of its
-// hostname, so it is lowercased here, as `isSubdomainOf` compares.
+// hostname, so it is lowercased here, as `isSubdomainOf` compares. Entries are tried in list order.
+// A RegExp entry that matches several parent domains takes the longest, so
+// `/^(?:blog\.)?example\.com$/` reads `alice` from `alice.blog.example.com`, not `alice.blog`.
 export const getSubdomain = (
   url: string | URL,
-  domains: string | ReadonlyArray<string>,
+  domains: Pattern | ReadonlyArray<Pattern>,
 ): string | undefined => {
   const hostname = getHostname(url)?.toLowerCase()
 
@@ -136,13 +154,14 @@ export const getSubdomain = (
     return
   }
 
-  const list = typeof domains === 'string' ? [domains] : domains
+  const parents = getParentDomains(hostname)
 
-  for (const domain of list) {
-    const suffix = `.${normalizeDomain(domain).toLowerCase()}`
+  for (const domain of toPatternList(domains)) {
+    const pattern = normalizeHostPattern(domain)
+    const parent = parents.find((candidate) => isAnyOf(candidate, pattern))
 
-    if (hostname.endsWith(suffix) && hostname.length > suffix.length) {
-      return hostname.slice(0, -suffix.length)
+    if (parent) {
+      return hostname.slice(0, -parent.length - 1)
     }
   }
 }
