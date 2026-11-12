@@ -59,7 +59,9 @@ const defaultOptions: NormalizeOptions = {
 
 describe('parseUrl', () => {
   it('should parse a valid URL string', () => {
-    expect(parseUrl('https://example.com/path')?.hostname).toBe('example.com')
+    const parsed = parseUrl('https://example.com/path')
+
+    expect(parsed?.hostname).toBe('example.com')
   })
 
   it('should return undefined for an undefined value', () => {
@@ -77,15 +79,17 @@ describe('parseUrl', () => {
   })
 
   it('should resolve a relative URL against a base', () => {
-    expect(parseUrl('/feed.xml', 'https://example.com/blog')?.href).toBe(
-      'https://example.com/feed.xml',
-    )
+    const parsed = parseUrl('/feed.xml', 'https://example.com/blog')
+
+    expect(parsed?.href).toBe('https://example.com/feed.xml')
   })
 
   it('should re-resolve a URL instance when a base is given', () => {
     const value = new URL('https://example.com/path')
 
-    expect(parseUrl(value, 'https://other.com')?.href).toBe('https://example.com/path')
+    const parsed = parseUrl(value, 'https://other.com')
+
+    expect(parsed?.href).toBe('https://example.com/path')
   })
 
   it('should return undefined for invalid URLs', () => {
@@ -102,7 +106,9 @@ describe('parseUrl', () => {
     Object.defineProperty(URL, 'parse', { value: undefined, configurable: true })
 
     try {
-      expect(parseUrl('https://example.com/path')?.hostname).toBe('example.com')
+      const parsed = parseUrl('https://example.com/path')
+
+      expect(parsed?.hostname).toBe('example.com')
       expect(parseUrl('not a url')).toBeUndefined()
     } finally {
       Object.defineProperty(URL, 'parse', { value: nativeParse, configurable: true })
@@ -4656,7 +4662,9 @@ describe('createUrlSpellings', () => {
       'https://example.com/feed?q=a%3Ab%2Fc',
     ]
 
-    expect(createUrlSpellings(value).slice(0, 3)).toEqual(expected)
+    const spellings = createUrlSpellings(value)
+
+    expect(spellings.slice(0, 3)).toEqual(expected)
   })
 
   it('should try every mix of four kinds in the query', () => {
