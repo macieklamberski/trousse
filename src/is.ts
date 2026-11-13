@@ -1,8 +1,10 @@
 export const isString = (value: unknown): value is string => {
+  // biome-ignore lint/plugin/useTypeofGuard: This is isString.
   return typeof value === 'string'
 }
 
 export const isNumber = (value: unknown): value is number => {
+  // biome-ignore lint/plugin/useTypeofGuard: This is isNumber.
   return typeof value === 'number'
 }
 
@@ -17,6 +19,7 @@ export const isFiniteNumber = (value: unknown): value is number => {
 }
 
 export const isBoolean = (value: unknown): value is boolean => {
+  // biome-ignore lint/plugin/useTypeofGuard: This is isBoolean.
   return typeof value === 'boolean'
 }
 
@@ -31,15 +34,18 @@ type FunctionOf<T> = unknown extends T
     : Extract<T, AnyFunction>
 
 export const isFunction = <T>(value: T): value is FunctionOf<T> & T => {
+  // biome-ignore lint/plugin/useTypeofGuard: This is isFunction.
   return typeof value === 'function'
 }
 
 export const isPresent = <T>(value: T): value is NonNullable<T> => {
+  // biome-ignore lint/plugin/useNullishGuard: This is isPresent.
   return value != null
 }
 
 // biome-ignore lint/plugin/useNullishType: Nullish<unknown> collapses to unknown, so the predicate spells the union out.
 export const isNullish = (value: unknown): value is null | undefined => {
+  // biome-ignore lint/plugin/useNullishGuard: This is isNullish.
   return value == null
 }
 
@@ -75,5 +81,6 @@ export const isNonEmptyString = (value: unknown): value is string => {
 }
 
 export const isValidDate = (value: unknown): value is Date => {
+  // biome-ignore lint/plugin/useIsValidDate: This is isValidDate.
   return value instanceof Date && !Number.isNaN(value.getTime())
 }
