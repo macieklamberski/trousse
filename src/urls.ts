@@ -115,7 +115,13 @@ export const isHostOf = (url: string | URL, hosts: Pattern | ReadonlyArray<Patte
     return false
   }
 
-  return isAnyOf(hostname, toPatternList(hosts).map(normalizeHostPattern))
+  for (const host of toPatternList(hosts)) {
+    if (isAnyOf(hostname, normalizeHostPattern(host))) {
+      return true
+    }
+  }
+
+  return false
 }
 
 // A RegExp entry is tested against each parent domain of the hostname, so `/^blogspot\.[a-z]{2}$/`
