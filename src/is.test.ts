@@ -151,6 +151,46 @@ describe('isFunction', () => {
     expect(isFunction(null)).toBe(false)
     expect(isFunction(undefined)).toBe(false)
   })
+
+  it('should narrow an unknown value to a function that can be called', () => {
+    const call = (value: unknown): unknown => {
+      if (!isFunction(value)) {
+        return
+      }
+
+      return value('feed')
+    }
+    const length = (name: string): number => {
+      return name.length
+    }
+
+    expect(call(length)).toBe(4)
+  })
+
+  it('should narrow an object property to a function that can be called', () => {
+    const call = (value: object): unknown => {
+      if (!('type' in value) || !isFunction(value.type)) {
+        return
+      }
+
+      return value.type('feed')
+    }
+    const element = { type: (name: string) => name.length }
+
+    expect(call(element)).toBe(4)
+  })
+
+  it('should keep the signature of a function member in a union', () => {
+    const read = (value: string | ((name: string) => number)): number => {
+      return isFunction(value) ? value('feed') : value.length
+    }
+    const length = (name: string): number => {
+      return name.length * 2
+    }
+
+    expect(read(length)).toBe(8)
+    expect(read('feedsmith')).toBe(9)
+  })
 })
 
 describe('isPresent', () => {
