@@ -1,6 +1,7 @@
 import { isPresent } from './is.js'
+import type { Nullish } from './types.js'
 
-export const omitEmpty = <T>(array: Array<T | null | undefined>): Array<T> | undefined => {
+export const omitEmpty = <T>(array: Array<Nullish<T>>): Array<T> | undefined => {
   const result: Array<T> = []
 
   for (const item of array) {

@@ -25,10 +25,12 @@ export type DeepOmit<T, Keys extends string> =
       ? Pick<{ [Key in keyof T]: DeepOmit<T[Key], Keys> }, Exclude<keyof T, Keys>>
       : T
 
+// biome-ignore lint/plugin/useNullishType: This is Nullish.
 export type Nullish<T> = T | null | undefined
 
 export type PartialNullish<T> = { [Key in keyof T]?: Nullish<T[Key]> }
 
+// biome-ignore lint/plugin/useMaybePromiseType: This is MaybePromise.
 export type MaybePromise<T> = T | Promise<T>
 
 export type Pattern = string | RegExp

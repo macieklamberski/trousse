@@ -28,12 +28,14 @@ export const isPresent = <T>(value: T): value is NonNullable<T> => {
   return value != null
 }
 
+// biome-ignore lint/plugin/useNullishType: Nullish<unknown> collapses to unknown, so the predicate spells the union out.
 export const isNullish = (value: unknown): value is null | undefined => {
   return value == null
 }
 
 // Narrow to any non-array object, excluding null. Accepts class instances, Date, Map, etc.
 export const isObject = (value: unknown): value is object => {
+  // biome-ignore lint/plugin/useIsObject: This is isObject.
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
