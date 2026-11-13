@@ -67,6 +67,7 @@ export const coerceDate = (value: unknown): Date | undefined => {
 }
 
 export const coerceSingular = <T>(value: T | Array<T>): T | undefined => {
+  // biome-ignore lint/plugin/useCoerceArray: This is coerceSingular.
   return Array.isArray(value) ? value[0] : value
 }
 
@@ -75,5 +76,6 @@ export const coerceArray = <T>(value: Nullish<T | Array<T>>): Array<T> => {
     return []
   }
 
+  // biome-ignore lint/plugin/useCoerceArray: This is coerceArray.
   return Array.isArray(value) ? value : [value]
 }
