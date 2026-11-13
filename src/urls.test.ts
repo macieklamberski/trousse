@@ -332,6 +332,12 @@ describe('isSubdomainOf', () => {
     expect(isSubdomainOf('https://a.example.com/feed', 'example.com.')).toBe(true)
   })
 
+  it('should match a pattern with a space before its trailing dot', () => {
+    const value = 'https://a.example.com/feed'
+
+    expect(isSubdomainOf(value, 'example.com .')).toBe(true)
+  })
+
   it('should match a subdomain by a pattern', () => {
     const value = 'https://alice.blogspot.com.br/'
 
@@ -360,6 +366,18 @@ describe('isSubdomainOf', () => {
     const value = 'https://alice.example.com/'
 
     expect(isSubdomainOf(value, [blogspotRegex, 'example.com'])).toBe(true)
+  })
+
+  it('should match an uppercase hostname by a string in a list with patterns', () => {
+    const value = 'javascript://ALICE.EXAMPLE.COM/'
+
+    expect(isSubdomainOf(value, [blogspotRegex, 'example.com'])).toBe(true)
+  })
+
+  it('should not match the bare domain by a string in a list with patterns', () => {
+    const value = 'https://example.com/'
+
+    expect(isSubdomainOf(value, [blogspotRegex, 'example.com'])).toBe(false)
   })
 
   it('should not match the bare domain by a pattern', () => {
@@ -459,6 +477,12 @@ describe('isHostOrSubdomainOf', () => {
     const value = 'https://alice.blogspot.de/'
 
     expect(isHostOrSubdomainOf(value, ['example.com', blogspotRegex])).toBe(true)
+  })
+
+  it('should match the bare domain by a string in a list with patterns', () => {
+    const value = 'https://example.com/'
+
+    expect(isHostOrSubdomainOf(value, [blogspotRegex, 'example.com'])).toBe(true)
   })
 
   it('should not match another domain by a pattern', () => {
@@ -567,6 +591,27 @@ describe('getSubdomain', () => {
     const expected = 'alice'
 
     expect(getSubdomain(value, [blogExampleRegex, 'example.com'])).toBe(expected)
+  })
+
+  it('should skip a string that does not match for a later pattern', () => {
+    const value = 'https://alice.blogspot.de/'
+    const expected = 'alice'
+
+    expect(getSubdomain(value, ['example.com', blogspotRegex])).toBe(expected)
+  })
+
+  it('should skip a pattern that does not match for a later string', () => {
+    const value = 'https://alice.blog.example.com/'
+    const expected = 'alice.blog'
+
+    expect(getSubdomain(value, [blogspotRegex, 'example.com'])).toBe(expected)
+  })
+
+  it('should read a string after a pattern case-insensitively', () => {
+    const value = 'https://alice.example.com/'
+    const expected = 'alice'
+
+    expect(getSubdomain(value, [blogspotRegex, 'EXAMPLE.com'])).toBe(expected)
   })
 
   it('should return undefined for the bare domain matched by a pattern', () => {

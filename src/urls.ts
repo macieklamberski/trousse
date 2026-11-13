@@ -70,17 +70,13 @@ const nonAsciiRegex = /[\u0080-\uffff]/
 // See: https://url.spec.whatwg.org/#concept-domain-to-ascii.
 const normalizeDomain = (domain: string): string => {
   const trimmed = domain.trim()
-  const bare = trimmed.endsWith('.') ? trimmed.slice(0, -1) : trimmed
+  const bare = trimmed.endsWith('.') ? trimmed.slice(0, -1).trimEnd() : trimmed
 
   if (!nonAsciiRegex.test(bare)) {
     return bare
   }
 
   return parseUrl(`http://${bare}`)?.hostname ?? bare
-}
-
-const normalizeHostPattern = (pattern: Pattern): Pattern => {
-  return pattern instanceof RegExp ? pattern : normalizeDomain(pattern)
 }
 
 // The domains a hostname is a strict subdomain of, longest first: `b.example.com` and
@@ -95,6 +91,21 @@ const getParentDomains = (hostname: string): Array<string> => {
   return parents
 }
 
+const keepValue = (value: string): string => value
+
+// Whether the hostname, lowercased by the caller once per call, ends in `.${domain}`. The dot is
+// checked by position and the suffix compared through a parser that keeps it, so neither string is
+// built or lowercased again per entry. An empty domain leaves only the dot.
+const endsWithDomain = (lowerHostname: string, domain: string): boolean => {
+  const lowerDomain = domain.toLowerCase()
+
+  if (lowerHostname.at(-lowerDomain.length - 1) !== '.') {
+    return false
+  }
+
+  return !lowerDomain || isAnyOf(lowerHostname.slice(-lowerDomain.length), lowerDomain, keepValue)
+}
+
 // A RegExp entry is tested against the whole hostname, as isAnyOf tests it, so anchor it to match
 // whole domains: `/^blogspot\.(?:com|[a-z]{2})$/` for `blogspot.com` and `blogspot.de`.
 export const isHostOf = (url: string | URL, hosts: Pattern | ReadonlyArray<Pattern>): boolean => {
@@ -104,7 +115,25 @@ export const isHostOf = (url: string | URL, hosts: Pattern | ReadonlyArray<Patte
     return false
   }
 
-  return isAnyOf(hostname, toPatternList(hosts).map(normalizeHostPattern))
+  // The hostname is lowercased once for the whole list, which isAnyOf would repeat for every entry,
+  // so a string entry is lowercased here and compared through a parser that keeps both as they are.
+  const lowerHostname = hostname.toLowerCase()
+
+  for (const host of toPatternList(hosts)) {
+    if (host instanceof RegExp) {
+      if (isAnyOf(hostname, host)) {
+        return true
+      }
+
+      continue
+    }
+
+    if (isAnyOf(lowerHostname, normalizeDomain(host).toLowerCase(), keepValue)) {
+      return true
+    }
+  }
+
+  return false
 }
 
 // A RegExp entry is tested against each parent domain of the hostname, so `/^blogspot\.[a-z]{2}$/`
@@ -119,9 +148,25 @@ export const isSubdomainOf = (
     return false
   }
 
-  const list = toPatternList(domains).map(normalizeHostPattern)
+  const lowerHostname = hostname.toLowerCase()
+  const patterns: Array<RegExp> = []
 
-  return getParentDomains(hostname).some((parent) => isAnyOf(parent, list))
+  for (const domain of toPatternList(domains)) {
+    if (domain instanceof RegExp) {
+      patterns.push(domain)
+      continue
+    }
+
+    if (endsWithDomain(lowerHostname, normalizeDomain(domain))) {
+      return true
+    }
+  }
+
+  if (patterns.length === 0) {
+    return false
+  }
+
+  return getParentDomains(hostname).some((parent) => isAnyOf(parent, patterns))
 }
 
 // See: https://fetch.spec.whatwg.org/#http-scheme.
@@ -157,11 +202,25 @@ export const getSubdomain = (
     return
   }
 
-  const parents = getParentDomains(hostname)
+  let parents: Array<string> | undefined
 
   for (const domain of toPatternList(domains)) {
-    const pattern = normalizeHostPattern(domain)
-    const parent = parents.find((candidate) => isAnyOf(candidate, pattern))
+    if (isString(domain)) {
+      const name = normalizeDomain(domain)
+
+      // An empty entry names no domain, so `example.com..` yields no label.
+      if (name && endsWithDomain(hostname, name)) {
+        return hostname.slice(0, -name.length - 1)
+      }
+
+      continue
+    }
+
+    if (!parents) {
+      parents = getParentDomains(hostname)
+    }
+
+    const parent = parents.find((candidate) => isAnyOf(candidate, domain))
 
     if (parent) {
       return hostname.slice(0, -parent.length - 1)
