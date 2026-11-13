@@ -24,15 +24,18 @@ export const parseUrl = (value: Nullish<string | URL>, base?: string | URL): URL
   // URL.parse returns null for invalid input, which skips the cost of a thrown error. Node 18 and
   // 20 lack it, so the constructor stays as the fallback.
   if (URL.parse) {
+    // biome-ignore lint/plugin/useParseUrl: This is parseUrl.
     return URL.parse(value, base) ?? undefined
   }
 
+  // biome-ignore lint/plugin/useParseUrl: This is parseUrl.
   try {
     return new URL(value, base)
   } catch {}
 }
 
 export const getPathSegments = (value: string | URL): Array<string> => {
+  // biome-ignore lint/plugin/useGetPathSegments: This is getPathSegments.
   return parseUrl(value)?.pathname.split('/').filter(Boolean) ?? []
 }
 
@@ -175,6 +178,7 @@ export const decodeSegment = (segment: string | undefined): string | undefined =
   }
 
   try {
+    // biome-ignore lint/plugin/useDecodePercent: A malformed escape returns undefined here, where decodePercent keeps it.
     return decodeURIComponent(segment)
   } catch {}
 }
@@ -205,6 +209,7 @@ const getSequenceLength = (byte: number): number => {
 
 const decodeEscapeRun = (run: string): string => {
   try {
+    // biome-ignore lint/plugin/useDecodePercent: This is part of decodePercent.
     return decodeURIComponent(run)
   } catch {}
 
@@ -218,6 +223,7 @@ const decodeEscapeRun = (run: string): string => {
 
     if (length && index + length <= count) {
       try {
+        // biome-ignore lint/plugin/useDecodePercent: This is part of decodePercent.
         decoded += decodeURIComponent(run.slice(start, start + length * 3))
         index += length
         continue
@@ -1079,6 +1085,7 @@ const decodeQueryKey = (pair: string): string => {
   const key = pair.split('=')[0].replace(plusRegex, ' ')
 
   try {
+    // biome-ignore lint/plugin/useDecodePercent: A malformed key stays whole here, where decodePercent would decode its valid escapes.
     return decodeURIComponent(key)
   } catch {
     return key

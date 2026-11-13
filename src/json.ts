@@ -63,6 +63,7 @@ export const parseJson = <T = unknown>(value: Nullish<string>): T | undefined =>
     return
   }
 
+  // biome-ignore lint/plugin/useParseJson: This is parseJson.
   try {
     return JSON.parse(value)
   } catch {}

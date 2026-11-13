@@ -4,6 +4,7 @@
 const maxDelay = 2 ** 31 - 1
 
 export const sleep = (milliseconds: number): Promise<void> => {
+  // biome-ignore lint/plugin/useSleep: This is sleep.
   return new Promise((resolve) => {
     setTimeout(resolve, Math.min(milliseconds, maxDelay))
   })
