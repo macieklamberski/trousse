@@ -1,6 +1,6 @@
 import { decodeHTMLStrict } from 'entities'
 import { isNullish, isString } from './is.js'
-import { endsWithAnyOf, isAnyOf, toPatternList } from './matching.js'
+import { isAnyOf, toPatternList } from './matching.js'
 import type {
   NormalizeOptions,
   Nullish,
@@ -91,18 +91,20 @@ const getParentDomains = (hostname: string): Array<string> => {
   return parents
 }
 
-// Whether the hostname ends in `.${domain}`, with the dot checked by position: lowercasing a
-// `.domain` string built on every call costs endsWithAnyOf more than the comparison itself. An
-// empty domain leaves only the dot, which endsWithAnyOf skips as an empty pattern.
-const endsWithDomain = (hostname: string, domain: string): boolean => {
-  if (hostname.at(-domain.length - 1) !== '.') {
+const keepValue = (value: string): string => value
+
+// Whether the hostname, lowercased by the caller once per call, ends in `.${domain}`. The dot is
+// checked by position and the suffix compared through a parser that keeps it, so neither string is
+// built or lowercased again per entry. An empty domain leaves only the dot.
+const endsWithDomain = (lowerHostname: string, domain: string): boolean => {
+  const lowerDomain = domain.toLowerCase()
+
+  if (lowerHostname.at(-lowerDomain.length - 1) !== '.') {
     return false
   }
 
-  return !domain || endsWithAnyOf(hostname, domain)
+  return !lowerDomain || isAnyOf(lowerHostname.slice(-lowerDomain.length), lowerDomain, keepValue)
 }
-
-const keepValue = (value: string): string => value
 
 // A RegExp entry is tested against the whole hostname, as isAnyOf tests it, so anchor it to match
 // whole domains: `/^blogspot\.(?:com|[a-z]{2})$/` for `blogspot.com` and `blogspot.de`.
@@ -146,6 +148,7 @@ export const isSubdomainOf = (
     return false
   }
 
+  const lowerHostname = hostname.toLowerCase()
   const patterns: Array<RegExp> = []
 
   for (const domain of toPatternList(domains)) {
@@ -154,7 +157,7 @@ export const isSubdomainOf = (
       continue
     }
 
-    if (endsWithDomain(hostname, normalizeDomain(domain))) {
+    if (endsWithDomain(lowerHostname, normalizeDomain(domain))) {
       return true
     }
   }
