@@ -80,6 +80,11 @@ const normalizeHostPattern = (pattern: Pattern): Pattern => {
   return pattern instanceof RegExp ? pattern : normalizeDomain(pattern)
 }
 
+// A string entry in the form isAnyOf compares it: normalized, lowercased and trimmed.
+const normalizeHostString = (domain: string): string => {
+  return normalizeDomain(domain).toLowerCase().trim()
+}
+
 // The domains a hostname is a strict subdomain of, longest first: `b.example.com` and
 // `example.com` for `a.b.example.com`.
 const getParentDomains = (hostname: string): Array<string> => {
@@ -116,9 +121,28 @@ export const isSubdomainOf = (
     return false
   }
 
-  const list = toPatternList(domains).map(normalizeHostPattern)
+  const lowerHostname = hostname.toLowerCase()
+  let parents: Array<string> | undefined
 
-  return getParentDomains(hostname).some((parent) => isAnyOf(parent, list))
+  for (const domain of toPatternList(domains)) {
+    if (typeof domain === 'string') {
+      if (lowerHostname.endsWith(`.${normalizeHostString(domain)}`)) {
+        return true
+      }
+
+      continue
+    }
+
+    if (!parents) {
+      parents = getParentDomains(hostname)
+    }
+
+    if (parents.some((parent) => isAnyOf(parent, domain))) {
+      return true
+    }
+  }
+
+  return false
 }
 
 // See: https://fetch.spec.whatwg.org/#http-scheme.
@@ -154,11 +178,24 @@ export const getSubdomain = (
     return
   }
 
-  const parents = getParentDomains(hostname)
+  let parents: Array<string> | undefined
 
   for (const domain of toPatternList(domains)) {
-    const pattern = normalizeHostPattern(domain)
-    const parent = parents.find((candidate) => isAnyOf(candidate, pattern))
+    if (typeof domain === 'string') {
+      const suffix = normalizeHostString(domain)
+
+      if (suffix && hostname.endsWith(`.${suffix}`)) {
+        return hostname.slice(0, -suffix.length - 1)
+      }
+
+      continue
+    }
+
+    if (!parents) {
+      parents = getParentDomains(hostname)
+    }
+
+    const parent = parents.find((candidate) => isAnyOf(candidate, domain))
 
     if (parent) {
       return hostname.slice(0, -parent.length - 1)
