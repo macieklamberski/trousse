@@ -53,15 +53,33 @@ export const isAnyOf = (
   }
 
   const parsedValue = parser ? parser(value) : value.toLowerCase().trim()
-  const originalValue = parser ? parsedValue : value.trim()
 
-  return toPatternList(patterns).some((pattern) => {
+  if (typeof patterns === 'string') {
+    return parsedValue === (parser ? patterns : patterns.toLowerCase().trim())
+  }
+
+  // Only a RegExp pattern meets the value in its original case, so it is trimmed for the first one.
+  let originalValue: string | undefined
+
+  for (const pattern of toPatternList(patterns)) {
     if (pattern instanceof RegExp) {
-      return testRegexAnyCase(pattern, parsedValue, originalValue)
+      if (originalValue === undefined) {
+        originalValue = parser ? parsedValue : value.trim()
+      }
+
+      if (testRegexAnyCase(pattern, parsedValue, originalValue)) {
+        return true
+      }
+
+      continue
     }
 
-    return parsedValue === (parser ? pattern : pattern.toLowerCase().trim())
-  })
+    if (parsedValue === (parser ? pattern : pattern.toLowerCase().trim())) {
+      return true
+    }
+  }
+
+  return false
 }
 
 // Compares two values the way isAnyOf compares a value with a string pattern, so a missing side
