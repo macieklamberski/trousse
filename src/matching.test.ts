@@ -122,6 +122,13 @@ describe('isAnyOf', () => {
     expect(isAnyOf(value, patterns)).toBe(true)
   })
 
+  it('should match a pattern whose only uppercase letter is outside ASCII', () => {
+    const value = 'übung'
+    const patterns = ['Übung']
+
+    expect(isAnyOf(value, patterns)).toBe(true)
+  })
+
   it('should return true when last pattern matches', () => {
     const value = 'application/json'
     const patterns = ['application/rss+xml', 'application/atom+xml', 'application/json']

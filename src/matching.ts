@@ -21,6 +21,21 @@ const testRegexAnyCase = (regex: RegExp, lowerValue: string, value: string): boo
   return testRegex(regex, lowerValue) || (lowerValue !== value && testRegex(regex, value))
 }
 
+const caseChangingCharRegex = /[A-Z\u0080-\uffff]/
+const edgeWhitespaceRegex = /^\s|\s$/
+
+// A string pattern lowercased, and trimmed for a matcher that trims, returned as written when it
+// is already in that form. A character outside ASCII may lowercase, so it takes toLowerCase.
+const prepareStringPattern = (pattern: string, shouldTrim: boolean): string => {
+  const lowerPattern = caseChangingCharRegex.test(pattern) ? pattern.toLowerCase() : pattern
+
+  if (!shouldTrim || !edgeWhitespaceRegex.test(lowerPattern)) {
+    return lowerPattern
+  }
+
+  return lowerPattern.trim()
+}
+
 export const toPatternList = (
   patterns: Pattern | ReadonlyArray<Pattern>,
 ): ReadonlyArray<Pattern> => {
@@ -60,7 +75,7 @@ export const isAnyOf = (
       return testRegexAnyCase(pattern, parsedValue, originalValue)
     }
 
-    return parsedValue === (parser ? pattern : pattern.toLowerCase().trim())
+    return parsedValue === (parser ? pattern : prepareStringPattern(pattern, true))
   })
 }
 
@@ -87,7 +102,7 @@ export const getAnyOf = <T extends string>(
   const parsedValue = parser ? parser(value) : value.toLowerCase().trim()
 
   return patterns.find((pattern) => {
-    return parsedValue === (parser ? pattern : pattern.toLowerCase().trim())
+    return parsedValue === (parser ? pattern : prepareStringPattern(pattern, true))
   })
 }
 
@@ -108,7 +123,7 @@ export const includesAnyOf = (
       return testRegexAnyCase(pattern, parsedValue, originalValue)
     }
 
-    return pattern && parsedValue.includes(parser ? pattern : pattern.toLowerCase())
+    return pattern && parsedValue.includes(parser ? pattern : prepareStringPattern(pattern, false))
   })
 }
 
@@ -127,7 +142,7 @@ export const startsWithAnyOf = (
       return testRegexAnyCase(pattern, lowerValue, value)
     }
 
-    return pattern && lowerValue.startsWith(pattern.toLowerCase())
+    return pattern && lowerValue.startsWith(prepareStringPattern(pattern, false))
   })
 }
 
@@ -146,7 +161,7 @@ export const endsWithAnyOf = (
       return testRegexAnyCase(pattern, lowerValue, value)
     }
 
-    return pattern && lowerValue.endsWith(pattern.toLowerCase())
+    return pattern && lowerValue.endsWith(prepareStringPattern(pattern, false))
   })
 }
 
