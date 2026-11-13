@@ -332,6 +332,12 @@ describe('isSubdomainOf', () => {
     expect(isSubdomainOf('https://a.example.com/feed', 'example.com.')).toBe(true)
   })
 
+  it('should match a pattern with a space before its trailing dot', () => {
+    const value = 'https://a.example.com/feed'
+
+    expect(isSubdomainOf(value, 'example.com .')).toBe(true)
+  })
+
   it('should match a subdomain by a pattern', () => {
     const value = 'https://alice.blogspot.com.br/'
 

@@ -1,6 +1,6 @@
 import { decodeHTMLStrict } from 'entities'
 import { isNullish } from './is.js'
-import { isAnyOf, toPatternList } from './matching.js'
+import { endsWithAnyOf, isAnyOf, toPatternList } from './matching.js'
 import type {
   NormalizeOptions,
   Nullish,
@@ -67,7 +67,7 @@ const nonAsciiRegex = /[\u0080-\uffff]/
 // See: https://url.spec.whatwg.org/#concept-domain-to-ascii.
 const normalizeDomain = (domain: string): string => {
   const trimmed = domain.trim()
-  const bare = trimmed.endsWith('.') ? trimmed.slice(0, -1) : trimmed
+  const bare = trimmed.endsWith('.') ? trimmed.slice(0, -1).trimEnd() : trimmed
 
   if (!nonAsciiRegex.test(bare)) {
     return bare
@@ -78,11 +78,6 @@ const normalizeDomain = (domain: string): string => {
 
 const normalizeHostPattern = (pattern: Pattern): Pattern => {
   return pattern instanceof RegExp ? pattern : normalizeDomain(pattern)
-}
-
-// A string entry in the form isAnyOf compares it: normalized, lowercased and trimmed.
-const normalizeHostString = (domain: string): string => {
-  return normalizeDomain(domain).toLowerCase().trim()
 }
 
 // The domains a hostname is a strict subdomain of, longest first: `b.example.com` and
@@ -121,28 +116,27 @@ export const isSubdomainOf = (
     return false
   }
 
-  const lowerHostname = hostname.toLowerCase()
-  let parents: Array<string> | undefined
+  const suffixes: Array<string> = []
+  const patterns: Array<RegExp> = []
 
   for (const domain of toPatternList(domains)) {
-    if (typeof domain === 'string') {
-      if (lowerHostname.endsWith(`.${normalizeHostString(domain)}`)) {
-        return true
-      }
-
+    if (domain instanceof RegExp) {
+      patterns.push(domain)
       continue
     }
 
-    if (!parents) {
-      parents = getParentDomains(hostname)
-    }
-
-    if (parents.some((parent) => isAnyOf(parent, domain))) {
-      return true
-    }
+    suffixes.push(`.${normalizeDomain(domain)}`)
   }
 
-  return false
+  if (endsWithAnyOf(hostname, suffixes)) {
+    return true
+  }
+
+  if (patterns.length === 0) {
+    return false
+  }
+
+  return getParentDomains(hostname).some((parent) => isAnyOf(parent, patterns))
 }
 
 // See: https://fetch.spec.whatwg.org/#http-scheme.
@@ -182,10 +176,12 @@ export const getSubdomain = (
 
   for (const domain of toPatternList(domains)) {
     if (typeof domain === 'string') {
-      const suffix = normalizeHostString(domain)
+      const name = normalizeDomain(domain)
+      const suffix = `.${name}`
 
-      if (suffix && hostname.endsWith(`.${suffix}`)) {
-        return hostname.slice(0, -suffix.length - 1)
+      // An empty entry names no domain, so `example.com..` yields no label.
+      if (name && endsWithAnyOf(hostname, suffix)) {
+        return hostname.slice(0, -suffix.length)
       }
 
       continue
