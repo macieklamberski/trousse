@@ -30,6 +30,7 @@ export const parseUrl = (value: Nullish<string | URL>, base?: string | URL): URL
 
   // biome-ignore lint/plugin/useParseUrl: This is parseUrl.
   try {
+    // biome-ignore lint/plugin/noBareNewUrl: This is parseUrl.
     return new URL(value, base)
   } catch {}
 }
@@ -1180,108 +1181,108 @@ const lowercaseQueryPair = (pair: string): string => {
 // may answer differently, or one no URL parser reads back the same.
 // See: https://www.rfc-editor.org/rfc/rfc3986#section-6.
 export const normalizeUrl = (url: string, options: NormalizeOptions): string => {
-  try {
-    // The parser percent-encodes the path, query and fragment and already applies NFC to the host,
-    // so NFC only has an effect on the raw string.
-    const parsed = new URL(options.normalizeUnicode ? url.normalize('NFC') : url)
+  // The parser percent-encodes the path, query and fragment and already applies NFC to the host,
+  // so NFC only has an effect on the raw string.
+  const parsed = parseUrl(options.normalizeUnicode ? url.normalize('NFC') : url)
 
-    // Before stripWww, which keeps `www.com` whole only once the dot is gone.
-    if (options.stripHostTrailingDot && parsed.hostname.endsWith('.')) {
-      parsed.hostname = parsed.hostname.slice(0, -1)
-    }
-
-    if (options.stripAuthentication) {
-      parsed.username = ''
-      parsed.password = ''
-    }
-
-    if (options.stripWww) {
-      parsed.hostname = stripWww(parsed.hostname)
-    }
-
-    if (options.stripHash) {
-      parsed.hash = ''
-    }
-
-    let pathname = parsed.pathname
-
-    if (options.normalizeEncoding) {
-      pathname = decodeAndNormalizeEncoding(pathname)
-    }
-
-    if (options.collapseSlashes) {
-      pathname = pathname.replace(repeatedSlashesRegex, '/')
-    }
-
-    if (options.stripTrailingSlash && pathname.length > 1 && pathname.endsWith('/')) {
-      pathname = pathname.slice(0, -1)
-    }
-
-    parsed.pathname = pathname
-
-    // Writing an empty search or hash drops the bare `?` or `#` a URL ends with.
-    if (options.normalizeEncoding && parsed.search.length > 1) {
-      parsed.search = canonicalizeQuery(parsed.search)
-      parsed.search = parsed.search.replace(percentEscapeRegex, (hex) => hex.toUpperCase())
-    }
-
-    if (options.normalizeEncoding && parsed.hash.includes('%')) {
-      parsed.hash = decodeAndNormalizeEncoding(parsed.hash)
-    }
-
-    if (options.stripQuery) {
-      parsed.search = ''
-    }
-
-    // Query parameters are edited as raw `key=value` pairs. Going through searchParams instead
-    // would re-serialize the whole query as form data on any write, so a query a server routes on
-    // literally, like `?/feeds/atom10.xml`, would come back as `?%2Ffeeds%2Fatom10.xml=` and stop
-    // resolving to the feed.
-    if (parsed.search && (options.stripQueryParams || options.lowercaseQuery)) {
-      let pairs = parsed.search.slice(1).split('&')
-
-      // Remove tracking/specified parameters (case-insensitive). An empty pair goes too, or a
-      // stripped `?a=1&utm_source=x&` would keep a separator `?a=1` lacks.
-      if (options.stripQueryParams) {
-        const strippedSet = getStrippedParamsSet(options.stripQueryParams)
-        pairs = pairs.filter((pair) => pair && !strippedSet.has(decodeQueryKey(pair).toLowerCase()))
-      }
-
-      if (options.lowercaseQuery) {
-        pairs = pairs.map(lowercaseQueryPair)
-      }
-
-      parsed.search = pairs.join('&')
-    }
-
-    // Sort query parameters. A query holding one pair is already in order, so only a query with a
-    // separator is worth splitting. Empty pairs go out first, or they sort ahead of everything and
-    // turn `?b=1&` into `?&b=1`.
-    if (options.sortQueryParams && parsed.search.includes('&')) {
-      const pairs = parsed.search.slice(1).split('&').filter(Boolean)
-      parsed.search = pairs.sort(compareQueryPairs).join('&')
-    }
-
-    // A bare `?` reads as an empty search, and writing an empty search drops it.
-    if (options.stripEmptyQuery && !parsed.search) {
-      parsed.search = ''
-    }
-
-    let result = parsed.href
-
-    // Strip root slash: URL.href always includes "/" for root paths.
-    if (options.stripRootSlash && result === `${parsed.origin}/`) {
-      result = parsed.origin
-    }
-
-    if (options.stripScheme ?? options.stripProtocol) {
-      result = result.replace(schemePrefixRegex, '')
-    }
-
-    return result
-  } catch {
+  if (!parsed) {
     return url
   }
+
+  // Before stripWww, which keeps `www.com` whole only once the dot is gone.
+  if (options.stripHostTrailingDot && parsed.hostname.endsWith('.')) {
+    parsed.hostname = parsed.hostname.slice(0, -1)
+  }
+
+  if (options.stripAuthentication) {
+    parsed.username = ''
+    parsed.password = ''
+  }
+
+  if (options.stripWww) {
+    parsed.hostname = stripWww(parsed.hostname)
+  }
+
+  if (options.stripHash) {
+    parsed.hash = ''
+  }
+
+  let pathname = parsed.pathname
+
+  if (options.normalizeEncoding) {
+    pathname = decodeAndNormalizeEncoding(pathname)
+  }
+
+  if (options.collapseSlashes) {
+    pathname = pathname.replace(repeatedSlashesRegex, '/')
+  }
+
+  if (options.stripTrailingSlash && pathname.length > 1 && pathname.endsWith('/')) {
+    pathname = pathname.slice(0, -1)
+  }
+
+  parsed.pathname = pathname
+
+  // Writing an empty search or hash drops the bare `?` or `#` a URL ends with.
+  if (options.normalizeEncoding && parsed.search.length > 1) {
+    parsed.search = canonicalizeQuery(parsed.search)
+    parsed.search = parsed.search.replace(percentEscapeRegex, (hex) => hex.toUpperCase())
+  }
+
+  if (options.normalizeEncoding && parsed.hash.includes('%')) {
+    parsed.hash = decodeAndNormalizeEncoding(parsed.hash)
+  }
+
+  if (options.stripQuery) {
+    parsed.search = ''
+  }
+
+  // Query parameters are edited as raw `key=value` pairs. Going through searchParams instead
+  // would re-serialize the whole query as form data on any write, so a query a server routes on
+  // literally, like `?/feeds/atom10.xml`, would come back as `?%2Ffeeds%2Fatom10.xml=` and stop
+  // resolving to the feed.
+  if (parsed.search && (options.stripQueryParams || options.lowercaseQuery)) {
+    let pairs = parsed.search.slice(1).split('&')
+
+    // Remove tracking/specified parameters (case-insensitive). An empty pair goes too, or a
+    // stripped `?a=1&utm_source=x&` would keep a separator `?a=1` lacks.
+    if (options.stripQueryParams) {
+      const strippedSet = getStrippedParamsSet(options.stripQueryParams)
+      pairs = pairs.filter((pair) => pair && !strippedSet.has(decodeQueryKey(pair).toLowerCase()))
+    }
+
+    if (options.lowercaseQuery) {
+      pairs = pairs.map(lowercaseQueryPair)
+    }
+
+    parsed.search = pairs.join('&')
+  }
+
+  // Sort query parameters. A query holding one pair is already in order, so only a query with a
+  // separator is worth splitting. Empty pairs go out first, or they sort ahead of everything and
+  // turn `?b=1&` into `?&b=1`.
+  if (options.sortQueryParams && parsed.search.includes('&')) {
+    const pairs = parsed.search.slice(1).split('&').filter(Boolean)
+    parsed.search = pairs.sort(compareQueryPairs).join('&')
+  }
+
+  // A bare `?` reads as an empty search, and writing an empty search drops it.
+  if (options.stripEmptyQuery && !parsed.search) {
+    parsed.search = ''
+  }
+
+  let result = parsed.href
+
+  // Strip root slash: URL.href always includes "/" for root paths.
+  if (options.stripRootSlash && result === `${parsed.origin}/`) {
+    result = parsed.origin
+  }
+
+  if (options.stripScheme ?? options.stripProtocol) {
+    result = result.replace(schemePrefixRegex, '')
+  }
+
+  return result
 }
 
 // Strips every leading `www` label. A host whose only other label is the top-level domain, like
@@ -1325,6 +1326,7 @@ export const createUrlVariants = (url: string): Array<string> => {
   for (const scheme of ['https:', 'http:']) {
     for (const variantHostname of hostnames) {
       for (const variantPathname of pathnames) {
+        // biome-ignore lint/plugin/noBareNewUrl: Copies a parsed url, so this cannot throw.
         const variant = new URL(parsed.href)
         variant.protocol = scheme
         variant.hostname = variantHostname
