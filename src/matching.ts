@@ -121,13 +121,21 @@ export const includesAnyOf = (
   const parsedValue = parser ? parser(value) : value.toLowerCase()
   const originalValue = parser ? parsedValue : value
 
-  return toPatternList(patterns).some((pattern) => {
+  for (const pattern of toPatternList(patterns)) {
     if (pattern instanceof RegExp) {
-      return testRegexAnyCase(pattern, parsedValue, originalValue)
+      if (testRegexAnyCase(pattern, parsedValue, originalValue)) {
+        return true
+      }
+
+      continue
     }
 
-    return pattern && parsedValue.includes(parser ? pattern : pattern.toLowerCase())
-  })
+    if (pattern && parsedValue.includes(parser ? pattern : pattern.toLowerCase())) {
+      return true
+    }
+  }
+
+  return false
 }
 
 export const startsWithAnyOf = (
@@ -140,13 +148,21 @@ export const startsWithAnyOf = (
 
   const lowerValue = value.toLowerCase()
 
-  return toPatternList(patterns).some((pattern) => {
+  for (const pattern of toPatternList(patterns)) {
     if (pattern instanceof RegExp) {
-      return testRegexAnyCase(pattern, lowerValue, value)
+      if (testRegexAnyCase(pattern, lowerValue, value)) {
+        return true
+      }
+
+      continue
     }
 
-    return pattern && lowerValue.startsWith(pattern.toLowerCase())
-  })
+    if (pattern && lowerValue.startsWith(pattern.toLowerCase())) {
+      return true
+    }
+  }
+
+  return false
 }
 
 export const endsWithAnyOf = (
@@ -159,13 +175,21 @@ export const endsWithAnyOf = (
 
   const lowerValue = value.toLowerCase()
 
-  return toPatternList(patterns).some((pattern) => {
+  for (const pattern of toPatternList(patterns)) {
     if (pattern instanceof RegExp) {
-      return testRegexAnyCase(pattern, lowerValue, value)
+      if (testRegexAnyCase(pattern, lowerValue, value)) {
+        return true
+      }
+
+      continue
     }
 
-    return pattern && lowerValue.endsWith(pattern.toLowerCase())
-  })
+    if (pattern && lowerValue.endsWith(pattern.toLowerCase())) {
+      return true
+    }
+  }
+
+  return false
 }
 
 export const anyWordMatchesAnyOf = (value: string, patterns: ReadonlyArray<Pattern>): boolean => {
