@@ -92,6 +92,17 @@ const getParentDomains = (hostname: string): Array<string> => {
   return parents
 }
 
+// Whether the hostname ends in `.${domain}`, with the dot checked by position: lowercasing a
+// `.domain` string built on every call costs endsWithAnyOf more than the comparison itself. An
+// empty domain leaves only the dot, which endsWithAnyOf skips as an empty pattern.
+const endsWithDomain = (hostname: string, domain: string): boolean => {
+  if (hostname.at(-domain.length - 1) !== '.') {
+    return false
+  }
+
+  return !domain || endsWithAnyOf(hostname, domain)
+}
+
 // A RegExp entry is tested against the whole hostname, as isAnyOf tests it, so anchor it to match
 // whole domains: `/^blogspot\.(?:com|[a-z]{2})$/` for `blogspot.com` and `blogspot.de`.
 export const isHostOf = (url: string | URL, hosts: Pattern | ReadonlyArray<Pattern>): boolean => {
@@ -116,7 +127,6 @@ export const isSubdomainOf = (
     return false
   }
 
-  const suffixes: Array<string> = []
   const patterns: Array<RegExp> = []
 
   for (const domain of toPatternList(domains)) {
@@ -125,11 +135,9 @@ export const isSubdomainOf = (
       continue
     }
 
-    suffixes.push(`.${normalizeDomain(domain)}`)
-  }
-
-  if (endsWithAnyOf(hostname, suffixes)) {
-    return true
+    if (endsWithDomain(hostname, normalizeDomain(domain))) {
+      return true
+    }
   }
 
   if (patterns.length === 0) {
@@ -177,11 +185,10 @@ export const getSubdomain = (
   for (const domain of toPatternList(domains)) {
     if (typeof domain === 'string') {
       const name = normalizeDomain(domain)
-      const suffix = `.${name}`
 
       // An empty entry names no domain, so `example.com..` yields no label.
-      if (name && endsWithAnyOf(hostname, suffix)) {
-        return hostname.slice(0, -suffix.length)
+      if (name && endsWithDomain(hostname, name)) {
+        return hostname.slice(0, -name.length - 1)
       }
 
       continue
