@@ -79,10 +79,6 @@ const normalizeDomain = (domain: string): string => {
   return parseUrl(`http://${bare}`)?.hostname ?? bare
 }
 
-const normalizeHostPattern = (pattern: Pattern): Pattern => {
-  return pattern instanceof RegExp ? pattern : normalizeDomain(pattern)
-}
-
 // The domains a hostname is a strict subdomain of, longest first: `b.example.com` and
 // `example.com` for `a.b.example.com`.
 const getParentDomains = (hostname: string): Array<string> => {
@@ -106,6 +102,8 @@ const endsWithDomain = (hostname: string, domain: string): boolean => {
   return !domain || endsWithAnyOf(hostname, domain)
 }
 
+const keepValue = (value: string): string => value
+
 // A RegExp entry is tested against the whole hostname, as isAnyOf tests it, so anchor it to match
 // whole domains: `/^blogspot\.(?:com|[a-z]{2})$/` for `blogspot.com` and `blogspot.de`.
 export const isHostOf = (url: string | URL, hosts: Pattern | ReadonlyArray<Pattern>): boolean => {
@@ -115,8 +113,20 @@ export const isHostOf = (url: string | URL, hosts: Pattern | ReadonlyArray<Patte
     return false
   }
 
+  // The hostname is lowercased once for the whole list, which isAnyOf would repeat for every entry,
+  // so a string entry is lowercased here and compared through a parser that keeps both as they are.
+  const lowerHostname = hostname.toLowerCase()
+
   for (const host of toPatternList(hosts)) {
-    if (isAnyOf(hostname, normalizeHostPattern(host))) {
+    if (host instanceof RegExp) {
+      if (isAnyOf(hostname, host)) {
+        return true
+      }
+
+      continue
+    }
+
+    if (isAnyOf(lowerHostname, normalizeDomain(host).toLowerCase(), keepValue)) {
       return true
     }
   }
