@@ -1,4 +1,4 @@
-import { isNullish } from './is.js'
+import { isNullish, isString } from './is.js'
 import type { Pattern } from './types.js'
 
 const whitespaceRegex = /\s+/
@@ -24,7 +24,7 @@ const testRegexAnyCase = (regex: RegExp, lowerValue: string, value: string): boo
 export const toPatternList = (
   patterns: Pattern | ReadonlyArray<Pattern>,
 ): ReadonlyArray<Pattern> => {
-  return typeof patterns === 'string' || patterns instanceof RegExp ? [patterns] : patterns
+  return isString(patterns) || patterns instanceof RegExp ? [patterns] : patterns
 }
 
 // Escapes a literal for a regex source string, valid inside and outside a character class under

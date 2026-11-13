@@ -62,7 +62,7 @@ export const coerceDate = (value: unknown): Date | undefined => {
   if (isNumber(value) || isNonEmptyString(value)) {
     const date = new Date(value)
 
-    return Number.isNaN(date.getTime()) ? undefined : date
+    return !isValidDate(date) ? undefined : date
   }
 }
 

@@ -1,5 +1,5 @@
 import { decodeHTMLStrict } from 'entities'
-import { isNullish } from './is.js'
+import { isNullish, isString } from './is.js'
 import { endsWithAnyOf, isAnyOf, toPatternList } from './matching.js'
 import type {
   NormalizeOptions,
@@ -342,7 +342,7 @@ const readQuerySource = (
     return source.searchParams
   }
 
-  if (typeof source === 'string') {
+  if (isString(source)) {
     return new URLSearchParams(source)
   }
 
@@ -361,7 +361,7 @@ const readFragmentSource = (
     return new URLSearchParams(source.hash.slice(1))
   }
 
-  if (typeof source === 'string') {
+  if (isString(source)) {
     return new URLSearchParams(source.startsWith('#') ? source.slice(1) : source)
   }
 

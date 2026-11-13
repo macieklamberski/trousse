@@ -20,7 +20,17 @@ export const isBoolean = (value: unknown): value is boolean => {
   return typeof value === 'boolean'
 }
 
-export const isFunction = (value: unknown): value is (...args: Array<never>) => unknown => {
+type AnyFunction = (...args: Array<never>) => unknown
+
+// A value whose type holds function members narrows to those members, so their signatures stay.
+// An unknown or object value narrows to a function that takes any arguments, so it can be called.
+type FunctionOf<T> = unknown extends T
+  ? (...args: Array<unknown>) => unknown
+  : Extract<T, AnyFunction> extends never
+    ? T & ((...args: Array<unknown>) => unknown)
+    : Extract<T, AnyFunction>
+
+export const isFunction = <T>(value: T): value is FunctionOf<T> & T => {
   return typeof value === 'function'
 }
 
