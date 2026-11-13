@@ -54,7 +54,7 @@ export const isAnyOf = (
 
   const parsedValue = parser ? parser(value) : value.toLowerCase().trim()
 
-  if (typeof patterns === 'string') {
+  if (isString(patterns)) {
     return parsedValue === (parser ? patterns : patterns.toLowerCase().trim())
   }
 

@@ -202,7 +202,7 @@ export const getSubdomain = (
   let parents: Array<string> | undefined
 
   for (const domain of toPatternList(domains)) {
-    if (typeof domain === 'string') {
+    if (isString(domain)) {
       const name = normalizeDomain(domain)
 
       // An empty entry names no domain, so `example.com..` yields no label.
