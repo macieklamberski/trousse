@@ -27,6 +27,7 @@ import {
   getSubdomain,
   hasFragmentParam,
   hasQueryParam,
+  isHostname,
   isHostOf,
   isHostOrSubdomainOf,
   isHttpUrl,
@@ -4584,6 +4585,84 @@ describe('isIpAddress', () => {
 
   it('should reject a single-label host', () => {
     expect(isIpAddress('localhost')).toBe(false)
+  })
+})
+
+describe('isHostname', () => {
+  it('should accept a dotted name', () => {
+    expect(isHostname('example.com')).toBe(true)
+  })
+
+  it('should accept a hyphen inside a label', () => {
+    expect(isHostname('a-b.example.co.uk')).toBe(true)
+  })
+
+  it('should accept a punycode label', () => {
+    expect(isHostname('xn--bcher-kva.example')).toBe(true)
+  })
+
+  it('should accept an underscore in a label', () => {
+    expect(isHostname('my_site.example.com')).toBe(true)
+  })
+
+  it('should accept an IPv4 address', () => {
+    expect(isHostname('146.75.121.140')).toBe(true)
+  })
+
+  it('should accept a bracketed IPv6 address from URL.hostname', () => {
+    expect(isHostname('[::1]')).toBe(true)
+  })
+
+  it('should accept a single-label host', () => {
+    expect(isHostname('localhost')).toBe(true)
+  })
+
+  it('should accept a final dot', () => {
+    expect(isHostname('example.com.')).toBe(true)
+  })
+
+  it('should accept a label of 63 characters', () => {
+    expect(isHostname(`${'a'.repeat(63)}.example.com`)).toBe(true)
+  })
+
+  it('should reject a comma in a label', () => {
+    expect(isHostname(',ccam.cc')).toBe(false)
+  })
+
+  it('should reject a space in a label', () => {
+    expect(isHostname('exa mple.com')).toBe(false)
+  })
+
+  it('should reject a label starting with a hyphen', () => {
+    expect(isHostname('-example.com')).toBe(false)
+  })
+
+  it('should reject a label ending with a hyphen', () => {
+    expect(isHostname('example-.com')).toBe(false)
+  })
+
+  it('should reject an empty label', () => {
+    expect(isHostname('example..com')).toBe(false)
+  })
+
+  it('should reject a label over 63 characters', () => {
+    expect(isHostname(`${'a'.repeat(64)}.example.com`)).toBe(false)
+  })
+
+  it('should reject a lone dot', () => {
+    expect(isHostname('.')).toBe(false)
+  })
+
+  it('should reject an empty string', () => {
+    expect(isHostname('')).toBe(false)
+  })
+
+  it('should read 200 KB of labels within a second', () => {
+    const value = `${'a.'.repeat(100_000)},`
+    const start = performance.now()
+
+    expect(isHostname(value)).toBe(false)
+    expect(performance.now() - start).toBeLessThan(1000)
   })
 })
 

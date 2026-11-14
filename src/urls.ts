@@ -648,6 +648,7 @@ const ipv6Regex = /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i
 
 const wwwPrefixRegex = /^(?:www\.)+(?=.*\.)/
 const ipv6BracketsRegex = /^\[|\]$/g
+const hostnameLabelRegex = /^[a-z0-9_](?:[a-z0-9_-]*[a-z0-9_])?$/i
 // A dot, a letter, then up to five letters or digits: `.xml` and `.ashx`, not the `.0` of `/rss/2.0`.
 const fileExtensionRegex = /\.[a-z][a-z0-9]{0,5}$/i
 
@@ -1368,6 +1369,21 @@ export const stripWww = (hostname: string): string => {
 // passes. URL.hostname wraps an IPv6 address in brackets, so they are accepted here.
 export const isIpAddress = (hostname: string): boolean => {
   return ipv4Regex.test(hostname) || ipv6Regex.test(hostname.replace(ipv6BracketsRegex, ''))
+}
+
+// Expects a URL.hostname. The URL parser accepts any host free of forbidden code points, such as
+// `,ccam.cc`. This passes an IP address or dot-separated labels of 1 to 63 letters, digits, `_`
+// and `-`, no label starting or ending with `-`. A single label and a final dot pass.
+export const isHostname = (host: string): boolean => {
+  if (isIpAddress(host)) {
+    return true
+  }
+
+  const name = host.endsWith('.') ? host.slice(0, -1) : host
+
+  return name.split('.').every((label) => {
+    return label.length <= 63 && hostnameLabelRegex.test(label)
+  })
 }
 
 // The forms one address is commonly reachable under: each scheme, with and without `www.`, with
