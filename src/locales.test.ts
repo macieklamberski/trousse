@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { escapeHtml, isLocaleSegment, t, tx } from './locales.js'
+import { escapeHtml, isLocaleSegment, isRegionSegment, t, tx } from './locales.js'
 
 describe('escapeHtml', () => {
   it('should escape all HTML-significant characters', () => {
@@ -95,5 +95,40 @@ describe('isLocaleSegment', () => {
     const value = 'e'
 
     expect(isLocaleSegment(value)).toBe(false)
+  })
+})
+
+describe('isRegionSegment', () => {
+  const regionCodes: Array<string> = ['us', 'US', 'mx', 'gb', 'de', '419']
+  const unnamedCodes: Array<string> = ['xx', 'cb']
+  const malformedCodes: Array<string> = ['fra', 'usa', '1', '']
+  const specialPurposeCodes: Array<string> = ['zz', 'qo', 'xa', 'xb']
+
+  it.each(regionCodes)('should accept the region code %s', (value) => {
+    expect(isRegionSegment(value)).toBe(true)
+  })
+
+  it.each(unnamedCodes)('should refuse the code %s that CLDR does not name', (value) => {
+    expect(isRegionSegment(value)).toBe(false)
+  })
+
+  it.each(malformedCodes)('should refuse the malformed code %s', (value) => {
+    expect(isRegionSegment(value)).toBe(false)
+  })
+
+  it.each(specialPurposeCodes)('should refuse the special-purpose code %s', (value) => {
+    expect(isRegionSegment(value)).toBe(false)
+  })
+
+  it('should refuse a locale with a region', () => {
+    const value = 'en-us'
+
+    expect(isRegionSegment(value)).toBe(false)
+  })
+
+  it('should refuse a language code', () => {
+    const value = 'en'
+
+    expect(isRegionSegment(value)).toBe(false)
   })
 })

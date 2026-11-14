@@ -60,3 +60,27 @@ export const isLocaleSegment = (segment: string): boolean => {
     return false
   }
 }
+
+const regionNames = /* @__PURE__ */ new Intl.DisplayNames(['en'], {
+  type: 'region',
+  fallback: 'none',
+})
+
+// ISO 3166 user-assigned codes CLDR names for its own use: an unknown region, outlying Oceania and
+// two pseudo-locales. XK, also user-assigned, stays in since sites use it for Kosovo.
+const specialPurposeRegions = ['zz', 'qo', 'xa', 'xb']
+
+// Whether a url path segment, such as `us` or `419`, names a country or region in the runtime's
+// CLDR data. It accepts a bare region code only: a locale with a region, such as `en-us`, is
+// `isLocaleSegment`'s job. Node names only an uppercase code, so the segment is uppercased first.
+export const isRegionSegment = (segment: string): boolean => {
+  if (isAnyOf(segment, specialPurposeRegions)) {
+    return false
+  }
+
+  try {
+    return regionNames.of(segment.toUpperCase()) !== undefined
+  } catch {
+    return false
+  }
+}
