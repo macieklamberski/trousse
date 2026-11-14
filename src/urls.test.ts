@@ -1715,6 +1715,19 @@ describe('fixMalformedScheme', () => {
     expect(fixMalformedScheme(value)).toBe(expected)
   })
 
+  const brokenSlashEscapeUrls: Array<string> = [
+    'https:/,cexample.com/',
+    'https:/.example.com/',
+    'http://https:/,cexample.com/',
+  ]
+
+  it.each(brokenSlashEscapeUrls)(
+    'should keep a comma or dot after a single slash that may hold the first host letter (%s)',
+    (value) => {
+      expect(fixMalformedScheme(value)).toBe(value)
+    },
+  )
+
   const placeholderCases: Array<[string, string]> = [
     ['http(s)://example.com', 'https://example.com'],
     ['HTTP(S)://example.com/feed', 'https://example.com/feed'],
