@@ -1,3 +1,5 @@
+import { isAnyOf } from './matching.js'
+
 const placeholderRegex = /\{\{(\w+)\}\}/g
 const escapableRegex = /[&<>"']/g
 
@@ -35,4 +37,26 @@ export const tx = (template: string, params: Record<string, string | number>): s
   return template.replace(placeholderRegex, (placeholder, key) => {
     return Object.hasOwn(params, key) ? escapeHtml(String(params[key])) : placeholder
   })
+}
+
+const languageNames = /* @__PURE__ */ new Intl.DisplayNames(['en'], {
+  type: 'language',
+  fallback: 'none',
+})
+
+// ISO 639 special-purpose codes, which CLDR names on some runtimes but no site uses as a locale.
+const specialPurposeCodes = ['und', 'mul', 'zxx']
+
+// Whether a url path segment, such as `fr` or `pt-br`, is a language tag the runtime's CLDR data
+// names. A word such as `api` or `feed`, or a well-formed tag CLDR has no name for, is not.
+export const isLocaleSegment = (segment: string): boolean => {
+  if (isAnyOf(segment, specialPurposeCodes)) {
+    return false
+  }
+
+  try {
+    return languageNames.of(segment) !== undefined
+  } catch {
+    return false
+  }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { escapeHtml, t, tx } from './locales.js'
+import { escapeHtml, isLocaleSegment, t, tx } from './locales.js'
 
 describe('escapeHtml', () => {
   it('should escape all HTML-significant characters', () => {
@@ -58,5 +58,42 @@ describe('tx', () => {
 
   it('should escape all HTML-significant characters in params', () => {
     expect(tx('{{value}}', { value: `&<>"'` })).toBe('&amp;&lt;&gt;&quot;&#39;')
+  })
+})
+
+describe('isLocaleSegment', () => {
+  const languageTags: Array<string> = [
+    'fr',
+    'pt-br',
+    'zh-hant',
+    'zh-hant-tw',
+    'fil',
+    'es-419',
+    'en-us',
+  ]
+  const unnamedTags: Array<string> = ['xx', 'qq', 'en-anything']
+  const pathWords: Array<string> = ['api', 'app', 'faq', 'rss', 'about', 'blog', 'news', 'feed']
+  const specialPurposeCodes: Array<string> = ['und', 'mul', 'zxx']
+
+  it.each(languageTags)('should accept the language tag %s', (value) => {
+    expect(isLocaleSegment(value)).toBe(true)
+  })
+
+  it.each(unnamedTags)('should refuse the tag %s that CLDR does not name', (value) => {
+    expect(isLocaleSegment(value)).toBe(false)
+  })
+
+  it.each(pathWords)('should refuse the path word %s', (value) => {
+    expect(isLocaleSegment(value)).toBe(false)
+  })
+
+  it.each(specialPurposeCodes)('should refuse the special-purpose code %s', (value) => {
+    expect(isLocaleSegment(value)).toBe(false)
+  })
+
+  it('should refuse a malformed tag', () => {
+    const value = 'e'
+
+    expect(isLocaleSegment(value)).toBe(false)
   })
 })

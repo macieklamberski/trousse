@@ -37,7 +37,7 @@ export {
   isValidDate,
 } from './is.js'
 export { isJsonLike, isParseableJson, parseJson } from './json.js'
-export { escapeHtml, t, tx } from './locales.js'
+export { escapeHtml, isLocaleSegment, t, tx } from './locales.js'
 export {
   anyWordMatchesAnyOf,
   endsWithAnyOf,
@@ -78,6 +78,10 @@ export {
   composeQuery,
   createUrlSpellings,
   createUrlVariants,
+  decodeBase64,
+  decodeBase64Binary,
+  decodeBase64Url,
+  decodeBase64UrlBinary,
   decodePercent,
   decodeSegment,
   encodePathSegment,
@@ -101,6 +105,7 @@ export {
   isHttpUrl,
   isIpAddress,
   isSubdomainOf,
+  isUtf8Binary,
   normalizeUrl,
   parseUrl,
   resolveFeedProtocol,
