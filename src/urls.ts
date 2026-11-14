@@ -632,14 +632,14 @@ const leadingSchemeSeparator = String.raw`\.*(?::${separatorChar}*|[\s=\\/]${sep
 // an `@` before any `/?#\` is part of a username, as in `https://http:secret@host` or
 // `https://http=user@host`. Both are skipped.
 const doubledSchemeRegex = /* @__PURE__ */ new RegExp(
-  String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d|[^/?#\\]*@)(${schemeSeparator})[.,:/]*(www[./]+)?`,
+  String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d|[^/?#\\]*@)(${schemeSeparator})([.,:/]*)(www[./]+)?`,
   'i',
 )
 
 // Single malformed scheme pattern - for typos, wrong separators, etc. Must start with h (or /h)
 // to be HTTP-like. Allows colons within letters (http:s//).
 const singleMalformedRegex = /* @__PURE__ */ new RegExp(
-  String.raw`^\/?(h[htps():]{1,10}|t{1,2}ps?)(${leadingSchemeSeparator})[.,:/]*(www[./]+)?`,
+  String.raw`^\/?(h[htps():]{1,10}|t{1,2}ps?)(${leadingSchemeSeparator})([.,:/]*)(www[./]+)?`,
   'i',
 )
 
@@ -650,6 +650,11 @@ const isSchemeToken = (token: string, separator: string): boolean => {
 
   return `${token}${separator}`.includes(':') || (lowered.includes('t') && lowered.includes('p'))
 }
+
+// A `,` or `.` after a single slash can be a decoded `%2C` or `%2E`: a `%2F%2F` that lost one `F`
+// takes the first host letter as its second hex digit, so `%2F%2cccam.cc` decodes to `/,ccam.cc`.
+// The host then has two readings, `ccam.cc` and `cccam.cc`, and the url stays as written.
+const brokenSlashEscapeRegex = /^[^/]*\/[,.][^/]*$/
 
 // Repairs a malformed http or https scheme: typos such as `htp://`, a missing, doubled or split
 // colon, wrong separators or extra slashes, a doubled scheme, junk after it, `http(s)://`, and a
@@ -663,8 +668,12 @@ export const fixMalformedScheme = (url: string): string => {
   const doubledMatch = doubledSchemeRegex.exec(url)
 
   if (doubledMatch && isSchemeToken(doubledMatch[1], doubledMatch[2])) {
+    if (brokenSlashEscapeRegex.test(`${doubledMatch[2]}${doubledMatch[3]}`)) {
+      return url
+    }
+
     const inner = doubledMatch[1]
-    const www = doubledMatch[3]
+    const www = doubledMatch[4]
     const rest = url.slice(doubledMatch[0].length)
     const scheme = httpsLetterRegex.test(inner) ? 'https://' : 'http://'
 
@@ -674,8 +683,12 @@ export const fixMalformedScheme = (url: string): string => {
   const singleMatch = singleMalformedRegex.exec(url)
 
   if (singleMatch && isSchemeToken(singleMatch[1], singleMatch[2])) {
+    if (brokenSlashEscapeRegex.test(`${singleMatch[2]}${singleMatch[3]}`)) {
+      return url
+    }
+
     const fullMatch = singleMatch[0]
-    const www = singleMatch[3]
+    const www = singleMatch[4]
     const rest = url.slice(fullMatch.length)
     const scheme = httpsLetterRegex.test(fullMatch) ? 'https://' : 'http://'
 
