@@ -100,6 +100,7 @@ export {
   getSubdomain,
   hasFragmentParam,
   hasQueryParam,
+  isHostname,
   isHostOf,
   isHostOrSubdomainOf,
   isHttpUrl,
