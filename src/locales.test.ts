@@ -73,6 +73,7 @@ describe('isLocaleSegment', () => {
   ]
   const unnamedTags: Array<string> = ['xx', 'qq', 'en-anything']
   const pathWords: Array<string> = ['api', 'app', 'faq', 'rss', 'about', 'blog', 'news', 'feed']
+  const specialPurposeCodes: Array<string> = ['und', 'mul', 'zxx']
 
   it.each(languageTags)('should accept the language tag %s', (value) => {
     expect(isLocaleSegment(value)).toBe(true)
@@ -83,6 +84,10 @@ describe('isLocaleSegment', () => {
   })
 
   it.each(pathWords)('should refuse the path word %s', (value) => {
+    expect(isLocaleSegment(value)).toBe(false)
+  })
+
+  it.each(specialPurposeCodes)('should refuse the special-purpose code %s', (value) => {
     expect(isLocaleSegment(value)).toBe(false)
   })
 
