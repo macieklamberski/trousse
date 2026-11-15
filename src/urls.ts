@@ -656,7 +656,6 @@ const fileExtensionRegex = /\.[a-z][a-z0-9]{0,5}$/i
 // can carry meaning to the server once decoded.
 // See: https://www.rfc-editor.org/rfc/rfc3986#section-6.2.2.2.
 const unreservedCharsRegex = /[a-zA-Z0-9._~-]/
-const httpsLetter = 's'
 const schemePrefixRegex = /^https?:\/\//
 const percentEscapeOrLettersRegex = /%[0-9A-Fa-f]{2}|[A-Z]+/g
 const plusRegex = /\+/g
@@ -736,7 +735,7 @@ export const fixMalformedScheme = (url: string): string => {
     if (brokenSlashEscapeRegex.test(`${doubledMatch[2]}${rest}`)) {
       return url
     }
-    const scheme = includesAnyOf(inner, httpsLetter) ? 'https://' : 'http://'
+    const scheme = includesAnyOf(inner, 's') ? 'https://' : 'http://'
 
     return `${scheme}${www ? 'www.' : ''}${rest}`
   }
@@ -751,7 +750,7 @@ export const fixMalformedScheme = (url: string): string => {
     if (brokenSlashEscapeRegex.test(`${singleMatch[2]}${rest}`)) {
       return url
     }
-    const scheme = includesAnyOf(fullMatch, httpsLetter) ? 'https://' : 'http://'
+    const scheme = includesAnyOf(fullMatch, 's') ? 'https://' : 'http://'
 
     return `${scheme}${www ? 'www.' : ''}${rest}`
   }
