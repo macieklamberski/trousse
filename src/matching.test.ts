@@ -97,7 +97,6 @@ describe('isAnyOf', () => {
     const value = null
     const patterns = ['application/rss+xml']
 
-    // @ts-expect-error: This is for testing purposes.
     expect(isAnyOf(value, patterns)).toBe(false)
   })
 
@@ -240,6 +239,18 @@ describe('isSameText', () => {
     expect(isSameText(value, undefined)).toBe(false)
   })
 
+  it('should return false when value is null', () => {
+    const other = 'pinterest'
+
+    expect(isSameText(null, other)).toBe(false)
+  })
+
+  it('should return false when other is null', () => {
+    const value = 'pinterest'
+
+    expect(isSameText(value, null)).toBe(false)
+  })
+
   it('should return false when both values are undefined', () => {
     expect(isSameText(undefined, undefined)).toBe(false)
   })
@@ -313,6 +324,13 @@ describe('getAnyOf', () => {
 
   it('should handle undefined value', () => {
     const value = undefined
+    const patterns = ['hot']
+
+    expect(getAnyOf(value, patterns)).toBeUndefined()
+  })
+
+  it('should handle null value', () => {
+    const value = null
     const patterns = ['hot']
 
     expect(getAnyOf(value, patterns)).toBeUndefined()
@@ -401,7 +419,6 @@ describe('includesAnyOf', () => {
     const value = null
     const patterns = ['application/rss+xml']
 
-    // @ts-expect-error: This is for testing purposes.
     expect(includesAnyOf(value, patterns)).toBe(false)
   })
 
@@ -493,6 +510,10 @@ describe('startsWithAnyOf', () => {
 
   it('should return false for an undefined value', () => {
     expect(startsWithAnyOf(undefined, ['feed'])).toBe(false)
+  })
+
+  it('should return false for a null value', () => {
+    expect(startsWithAnyOf(null, ['feed'])).toBe(false)
   })
 
   it('should return false when value does not start with any pattern', () => {
@@ -597,6 +618,10 @@ describe('endsWithAnyOf', () => {
 
   it('should return false for an undefined value', () => {
     expect(endsWithAnyOf(undefined, ['.xml'])).toBe(false)
+  })
+
+  it('should return false for a null value', () => {
+    expect(endsWithAnyOf(null, ['.xml'])).toBe(false)
   })
 
   it('should return false when value does not end with any pattern', () => {
