@@ -1,5 +1,5 @@
 import { decodeHTMLStrict } from 'entities'
-import { isNullish, isString } from './is.js'
+import { isFunction, isNullish, isString } from './is.js'
 import { isAnyOf, toPatternList } from './matching.js'
 import type {
   NormalizeOptions,
@@ -1263,17 +1263,31 @@ const decodeAndNormalizeEncoding = (value: string): string => {
   })
 }
 
-// Applies the form-urlencoded rules for a key by hand. `new URLSearchParams(pair)` turns a
-// malformed escape like `%E0` into U+FFFD, which would sort distinct malformed keys as one.
-const decodeQueryKey = (pair: string): string => {
-  const key = pair.split('=')[0].replace(plusRegex, ' ')
+// Applies the form-urlencoded rules for a key or value by hand. `new URLSearchParams(pair)` turns
+// a malformed escape like `%E0` into U+FFFD, which would sort distinct malformed keys as one.
+const decodeQueryComponent = (component: string): string => {
+  const spaced = component.replace(plusRegex, ' ')
 
   try {
-    // biome-ignore lint/plugin/useDecodePercent: A malformed key stays whole here, where decodePercent would decode its valid escapes.
-    return decodeURIComponent(key)
+    // biome-ignore lint/plugin/useDecodePercent: A malformed component stays whole here, where decodePercent would decode its valid escapes.
+    return decodeURIComponent(spaced)
   } catch {
-    return key
+    return spaced
   }
+}
+
+const decodeQueryKey = (pair: string): string => {
+  return decodeQueryComponent(pair.split('=')[0])
+}
+
+const decodeQueryValue = (pair: string): string | undefined => {
+  const separatorIndex = pair.indexOf('=')
+
+  if (separatorIndex === -1) {
+    return
+  }
+
+  return decodeQueryComponent(pair.slice(separatorIndex + 1))
 }
 
 // Orders two pairs by their decoded key, comparing code units the way searchParams.sort does.
@@ -1368,9 +1382,14 @@ export const normalizeUrl = (url: string, options: NormalizeOptions): string => 
   if (parsed.search && (options.stripQueryParams || options.lowercaseQuery)) {
     let pairs = parsed.search.slice(1).split('&')
 
-    // Remove tracking/specified parameters (case-insensitive). An empty pair goes too, or a
-    // stripped `?a=1&utm_source=x&` would keep a separator `?a=1` lacks.
-    if (options.stripQueryParams) {
+    // Remove tracking/specified parameters, a list matching case-insensitively. An empty pair goes
+    // too, or a stripped `?a=1&utm_source=x&` would keep a separator `?a=1` lacks.
+    if (isFunction(options.stripQueryParams)) {
+      const isStripped = options.stripQueryParams
+      pairs = pairs.filter((pair) => {
+        return pair && !isStripped(decodeQueryKey(pair), decodeQueryValue(pair), parsed)
+      })
+    } else if (options.stripQueryParams) {
       const strippedSet = getStrippedParamsSet(options.stripQueryParams)
       pairs = pairs.filter((pair) => pair && !strippedSet.has(decodeQueryKey(pair).toLowerCase()))
     }
