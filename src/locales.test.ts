@@ -74,6 +74,7 @@ describe('isLocaleSegment', () => {
   const unnamedTags: Array<string> = ['xx', 'qq', 'en-anything']
   const pathWords: Array<string> = ['api', 'app', 'faq', 'rss', 'about', 'blog', 'news', 'feed']
   const specialPurposeCodes: Array<string> = ['und', 'mul', 'zxx']
+  const underscoreTags: Array<string> = ['fr_FR', 'en_GB', 'zh_Hant_HK', 'pt_br']
 
   it.each(languageTags)('should accept the language tag %s', (value) => {
     expect(isLocaleSegment(value)).toBe(true)
@@ -95,6 +96,42 @@ describe('isLocaleSegment', () => {
     const value = 'e'
 
     expect(isLocaleSegment(value)).toBe(false)
+  })
+
+  it.each(underscoreTags)('should refuse the underscore tag %s by default', (value) => {
+    expect(isLocaleSegment(value)).toBe(false)
+  })
+
+  it.each(underscoreTags)('should accept the underscore tag %s with underscore', (value) => {
+    const options = { underscore: true }
+
+    expect(isLocaleSegment(value, options)).toBe(true)
+  })
+
+  it.each(languageTags)('should accept the language tag %s with underscore', (value) => {
+    const options = { underscore: true }
+
+    expect(isLocaleSegment(value, options)).toBe(true)
+  })
+
+  it.each(pathWords)('should refuse the path word %s with underscore', (value) => {
+    const options = { underscore: true }
+
+    expect(isLocaleSegment(value, options)).toBe(false)
+  })
+
+  it('should accept a tag mixing both separators with underscore', () => {
+    const value = 'zh-Hant_HK'
+    const options = { underscore: true }
+
+    expect(isLocaleSegment(value, options)).toBe(true)
+  })
+
+  it('should refuse a malformed tag mixing both separators with underscore', () => {
+    const value = 'en-GB_x'
+    const options = { underscore: true }
+
+    expect(isLocaleSegment(value, options)).toBe(false)
   })
 })
 

@@ -47,6 +47,10 @@ export type ParamOptions = {
   preserveEmptyValues?: boolean // False by default, true reads an empty value or `?live` as ''
 }
 
+export type LocaleSegmentOptions = {
+  underscore?: boolean // False by default, true reads each `_` as `-`, so `fr_FR` checks as `fr-FR`
+}
+
 export type RegistrableDomainOptions = {
   suffixes?: ReadonlyArray<string> // Public Suffix List rules, cached per array, so never mutate it
 }
