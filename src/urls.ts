@@ -456,6 +456,7 @@ const readParamValues = (
   const lowercaseName = name.toLowerCase()
 
   for (const [key, value] of params) {
+    // biome-ignore lint/plugin/useAnyOfOrSameText: The name is folded once before the loop, and isAnyOf would fold and trim both sides per pair.
     if (key.toLowerCase() !== lowercaseName) {
       continue
     }
@@ -479,6 +480,7 @@ const hasParam = (params: ParamPairs | undefined, name: string): boolean => {
   const lowercaseName = name.toLowerCase()
 
   for (const [key] of params) {
+    // biome-ignore lint/plugin/useAnyOfOrSameText: The name is folded once before the loop, and isAnyOf would fold and trim both sides per pair.
     if (key.toLowerCase() === lowercaseName) {
       return true
     }
