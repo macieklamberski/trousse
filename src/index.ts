@@ -85,6 +85,7 @@ export {
   decodePercent,
   decodeSegment,
   encodePathSegment,
+  fixMalformedHost,
   fixMalformedProtocol,
   fixMalformedQuery,
   fixMalformedScheme,

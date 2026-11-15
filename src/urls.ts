@@ -693,14 +693,14 @@ const leadingSchemeSeparator = String.raw`\.*(?::${separatorChar}*|[\s=\\/]${sep
 // an `@` before any `/?#\` is part of a username, as in `https://http:secret@host` or
 // `https://http=user@host`. Both are skipped.
 const doubledSchemeRegex = /* @__PURE__ */ new RegExp(
-  String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d|[^/?#\\]*@)(${schemeSeparator})([.,:/]*)(www[./]+)?`,
+  String.raw`^\/?[htps]{2,7}${leadingSchemeSeparator}([htps]{2,7})(?!:\d|[^/?#\\]*@)(${schemeSeparator})(www[./]+)?`,
   'i',
 )
 
 // Single malformed scheme pattern - for typos, wrong separators, etc. Must start with h (or /h)
 // to be HTTP-like. Allows colons within letters (http:s//).
 const singleMalformedRegex = /* @__PURE__ */ new RegExp(
-  String.raw`^\/?(h[htps():]{1,10}|t{1,2}ps?)(${leadingSchemeSeparator})([.,:/]*)(www[./]+)?`,
+  String.raw`^\/?(h[htps():]{1,10}|t{1,2}ps?)(${leadingSchemeSeparator})(www[./]+)?`,
   'i',
 )
 
@@ -715,7 +715,7 @@ const isSchemeToken = (token: string, separator: string): boolean => {
 // A `,` or `.` after a single slash can be a decoded `%2C` or `%2E`: a `%2F%2F` that lost one `F`
 // takes the first host letter as its second hex digit, so `%2F%2cccam.cc` decodes to `/,ccam.cc`.
 // The host then has two readings, `ccam.cc` and `cccam.cc`, and the url stays as written.
-const brokenSlashEscapeRegex = /^[^/]*\/[,.][^/]*$/
+const brokenSlashEscapeRegex = /^[^/]*\/[,.]/
 
 // Repairs a malformed http or https scheme: typos such as `htp://`, a missing, doubled or split
 // colon, wrong separators or extra slashes, a doubled scheme, junk after it, `http(s)://`, and a
@@ -729,13 +729,13 @@ export const fixMalformedScheme = (url: string): string => {
   const doubledMatch = doubledSchemeRegex.exec(url)
 
   if (doubledMatch && isSchemeToken(doubledMatch[1], doubledMatch[2])) {
-    if (brokenSlashEscapeRegex.test(`${doubledMatch[2]}${doubledMatch[3]}`)) {
+    const inner = doubledMatch[1]
+    const www = doubledMatch[3]
+    const rest = url.slice(doubledMatch[0].length)
+
+    if (brokenSlashEscapeRegex.test(`${doubledMatch[2]}${rest}`)) {
       return url
     }
-
-    const inner = doubledMatch[1]
-    const www = doubledMatch[4]
-    const rest = url.slice(doubledMatch[0].length)
     const scheme = httpsLetterRegex.test(inner) ? 'https://' : 'http://'
 
     return `${scheme}${www ? 'www.' : ''}${rest}`
@@ -744,19 +744,59 @@ export const fixMalformedScheme = (url: string): string => {
   const singleMatch = singleMalformedRegex.exec(url)
 
   if (singleMatch && isSchemeToken(singleMatch[1], singleMatch[2])) {
-    if (brokenSlashEscapeRegex.test(`${singleMatch[2]}${singleMatch[3]}`)) {
+    const fullMatch = singleMatch[0]
+    const www = singleMatch[3]
+    const rest = url.slice(fullMatch.length)
+
+    if (brokenSlashEscapeRegex.test(`${singleMatch[2]}${rest}`)) {
       return url
     }
-
-    const fullMatch = singleMatch[0]
-    const www = singleMatch[4]
-    const rest = url.slice(fullMatch.length)
     const scheme = httpsLetterRegex.test(fullMatch) ? 'https://' : 'http://'
 
     return `${scheme}${www ? 'www.' : ''}${rest}`
   }
 
   return url
+}
+
+const authorityRegex = /^(?:[a-z][a-z\d+.-]*:)?\/\/[^/?#\\]*/i
+const dotRunRegex = /\.{2,}/g
+
+// A host name never ends in one of these: a run of them is punctuation from the text around a link.
+const trailingHostJunkChars = [')', ',', "'", '&']
+
+// Repairs a host whose junk has one reading. Only the host between `//` and the first `/`, `?`, `#`
+// or `\` is read, so the path, the query, the fragment and a url carried in them stay as written.
+export const fixMalformedHost = (url: string): string => {
+  const authority = authorityRegex.exec(url)?.[0]
+
+  if (!authority) {
+    return url
+  }
+
+  const hostStart = Math.max(authority.indexOf('//') + 2, authority.lastIndexOf('@') + 1)
+  const host = authority.slice(hostStart)
+  let hostEnd = host.length
+
+  while (hostEnd > 0 && trailingHostJunkChars.includes(host.charAt(hostEnd - 1))) {
+    hostEnd--
+  }
+
+  // An empty label holds no name, so a run of dots is one label separator and a dot opening the
+  // host separates nothing.
+  let fixedHost = host.slice(0, hostEnd).replace(dotRunRegex, '.')
+
+  if (fixedHost.startsWith('.')) {
+    fixedHost = fixedHost.slice(1)
+  }
+
+  // A comma opening the host can be a decoded `%2C` whose `C` was the host's first letter, so
+  // `,ccam.cc` reads as `ccam.cc` or `cccam.cc`.
+  if (!fixedHost || fixedHost.startsWith(',')) {
+    return url
+  }
+
+  return `${url.slice(0, hostStart)}${fixedHost}${url.slice(authority.length)}`
 }
 
 // A url carried inside another one, as a value or bare, holds its own `?` and `&`. The scheme can
@@ -1125,6 +1165,8 @@ export const resolveUrl = (url: string, base?: string): string | undefined => {
   if (!base || schemeColonRegex.test(resolvedUrl) || missingColonSchemeRegex.test(resolvedUrl)) {
     resolvedUrl = fixMalformedScheme(resolvedUrl)
   }
+
+  resolvedUrl = fixMalformedHost(resolvedUrl)
 
   // Step 4: Resolve relative URLs if base is provided.
   if (base) {
