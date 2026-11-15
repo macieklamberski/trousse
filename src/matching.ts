@@ -1,5 +1,5 @@
 import { isNullish, isString } from './is.js'
-import type { Pattern } from './types.js'
+import type { Nullish, Pattern } from './types.js'
 
 const whitespaceRegex = /\s+/
 // A backslash before `-` or a punctuator the `v` flag reserves when doubled (`&&`, `==`) is a
@@ -44,7 +44,7 @@ export const escapeRegex = (value: string): string => {
 // Without one, matching lowercases with toLowerCase, wider than ASCII case-insensitive, so the
 // Kelvin sign matches `k`. See: https://infra.spec.whatwg.org/#ascii-case-insensitive.
 export const isAnyOf = (
-  value: string | undefined,
+  value: Nullish<string>,
   patterns: Pattern | ReadonlyArray<Pattern>,
   parser?: (value: string) => string,
 ): boolean => {
@@ -84,7 +84,7 @@ export const isAnyOf = (
 
 // Compares two values the way isAnyOf compares a value with a string pattern, so a missing side
 // never equals anything.
-export const isSameText = (value: string | undefined, other: string | undefined): boolean => {
+export const isSameText = (value: Nullish<string>, other: Nullish<string>): boolean => {
   if (isNullish(value) || isNullish(other)) {
     return false
   }
@@ -94,7 +94,7 @@ export const isSameText = (value: string | undefined, other: string | undefined)
 
 // Returns the list entry the value matches, so a caller can emit the entry's own spelling.
 export const getAnyOf = <T extends string>(
-  value: string | undefined,
+  value: Nullish<string>,
   patterns: ReadonlyArray<T>,
   parser?: (value: string) => string,
 ): T | undefined => {
@@ -110,7 +110,7 @@ export const getAnyOf = <T extends string>(
 }
 
 export const includesAnyOf = (
-  value: string | undefined,
+  value: Nullish<string>,
   patterns: Pattern | ReadonlyArray<Pattern>,
   parser?: (value: string) => string,
 ): boolean => {
@@ -139,7 +139,7 @@ export const includesAnyOf = (
 }
 
 export const startsWithAnyOf = (
-  value: string | undefined,
+  value: Nullish<string>,
   patterns: Pattern | ReadonlyArray<Pattern>,
 ): boolean => {
   if (isNullish(value)) {
@@ -166,7 +166,7 @@ export const startsWithAnyOf = (
 }
 
 export const endsWithAnyOf = (
-  value: string | undefined,
+  value: Nullish<string>,
   patterns: Pattern | ReadonlyArray<Pattern>,
 ): boolean => {
   if (isNullish(value)) {
