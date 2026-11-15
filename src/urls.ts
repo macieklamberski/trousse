@@ -760,7 +760,7 @@ export const fixMalformedScheme = (url: string): string => {
 }
 
 const authorityRegex = /^(?:[a-z][a-z\d+.-]*:)?\/\/[^/?#\\]*/i
-const dotRunRegex = /\.{2,}/g
+const doubledDotRegex = /(?<!\.)\.\.(?!\.)/g
 
 // A host name never ends in one of these: a run of them is punctuation from the text around a link.
 const trailingHostJunkChars = [')', ',', "'", '&']
@@ -782,12 +782,20 @@ export const fixMalformedHost = (url: string): string => {
     hostEnd--
   }
 
-  // An empty label holds no name, so a run of dots is one label separator and a dot opening the
-  // host separates nothing.
-  let fixedHost = host.slice(0, hostEnd).replace(dotRunRegex, '.')
+  // An empty label holds no name, so a doubled dot is one label separator and a dot opening the
+  // host separates nothing. A run of three or more dots is an ellipsis marking text cut off, which
+  // has no single reading, so it stays as written.
+  let fixedHost = host.slice(0, hostEnd).replace(doubledDotRegex, '.')
 
-  if (fixedHost.startsWith('.')) {
+  if (fixedHost.startsWith('.') && !fixedHost.startsWith('..')) {
     fixedHost = fixedHost.slice(1)
+  }
+
+  // A repair that leaves the host ending in a dot has stripped it back to a label that was cut off,
+  // as in `www.example..` or `example.com.)`, so the url stays as written. A final dot the publisher
+  // wrote needs no repair and comes back the same way.
+  if (fixedHost.endsWith('.')) {
+    return url
   }
 
   // A comma opening the host can be a decoded `%2C` whose `C` was the host's first letter, so

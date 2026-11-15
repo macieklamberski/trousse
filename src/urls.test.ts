@@ -2131,6 +2131,48 @@ describe('fixMalformedHost', () => {
     expect(fixMalformedHost(value)).toBe(expected)
   })
 
+  it('should keep a run of three dots ending the host', () => {
+    const value = 'https://www.example...'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a run of three dots ending a host before the path', () => {
+    const value = 'https://example.co.j.../feed'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a run of three dots inside the host', () => {
+    const value = 'http://Remember...example'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a run of three dots opening the host', () => {
+    const value = 'https://...example.com/'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a host whose doubled dot repair would end it in a dot', () => {
+    const value = 'https://www.example../feed'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a host whose trailing punctuation repair would end it in a dot', () => {
+    const value = 'https://example.com.)/feed'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a final dot written by the publisher', () => {
+    const value = 'https://example.com./feed'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
   it('should drop a leading dot from the host', () => {
     const value = 'http://.example.com/x'
     const expected = 'http://example.com/x'
@@ -2200,11 +2242,11 @@ describe('fixMalformedHost', () => {
     expect(fixMalformedHost(value)).toBe(value)
   })
 
-  it('should repair 200 KB of dots in a host within a second', () => {
+  it('should read 200 KB of dots in a host within a second', () => {
     const value = `https://www${'.'.repeat(200_000)}example.com/`
     const start = performance.now()
 
-    expect(fixMalformedHost(value)).toBe('https://www.example.com/')
+    expect(fixMalformedHost(value)).toBe(value)
     expect(performance.now() - start).toBeLessThan(1000)
   })
 
