@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { escapeHtml, isLocaleSegment, isRegionSegment, t, tx } from './locales.js'
+import { escapeHtml, isLocale, isLocaleOrRegion, isRegion, t, tx } from './locales.js'
 
 describe('escapeHtml', () => {
   it('should escape all HTML-significant characters', () => {
@@ -61,7 +61,7 @@ describe('tx', () => {
   })
 })
 
-describe('isLocaleSegment', () => {
+describe('isLocale', () => {
   const languageTags: Array<string> = [
     'fr',
     'pt-br',
@@ -77,95 +77,120 @@ describe('isLocaleSegment', () => {
   const underscoreTags: Array<string> = ['fr_FR', 'en_GB', 'zh_Hant_HK', 'pt_br']
 
   it.each(languageTags)('should accept the language tag %s', (value) => {
-    expect(isLocaleSegment(value)).toBe(true)
+    expect(isLocale(value)).toBe(true)
   })
 
   it.each(unnamedTags)('should refuse the tag %s that CLDR does not name', (value) => {
-    expect(isLocaleSegment(value)).toBe(false)
+    expect(isLocale(value)).toBe(false)
   })
 
   it.each(pathWords)('should refuse the path word %s', (value) => {
-    expect(isLocaleSegment(value)).toBe(false)
+    expect(isLocale(value)).toBe(false)
   })
 
   it.each(specialPurposeCodes)('should refuse the special-purpose code %s', (value) => {
-    expect(isLocaleSegment(value)).toBe(false)
+    expect(isLocale(value)).toBe(false)
   })
 
   it('should refuse a malformed tag', () => {
     const value = 'e'
 
-    expect(isLocaleSegment(value)).toBe(false)
+    expect(isLocale(value)).toBe(false)
   })
 
   it.each(underscoreTags)('should refuse the underscore tag %s by default', (value) => {
-    expect(isLocaleSegment(value)).toBe(false)
+    expect(isLocale(value)).toBe(false)
   })
 
   it.each(underscoreTags)('should accept the underscore tag %s with underscore', (value) => {
     const options = { underscore: true }
 
-    expect(isLocaleSegment(value, options)).toBe(true)
+    expect(isLocale(value, options)).toBe(true)
   })
 
   it.each(languageTags)('should accept the language tag %s with underscore', (value) => {
     const options = { underscore: true }
 
-    expect(isLocaleSegment(value, options)).toBe(true)
+    expect(isLocale(value, options)).toBe(true)
   })
 
   it.each(pathWords)('should refuse the path word %s with underscore', (value) => {
     const options = { underscore: true }
 
-    expect(isLocaleSegment(value, options)).toBe(false)
+    expect(isLocale(value, options)).toBe(false)
   })
 
   it('should accept a tag mixing both separators with underscore', () => {
     const value = 'zh-Hant_HK'
     const options = { underscore: true }
 
-    expect(isLocaleSegment(value, options)).toBe(true)
+    expect(isLocale(value, options)).toBe(true)
   })
 
   it('should refuse a malformed tag mixing both separators with underscore', () => {
     const value = 'en-GB_x'
     const options = { underscore: true }
 
-    expect(isLocaleSegment(value, options)).toBe(false)
+    expect(isLocale(value, options)).toBe(false)
   })
 })
 
-describe('isRegionSegment', () => {
+describe('isRegion', () => {
   const regionCodes: Array<string> = ['us', 'US', 'mx', 'gb', 'de', '419']
   const unnamedCodes: Array<string> = ['xx', 'cb']
   const malformedCodes: Array<string> = ['fra', 'usa', '1', '']
   const specialPurposeCodes: Array<string> = ['zz', 'qo', 'xa', 'xb']
 
   it.each(regionCodes)('should accept the region code %s', (value) => {
-    expect(isRegionSegment(value)).toBe(true)
+    expect(isRegion(value)).toBe(true)
   })
 
   it.each(unnamedCodes)('should refuse the code %s that CLDR does not name', (value) => {
-    expect(isRegionSegment(value)).toBe(false)
+    expect(isRegion(value)).toBe(false)
   })
 
   it.each(malformedCodes)('should refuse the malformed code %s', (value) => {
-    expect(isRegionSegment(value)).toBe(false)
+    expect(isRegion(value)).toBe(false)
   })
 
   it.each(specialPurposeCodes)('should refuse the special-purpose code %s', (value) => {
-    expect(isRegionSegment(value)).toBe(false)
+    expect(isRegion(value)).toBe(false)
   })
 
   it('should refuse a locale with a region', () => {
     const value = 'en-us'
 
-    expect(isRegionSegment(value)).toBe(false)
+    expect(isRegion(value)).toBe(false)
   })
 
   it('should refuse a language code', () => {
     const value = 'en'
 
-    expect(isRegionSegment(value)).toBe(false)
+    expect(isRegion(value)).toBe(false)
+  })
+})
+
+describe('isLocaleOrRegion', () => {
+  const locales: Array<string> = ['en', 'fr', 'pt-br', 'zh-hant', 'fil']
+  const regions: Array<string> = ['us', 'mx', 'gb', '419']
+  const others: Array<string> = ['xx', 'cb', 'api', 'feed', 'en-anything', '']
+
+  it.each(locales)('should accept the language tag %s', (value) => {
+    expect(isLocaleOrRegion(value)).toBe(true)
+  })
+
+  it.each(regions)('should accept the region code %s', (value) => {
+    expect(isLocaleOrRegion(value)).toBe(true)
+  })
+
+  it.each(others)('should refuse %s, which names neither', (value) => {
+    expect(isLocaleOrRegion(value)).toBe(false)
+  })
+
+  it('should accept an underscore tag with underscore', () => {
+    const value = 'fr_FR'
+    const options = { underscore: true }
+
+    expect(isLocaleOrRegion(value, options)).toBe(true)
   })
 })

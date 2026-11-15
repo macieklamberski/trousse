@@ -37,7 +37,16 @@ export {
   isValidDate,
 } from './is.js'
 export { isJsonLike, isParseableJson, parseJson } from './json.js'
-export { escapeHtml, isLocaleSegment, isRegionSegment, t, tx } from './locales.js'
+export {
+  escapeHtml,
+  isLocale,
+  isLocaleOrRegion,
+  isLocaleSegment,
+  isRegion,
+  isRegionSegment,
+  t,
+  tx,
+} from './locales.js'
 export {
   anyWordMatchesAnyOf,
   endsWithAnyOf,
@@ -61,6 +70,7 @@ export type {
   AnyOf,
   DeepOmit,
   IsPlainObject,
+  LocaleOptions,
   LocaleSegmentOptions,
   MaybePromise,
   NormalizeOptions,

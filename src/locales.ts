@@ -1,5 +1,5 @@
 import { isAnyOf } from './matching.js'
-import type { LocaleSegmentOptions } from './types.js'
+import type { LocaleOptions } from './types.js'
 
 const placeholderRegex = /\{\{(\w+)\}\}/g
 const escapableRegex = /[&<>"']/g
@@ -48,15 +48,15 @@ const languageNames = /* @__PURE__ */ new Intl.DisplayNames(['en'], {
 // ISO 639 special-purpose codes, which CLDR names on some runtimes but no site uses as a locale.
 const specialPurposeCodes = ['und', 'mul', 'zxx']
 
-// Whether a url path segment, such as `fr` or `pt-br`, is a language tag the runtime's CLDR data
-// names. A word such as `api` or `feed`, or a well-formed tag CLDR has no name for, is not.
-// BCP 47 separates subtags with `-`, so `fr_FR` counts only with the `underscore` option.
-export const isLocaleSegment = (segment: string, options?: LocaleSegmentOptions): boolean => {
-  if (isAnyOf(segment, specialPurposeCodes)) {
+// Whether a value, such as `fr` or `pt-br`, is a language tag the runtime's CLDR data names. A
+// word such as `api` or `feed`, or a well-formed tag CLDR has no name for, is not. BCP 47
+// separates subtags with `-`, so `fr_FR` counts only with the `underscore` option.
+export const isLocale = (value: string, options?: LocaleOptions): boolean => {
+  if (isAnyOf(value, specialPurposeCodes)) {
     return false
   }
 
-  const tag = options?.underscore ? segment.replaceAll('_', '-') : segment
+  const tag = options?.underscore ? value.replaceAll('_', '-') : value
 
   try {
     return languageNames.of(tag) !== undefined
@@ -74,17 +74,29 @@ const regionNames = /* @__PURE__ */ new Intl.DisplayNames(['en'], {
 // two pseudo-locales. XK, also user-assigned, stays in since sites use it for Kosovo.
 const specialPurposeRegions = ['zz', 'qo', 'xa', 'xb']
 
-// Whether a url path segment, such as `us` or `419`, names a country or region in the runtime's
-// CLDR data. It accepts a bare region code only: a locale with a region, such as `en-us`, is
-// `isLocaleSegment`'s job. Node names only an uppercase code, so the segment is uppercased first.
-export const isRegionSegment = (segment: string): boolean => {
-  if (isAnyOf(segment, specialPurposeRegions)) {
+// Whether a value, such as `us` or `419`, names a country or region in the runtime's CLDR data.
+// It accepts a bare region code only: a locale with a region, such as `en-us`, is `isLocale`'s
+// job. Node names only an uppercase code, so the value is uppercased first.
+export const isRegion = (value: string): boolean => {
+  if (isAnyOf(value, specialPurposeRegions)) {
     return false
   }
 
   try {
-    return regionNames.of(segment.toUpperCase()) !== undefined
+    return regionNames.of(value.toUpperCase()) !== undefined
   } catch {
     return false
   }
 }
+
+// Whether a value names a language, such as `en` or `zh-hant`, or a country, such as `us`, the two
+// things a site puts in a locale prefix.
+export const isLocaleOrRegion = (value: string, options?: LocaleOptions): boolean => {
+  return isLocale(value, options) || isRegion(value)
+}
+
+/** @deprecated Use `isLocale` instead. */
+export const isLocaleSegment = isLocale
+
+/** @deprecated Use `isRegion` instead. */
+export const isRegionSegment = isRegion
