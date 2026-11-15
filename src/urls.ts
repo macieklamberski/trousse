@@ -648,7 +648,7 @@ const ipv6Regex = /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i
 
 const wwwPrefixRegex = /^(?:www\.)+(?=.*\.)/
 const ipv6BracketsRegex = /^\[|\]$/g
-const hostnameLabelRegex = /^[a-z0-9_](?:[a-z0-9_-]*[a-z0-9_])?$/i
+const hostnameLabelRegex = /^[a-z0-9_-]+$/i
 // A dot, a letter, then up to five letters or digits: `.xml` and `.ashx`, not the `.0` of `/rss/2.0`.
 const fileExtensionRegex = /\.[a-z][a-z0-9]{0,5}$/i
 
@@ -1415,7 +1415,8 @@ export const isIpAddress = (hostname: string): boolean => {
 
 // Expects a URL.hostname. The URL parser accepts any host free of forbidden code points, such as
 // `,ccam.cc`. This passes an IP address or dot-separated labels of 1 to 63 letters, digits, `_`
-// and `-`, no label starting or ending with `-`. A single label and a final dot pass.
+// and `-`. A label may start or end with `-`, which RFC 1123 refuses but live hosts such as
+// `ok-.livejournal.com` use. A single label and a final dot pass.
 export const isHostname = (host: string): boolean => {
   if (isIpAddress(host)) {
     return true

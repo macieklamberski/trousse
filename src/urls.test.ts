@@ -4805,12 +4805,28 @@ describe('isHostname', () => {
     expect(isHostname('exa mple.com')).toBe(false)
   })
 
-  it('should reject a label starting with a hyphen', () => {
-    expect(isHostname('-example.com')).toBe(false)
+  it('should accept a label starting with a hyphen', () => {
+    const value = '-example.com'
+
+    expect(isHostname(value)).toBe(true)
   })
 
-  it('should reject a label ending with a hyphen', () => {
-    expect(isHostname('example-.com')).toBe(false)
+  it('should accept a label ending with a hyphen', () => {
+    const value = 'example-.com'
+
+    expect(isHostname(value)).toBe(true)
+  })
+
+  it('should accept a subdomain label ending with a hyphen', () => {
+    const value = 'ok-.example.com'
+
+    expect(isHostname(value)).toBe(true)
+  })
+
+  it('should accept a label starting with two hyphens', () => {
+    const value = '--example.com'
+
+    expect(isHostname(value)).toBe(true)
   })
 
   it('should reject an empty label', () => {
