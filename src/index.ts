@@ -61,6 +61,7 @@ export type {
   AnyOf,
   DeepOmit,
   IsPlainObject,
+  LocaleSegmentOptions,
   MaybePromise,
   NormalizeOptions,
   Nullish,

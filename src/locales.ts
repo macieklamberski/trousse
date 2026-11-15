@@ -1,4 +1,5 @@
 import { isAnyOf } from './matching.js'
+import type { LocaleSegmentOptions } from './types.js'
 
 const placeholderRegex = /\{\{(\w+)\}\}/g
 const escapableRegex = /[&<>"']/g
@@ -49,13 +50,16 @@ const specialPurposeCodes = ['und', 'mul', 'zxx']
 
 // Whether a url path segment, such as `fr` or `pt-br`, is a language tag the runtime's CLDR data
 // names. A word such as `api` or `feed`, or a well-formed tag CLDR has no name for, is not.
-export const isLocaleSegment = (segment: string): boolean => {
+// BCP 47 separates subtags with `-`, so `fr_FR` counts only with the `underscore` option.
+export const isLocaleSegment = (segment: string, options?: LocaleSegmentOptions): boolean => {
   if (isAnyOf(segment, specialPurposeCodes)) {
     return false
   }
 
+  const tag = options?.underscore ? segment.replaceAll('_', '-') : segment
+
   try {
-    return languageNames.of(segment) !== undefined
+    return languageNames.of(tag) !== undefined
   } catch {
     return false
   }
