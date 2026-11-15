@@ -1,6 +1,6 @@
 import { decodeHTMLStrict } from 'entities'
 import { isFunction, isNullish, isString } from './is.js'
-import { isAnyOf, toPatternList } from './matching.js'
+import { includesAnyOf, isAnyOf, toPatternList } from './matching.js'
 import type {
   NormalizeOptions,
   Nullish,
@@ -656,7 +656,6 @@ const fileExtensionRegex = /\.[a-z][a-z0-9]{0,5}$/i
 // can carry meaning to the server once decoded.
 // See: https://www.rfc-editor.org/rfc/rfc3986#section-6.2.2.2.
 const unreservedCharsRegex = /[a-zA-Z0-9._~-]/
-const httpsLetterRegex = /s/i
 const schemePrefixRegex = /^https?:\/\//
 const percentEscapeOrLettersRegex = /%[0-9A-Fa-f]{2}|[A-Z]+/g
 const plusRegex = /\+/g
@@ -667,6 +666,7 @@ const httpsSchemeRegex = /^https:\/\//i
 const repeatedSlashesRegex = /(?<!:|%3a)\/{2,}/gi
 
 const leadingWhitespaceChars = [' ', '\t', '\n']
+const httpsLetter = 's'
 const relativeLeadChars = ['/', '.', '?', '#']
 const localhostRegex = /^localhost(?:[:/?#]|$)/i
 const schemeColonRegex = /^[^/]*:/
@@ -707,9 +707,9 @@ const singleMalformedRegex = /* @__PURE__ */ new RegExp(
 // Without a colon, only a token spelled with both `t` and `p` reads as a scheme, so the host `hp`
 // in `http://hp/support` and the relative path `hp//x` stay as they are.
 const isSchemeToken = (token: string, separator: string): boolean => {
-  const lowered = token.toLowerCase()
-
-  return `${token}${separator}`.includes(':') || (lowered.includes('t') && lowered.includes('p'))
+  return (
+    `${token}${separator}`.includes(':') || (includesAnyOf(token, 't') && includesAnyOf(token, 'p'))
+  )
 }
 
 // A `,` or `.` after a single slash can be a decoded `%2C` or `%2E`: a `%2F%2F` that lost one `F`
@@ -736,7 +736,7 @@ export const fixMalformedScheme = (url: string): string => {
     if (brokenSlashEscapeRegex.test(`${doubledMatch[2]}${rest}`)) {
       return url
     }
-    const scheme = httpsLetterRegex.test(inner) ? 'https://' : 'http://'
+    const scheme = includesAnyOf(inner, httpsLetter) ? 'https://' : 'http://'
 
     return `${scheme}${www ? 'www.' : ''}${rest}`
   }
@@ -751,7 +751,7 @@ export const fixMalformedScheme = (url: string): string => {
     if (brokenSlashEscapeRegex.test(`${singleMatch[2]}${rest}`)) {
       return url
     }
-    const scheme = httpsLetterRegex.test(fullMatch) ? 'https://' : 'http://'
+    const scheme = includesAnyOf(fullMatch, httpsLetter) ? 'https://' : 'http://'
 
     return `${scheme}${www ? 'www.' : ''}${rest}`
   }
