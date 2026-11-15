@@ -69,6 +69,7 @@ export type {
   ParamSource,
   PartialNullish,
   Pattern,
+  QueryParamPredicate,
   RegistrableDomainOptions,
   WeightedMimeType,
 } from './types.js'

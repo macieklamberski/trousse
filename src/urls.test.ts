@@ -4205,6 +4205,86 @@ describe('normalizeUrl', () => {
 
       expect(normalizeUrl(value, options)).toBe(expected)
     })
+
+    it('should strip a param by name when a function is provided', () => {
+      const value = 'https://example.com/feed?ref=newsletter&id=123'
+      const options: NormalizeOptions = {
+        stripQueryParams: (name) => name === 'ref',
+      }
+      const expected = 'https://example.com/feed?id=123'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should strip a param by value when a function is provided', () => {
+      const value = 'https://example.com/feed?ref=example.org&ref=newsletter'
+      const options: NormalizeOptions = {
+        stripQueryParams: (_name, value) => value === 'example.org',
+      }
+      const expected = 'https://example.com/feed?ref=newsletter'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should strip a param by host when a function is provided', () => {
+      const value = 'https://example.com/post?ref=example.com&ref=example.org'
+      const options: NormalizeOptions = {
+        stripQueryParams: (_name, value, url) => value === url.hostname,
+      }
+      const expected = 'https://example.com/post?ref=example.org'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should keep the raw encoding of the params a function keeps', () => {
+      const value = 'https://example.com/feed?utm_source=twitter&path=a/b&q=caf%c3%a9+au+lait&atom'
+      const options: NormalizeOptions = {
+        stripQueryParams: (name) => name === 'utm_source',
+      }
+      const expected = 'https://example.com/feed?path=a/b&q=caf%c3%a9+au+lait&atom'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should pass a function the decoded name and value', () => {
+      const value = 'https://example.com/feed?utm%5Fsource+id=a%2Fb+c&id=123'
+      const options: NormalizeOptions = {
+        stripQueryParams: (name, value) => name === 'utm_source id' && value === 'a/b c',
+      }
+      const expected = 'https://example.com/feed?id=123'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should pass a function an undefined value for a param with no equals sign', () => {
+      const value = 'https://example.com/feed?atom&empty=&id=123'
+      const options: NormalizeOptions = {
+        stripQueryParams: (_name, value) => value === undefined,
+      }
+      const expected = 'https://example.com/feed?empty=&id=123'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should pass a function the name in its original case', () => {
+      const value = 'https://example.com/feed?Ref=newsletter&ref=homepage'
+      const options: NormalizeOptions = {
+        stripQueryParams: (name) => name === 'Ref',
+      }
+      const expected = 'https://example.com/feed?ref=homepage'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
+
+    it('should drop empty pairs when a function is provided', () => {
+      const value = 'https://example.com/feed?id=1&&ref=newsletter&'
+      const options: NormalizeOptions = {
+        stripQueryParams: (name) => name === 'ref',
+      }
+      const expected = 'https://example.com/feed?id=1'
+
+      expect(normalizeUrl(value, options)).toBe(expected)
+    })
   })
 
   describe('query string stripping', () => {

@@ -55,6 +55,11 @@ export type RegistrableDomainOptions = {
   suffixes?: ReadonlyArray<string> // Public Suffix List rules, cached per array, so never mutate it
 }
 
+// Answers whether a query pair is stripped, given its decoded name in its original case, its
+// decoded value, undefined for a pair with no `=`, and the URL as normalized so far, so a host
+// stripWww shortened arrives without its `www.`.
+export type QueryParamPredicate = (name: string, value: string | undefined, url: URL) => boolean
+
 // See: https://www.rfc-editor.org/rfc/rfc3986.
 // See: https://www.rfc-editor.org/rfc/rfc9110.
 // See: https://www.rfc-editor.org/rfc/rfc3987.
@@ -70,7 +75,7 @@ export type NormalizeOptions = {
   collapseSlashes?: boolean // /// → /, except after a scheme in the path, against RFC 3986 §3.3
   stripHash?: boolean // Strip #fragment, never sent to the server, RFC 3986 §3.5
   sortQueryParams?: boolean // Sort query params alphabetically, a server may read them in order
-  stripQueryParams?: ReadonlyArray<string> // Query params to strip, cached per array, so never mutate it
+  stripQueryParams?: ReadonlyArray<string> | QueryParamPredicate // Names cached per array, so never mutate it
   stripQuery?: boolean // Strip entire query string
   stripEmptyQuery?: boolean // /feed? → /feed, against RFC 3986 §6.2.3
   lowercaseQuery?: boolean // Lowercase query param names and values, against RFC 3986 §6.2.2.1
