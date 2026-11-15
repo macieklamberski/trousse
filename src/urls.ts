@@ -666,6 +666,7 @@ const httpsSchemeRegex = /^https:\/\//i
 const repeatedSlashesRegex = /(?<!:|%3a)\/{2,}/gi
 
 const leadingWhitespaceChars = [' ', '\t', '\n']
+const httpsLetter = 's'
 const relativeLeadChars = ['/', '.', '?', '#']
 const localhostRegex = /^localhost(?:[:/?#]|$)/i
 const schemeColonRegex = /^[^/]*:/
@@ -735,7 +736,7 @@ export const fixMalformedScheme = (url: string): string => {
     if (brokenSlashEscapeRegex.test(`${doubledMatch[2]}${rest}`)) {
       return url
     }
-    const scheme = includesAnyOf(inner, 's') ? 'https://' : 'http://'
+    const scheme = includesAnyOf(inner, httpsLetter) ? 'https://' : 'http://'
 
     return `${scheme}${www ? 'www.' : ''}${rest}`
   }
@@ -750,7 +751,7 @@ export const fixMalformedScheme = (url: string): string => {
     if (brokenSlashEscapeRegex.test(`${singleMatch[2]}${rest}`)) {
       return url
     }
-    const scheme = includesAnyOf(fullMatch, 's') ? 'https://' : 'http://'
+    const scheme = includesAnyOf(fullMatch, httpsLetter) ? 'https://' : 'http://'
 
     return `${scheme}${www ? 'www.' : ''}${rest}`
   }
