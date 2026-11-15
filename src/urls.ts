@@ -648,7 +648,7 @@ const ipv6Regex = /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i
 
 const wwwPrefixRegex = /^(?:www\.)+(?=.*\.)/
 const ipv6BracketsRegex = /^\[|\]$/g
-const hostnameLabelRegex = /^[a-z0-9_](?:[a-z0-9_-]*[a-z0-9_])?$/i
+const hostnameLabelRegex = /^[a-z0-9_-]+$/i
 // A dot, a letter, then up to five letters or digits: `.xml` and `.ashx`, not the `.0` of `/rss/2.0`.
 const fileExtensionRegex = /\.[a-z][a-z0-9]{0,5}$/i
 
@@ -760,7 +760,7 @@ export const fixMalformedScheme = (url: string): string => {
 }
 
 const authorityRegex = /^(?:[a-z][a-z\d+.-]*:)?\/\/[^/?#\\]*/i
-const dotRunRegex = /\.{2,}/g
+const doubledDotRegex = /(?<!\.)\.\.(?!\.)/g
 
 // A host name never ends in one of these: a run of them is punctuation from the text around a link.
 const trailingHostJunkChars = [')', ',', "'", '&']
@@ -782,12 +782,20 @@ export const fixMalformedHost = (url: string): string => {
     hostEnd--
   }
 
-  // An empty label holds no name, so a run of dots is one label separator and a dot opening the
-  // host separates nothing.
-  let fixedHost = host.slice(0, hostEnd).replace(dotRunRegex, '.')
+  // An empty label holds no name, so a doubled dot is one label separator and a dot opening the
+  // host separates nothing. A run of three or more dots is an ellipsis marking text cut off, which
+  // has no single reading, so it stays as written.
+  let fixedHost = host.slice(0, hostEnd).replace(doubledDotRegex, '.')
 
-  if (fixedHost.startsWith('.')) {
+  if (fixedHost.startsWith('.') && !fixedHost.startsWith('..')) {
     fixedHost = fixedHost.slice(1)
+  }
+
+  // A repair that leaves the host ending in a dot has stripped it back to a label that was cut off,
+  // as in `www.example..` or `example.com.)`, so the url stays as written. A final dot the publisher
+  // wrote needs no repair and comes back the same way.
+  if (fixedHost.endsWith('.')) {
+    return url
   }
 
   // A comma opening the host can be a decoded `%2C` whose `C` was the host's first letter, so
@@ -1415,7 +1423,8 @@ export const isIpAddress = (hostname: string): boolean => {
 
 // Expects a URL.hostname. The URL parser accepts any host free of forbidden code points, such as
 // `,ccam.cc`. This passes an IP address or dot-separated labels of 1 to 63 letters, digits, `_`
-// and `-`, no label starting or ending with `-`. A single label and a final dot pass.
+// and `-`. A label may start or end with `-`, which RFC 1123 refuses but live hosts such as
+// `ok-.livejournal.com` use. A single label and a final dot pass.
 export const isHostname = (host: string): boolean => {
   if (isIpAddress(host)) {
     return true
