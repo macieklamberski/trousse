@@ -13,6 +13,7 @@ import {
   decodePercent,
   decodeSegment,
   encodePathSegment,
+  fixMalformedHost,
   fixMalformedQuery,
   fixMalformedScheme,
   getFragmentParam,
@@ -1815,12 +1816,17 @@ describe('fixMalformedScheme', () => {
 
   const leadingJunkCases: Array<[string, string]> = [
     ['http://./example.com', 'http://example.com'],
-    ['http://,example.com', 'http://example.com'],
     ['https://...example.com', 'https://example.com'],
   ]
 
   it.each(leadingJunkCases)('should remove leading junk after scheme (%s)', (value, expected) => {
     expect(fixMalformedScheme(value)).toBe(expected)
+  })
+
+  it('should keep a comma after a double slash that may hold the first host letter', () => {
+    const value = 'https://,cexample.com/'
+
+    expect(fixMalformedScheme(value)).toBe(value)
   })
 
   const brokenSlashEscapeUrls: Array<string> = [
@@ -2072,6 +2078,142 @@ describe('fixMalformedScheme', () => {
 
   it('should return empty string unchanged', () => {
     expect(fixMalformedScheme('')).toBe('')
+  })
+})
+
+describe('fixMalformedHost', () => {
+  it('should drop a closing paren after the host', () => {
+    const value = 'https://www.example.org)/'
+    const expected = 'https://www.example.org/'
+
+    expect(fixMalformedHost(value)).toBe(expected)
+  })
+
+  it('should drop a comma after the host', () => {
+    const value = 'http://example.com,/'
+    const expected = 'http://example.com/'
+
+    expect(fixMalformedHost(value)).toBe(expected)
+  })
+
+  it('should drop a quote after the host', () => {
+    const value = "https://example.com'/feed"
+    const expected = 'https://example.com/feed'
+
+    expect(fixMalformedHost(value)).toBe(expected)
+  })
+
+  it('should drop an ampersand after the host', () => {
+    const value = 'https://example.com&/feed'
+    const expected = 'https://example.com/feed'
+
+    expect(fixMalformedHost(value)).toBe(expected)
+  })
+
+  it('should drop a run of trailing punctuation after the host', () => {
+    const value = "https://example.com),'/feed"
+    const expected = 'https://example.com/feed'
+
+    expect(fixMalformedHost(value)).toBe(expected)
+  })
+
+  it('should drop trailing punctuation from a host that ends the url', () => {
+    const value = 'https://example.com)'
+    const expected = 'https://example.com'
+
+    expect(fixMalformedHost(value)).toBe(expected)
+  })
+
+  it('should collapse doubled dots in the host', () => {
+    const value = 'http://www..example.org/feed'
+    const expected = 'http://www.example.org/feed'
+
+    expect(fixMalformedHost(value)).toBe(expected)
+  })
+
+  it('should drop a leading dot from the host', () => {
+    const value = 'http://.example.com/x'
+    const expected = 'http://example.com/x'
+
+    expect(fixMalformedHost(value)).toBe(expected)
+  })
+
+  it('should repair the host of a scheme-relative url', () => {
+    const value = '//example.com)/feed'
+    const expected = '//example.com/feed'
+
+    expect(fixMalformedHost(value)).toBe(expected)
+  })
+
+  it('should repair the host after a username', () => {
+    const value = 'https://user@.example.com/'
+    const expected = 'https://user@example.com/'
+
+    expect(fixMalformedHost(value)).toBe(expected)
+  })
+
+  it('should keep the path, query and fragment as written', () => {
+    const value = "https://example.com/a)/b..c?q=d,#e'"
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a host carried in the query', () => {
+    const value = 'https://example.com/?url=https://www..example.org)/'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a leading comma that may be a broken escape', () => {
+    const value = 'https://,cexample.com/'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a label starting with a hyphen', () => {
+    const value = 'https://-example.com/'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep an entity closing the host', () => {
+    const value = 'https://example.com&amp;/feed'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a host made only of punctuation', () => {
+    const value = 'http://)/feed'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a relative path', () => {
+    const value = '/feed)/item..1'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should keep a valid url', () => {
+    const value = 'https://user:secret@www.example.com:8080/feed?a=1#top'
+
+    expect(fixMalformedHost(value)).toBe(value)
+  })
+
+  it('should repair 200 KB of dots in a host within a second', () => {
+    const value = `https://www${'.'.repeat(200_000)}example.com/`
+    const start = performance.now()
+
+    expect(fixMalformedHost(value)).toBe('https://www.example.com/')
+    expect(performance.now() - start).toBeLessThan(1000)
+  })
+
+  it('should repair 200 KB of closing parens after a host within a second', () => {
+    const value = `https://example.com${')'.repeat(200_000)}/`
+    const start = performance.now()
+
+    expect(fixMalformedHost(value)).toBe('https://example.com/')
+    expect(performance.now() - start).toBeLessThan(1000)
   })
 })
 
@@ -3013,6 +3155,36 @@ describe('resolveUrl', () => {
       const expected = 'https://ps.w.org/plugin/icon.png'
 
       expect(resolveUrl(value)).toBe(expected)
+    })
+  })
+
+  describe('malformed hosts', () => {
+    it('should drop a closing paren after the host', () => {
+      const value = 'https://www.example.org)/'
+      const expected = 'https://www.example.org/'
+
+      expect(resolveUrl(value)).toBe(expected)
+    })
+
+    it('should collapse doubled dots in the host', () => {
+      const value = 'http://www..example.org/feed'
+      const expected = 'http://www.example.org/feed'
+
+      expect(resolveUrl(value)).toBe(expected)
+    })
+
+    it('should repair the host of a scheme-relative href with a base', () => {
+      const value = '//example.com)/feed'
+      const base = 'https://example.org/'
+      const expected = 'https://example.com/feed'
+
+      expect(resolveUrl(value, base)).toBe(expected)
+    })
+
+    it('should keep a leading comma that may be a broken escape', () => {
+      const value = 'https://,cexample.com/'
+
+      expect(resolveUrl(value)).toBe(value)
     })
   })
 
