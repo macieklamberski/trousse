@@ -113,6 +113,7 @@ export {
   getSubdomain,
   hasFragmentParam,
   hasQueryParam,
+  isBrandDomainOf,
   isHostname,
   isHostOf,
   isHostOrSubdomainOf,
