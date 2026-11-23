@@ -28,6 +28,7 @@ import {
   getSubdomain,
   hasFragmentParam,
   hasQueryParam,
+  isBrandDomainOf,
   isHostname,
   isHostOf,
   isHostOrSubdomainOf,
@@ -5563,6 +5564,68 @@ describe('getRegistrableDomain', () => {
 
       expect(getRegistrableDomain(value, options)).toBe('example.com')
     })
+  })
+})
+
+describe('isBrandDomainOf', () => {
+  it('should return true for a host on the brand domain', () => {
+    const value = 'https://alice.example.com/feed'
+
+    expect(isBrandDomainOf(value, 'example')).toBe(true)
+  })
+
+  it('should return true for the brand under another ending', () => {
+    const value = 'https://alice.example.de/feed'
+
+    expect(isBrandDomainOf(value, 'example')).toBe(true)
+  })
+
+  it('should return true for the brand under a country code suffix', () => {
+    const value = 'https://alice.example.com.br/feed'
+
+    expect(isBrandDomainOf(value, 'example')).toBe(true)
+  })
+
+  it('should return true for the bare brand domain', () => {
+    const value = 'https://example.org'
+
+    expect(isBrandDomainOf(value, 'example')).toBe(true)
+  })
+
+  it('should return true for any brand in a list', () => {
+    const value = 'https://alice.example.net/'
+
+    expect(isBrandDomainOf(value, ['test', 'example'])).toBe(true)
+  })
+
+  it('should match the brand in any case', () => {
+    const value = 'https://Alice.EXAMPLE.com/'
+
+    expect(isBrandDomainOf(value, 'example')).toBe(true)
+  })
+
+  it('should return false for another registrable domain', () => {
+    const value = 'https://alice.example-shop.com/'
+
+    expect(isBrandDomainOf(value, 'example')).toBe(false)
+  })
+
+  it('should return false for the brand as a subdomain of another domain', () => {
+    const value = 'https://example.test.com/'
+
+    expect(isBrandDomainOf(value, 'example')).toBe(false)
+  })
+
+  it('should return false for an IP address', () => {
+    const value = 'http://127.0.0.1/'
+
+    expect(isBrandDomainOf(value, '127')).toBe(false)
+  })
+
+  it('should return false for a URL with no host', () => {
+    const value = 'not a url'
+
+    expect(isBrandDomainOf(value, 'example')).toBe(false)
   })
 })
 

@@ -1709,6 +1709,22 @@ export const getRegistrableDomain = (
   return parts.slice(-labels).join('.')
 }
 
+// Whether the URL's registrable domain is one of the brands under any suffix, as `ucoz` for
+// `alice.ucoz.com.br`, so a platform serving one name under many endings needs no list of them.
+export const isBrandDomainOf = (
+  url: string | URL,
+  brands: string | ReadonlyArray<string>,
+  options?: RegistrableDomainOptions,
+): boolean => {
+  const domain = getRegistrableDomain(url, options)
+
+  if (!domain || isIpAddress(domain)) {
+    return false
+  }
+
+  return isAnyOf(domain.slice(0, domain.indexOf('.')), brands)
+}
+
 /** @deprecated Use `fixMalformedScheme` instead. */
 export const fixMalformedProtocol = fixMalformedScheme
 
