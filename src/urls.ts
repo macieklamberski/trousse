@@ -94,6 +94,28 @@ const getParentDomains = (hostname: string): Array<string> => {
 
 const keepValue = (value: string): string => value
 
+const lowerDomainCacheLimit = 1000
+const lowerDomainCache = new Map<string, string>()
+
+// A domain pattern as isHostOf, isSubdomainOf and getSubdomain compare it, normalized and
+// lowercased once per distinct pattern. The cache empties when full, so patterns built per call
+// cannot grow it.
+const toLowerDomain = (domain: string): string => {
+  let lowerDomain = lowerDomainCache.get(domain)
+
+  if (lowerDomain === undefined) {
+    lowerDomain = normalizeDomain(domain).toLowerCase()
+
+    if (lowerDomainCache.size >= lowerDomainCacheLimit) {
+      lowerDomainCache.clear()
+    }
+
+    lowerDomainCache.set(domain, lowerDomain)
+  }
+
+  return lowerDomain
+}
+
 // Whether the hostname, lowercased by the caller once per call, ends in `.${domain}`. The dot is
 // checked by position and the suffix compared through a parser that keeps it, so neither string is
 // built or lowercased again per entry. An empty domain leaves only the dot.
@@ -129,7 +151,7 @@ export const isHostOf = (url: string | URL, hosts: Pattern | ReadonlyArray<Patte
       continue
     }
 
-    if (isAnyOf(lowerHostname, normalizeDomain(host).toLowerCase(), keepValue)) {
+    if (isAnyOf(lowerHostname, toLowerDomain(host), keepValue)) {
       return true
     }
   }
@@ -158,7 +180,7 @@ export const isSubdomainOf = (
       continue
     }
 
-    if (endsWithDomain(lowerHostname, normalizeDomain(domain))) {
+    if (endsWithDomain(lowerHostname, toLowerDomain(domain))) {
       return true
     }
   }
@@ -207,7 +229,7 @@ export const getSubdomain = (
 
   for (const domain of toPatternList(domains)) {
     if (isString(domain)) {
-      const name = normalizeDomain(domain)
+      const name = toLowerDomain(domain)
 
       // An empty entry names no domain, so `example.com..` yields no label.
       if (name && endsWithDomain(hostname, name)) {
