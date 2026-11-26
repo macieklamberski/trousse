@@ -700,6 +700,29 @@ describe('getSubdomain', () => {
     expect(getSubdomain(value, globalRegex)).toBe(expected)
     expect(getSubdomain(value, globalRegex)).toBe(expected)
   })
+
+  it('should read a cached pattern as a fresh one', () => {
+    const value = 'https://alice.example.net/feed'
+    const expected = 'alice'
+
+    expect(getSubdomain(value, 'Example.net')).toBe(expected)
+    expect(getSubdomain(value, 'Example.net')).toBe(expected)
+  })
+
+  it('should read a cached pattern written in Unicode', () => {
+    const value = 'https://news.bücher.de/feed'
+    const expected = 'news'
+
+    expect(getSubdomain(value, 'bücher.de')).toBe(expected)
+    expect(getSubdomain(value, 'bücher.de')).toBe(expected)
+  })
+
+  it('should read an uppercase pattern with a trailing dot', () => {
+    const value = 'https://alice.example.com/feed'
+    const expected = 'alice'
+
+    expect(getSubdomain(value, 'EXAMPLE.COM.')).toBe(expected)
+  })
 })
 
 describe('decodeSegment', () => {

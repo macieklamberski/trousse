@@ -97,8 +97,9 @@ const keepValue = (value: string): string => value
 const lowerDomainCacheLimit = 1000
 const lowerDomainCache = new Map<string, string>()
 
-// A domain pattern as isHostOf and isSubdomainOf compare it, normalized and lowercased once per
-// distinct pattern. The cache empties when full, so patterns built per call cannot grow it.
+// A domain pattern as isHostOf, isSubdomainOf and getSubdomain compare it, normalized and
+// lowercased once per distinct pattern. The cache empties when full, so patterns built per call
+// cannot grow it.
 const toLowerDomain = (domain: string): string => {
   let lowerDomain = lowerDomainCache.get(domain)
 
@@ -228,7 +229,7 @@ export const getSubdomain = (
 
   for (const domain of toPatternList(domains)) {
     if (isString(domain)) {
-      const name = normalizeDomain(domain)
+      const name = toLowerDomain(domain)
 
       // An empty entry names no domain, so `example.com..` yields no label.
       if (name && endsWithDomain(hostname, name)) {
