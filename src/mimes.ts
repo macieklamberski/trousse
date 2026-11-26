@@ -41,6 +41,8 @@ export const genericHtmlMimeTypes: Array<WeightedMimeType> = [
   { mime: '*/*', quality: 0.8 },
 ]
 
+// Pure, so a bundler drops a top-level header built with it that nothing reads.
+/* @__NO_SIDE_EFFECTS__ */
 export const createAcceptHeader = (types: ReadonlyArray<WeightedMimeType>): string => {
   const ranges = types.map((type) => {
     if (type.quality === 1) {

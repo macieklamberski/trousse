@@ -106,6 +106,8 @@ export const trimObject: TrimObject = <T extends Record<string, unknown>>(
 
 // A map only ever sees the keys that were put into it, so a lookup for a name that lives on the
 // object prototype, `constructor` or `toString`, misses instead of resolving up the chain.
+// Pure, so a bundler drops a top-level table built with it that nothing reads.
+/* @__NO_SIDE_EFFECTS__ */
 export const toMap = <V>(record: Record<string, V>): Map<string, V> => {
   return new Map(Object.entries(record))
 }
