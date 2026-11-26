@@ -5616,6 +5616,18 @@ describe('isBrandDomainOf', () => {
     expect(isBrandDomainOf(value, 'example')).toBe(false)
   })
 
+  it('should return true for a single-label host matching the brand', () => {
+    const value = 'http://localhost/'
+
+    expect(isBrandDomainOf(value, 'localhost')).toBe(true)
+  })
+
+  it('should return false for a single-label host missing its last character', () => {
+    const value = 'http://localhost/'
+
+    expect(isBrandDomainOf(value, 'localhos')).toBe(false)
+  })
+
   it('should return false for an IP address', () => {
     const value = 'http://127.0.0.1/'
 

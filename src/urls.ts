@@ -1722,7 +1722,7 @@ export const isBrandDomainOf = (
     return false
   }
 
-  return isAnyOf(domain.slice(0, domain.indexOf('.')), brands)
+  return isAnyOf(domain.split('.')[0], brands)
 }
 
 /** @deprecated Use `fixMalformedScheme` instead. */
