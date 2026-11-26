@@ -1,5 +1,5 @@
-import { isPresent } from './is.js'
-import type { AnyOf } from './types.js'
+import { isFunction, isNonEmptyString, isPresent, isString } from './is.js'
+import type { AnyOf, TrimOptions, TrimPredicate } from './types.js'
 
 // Assigning to `__proto__` replaces the prototype, so an own `__proto__` key from JSON.parse would
 // vanish and its fields would be inherited instead.
@@ -50,13 +50,35 @@ export const omit = <T extends object, K extends keyof T>(
   return result as Omit<T, K>
 }
 
+type TrimObject = {
+  <T extends Record<string, unknown>>(object: T, options?: TrimOptions): AnyOf<T> | undefined
+  /** @deprecated Pass `{ keep }` instead. */
+  <T extends Record<string, unknown>>(object: T, keep: TrimPredicate): AnyOf<T> | undefined
+}
+
+// Wraps keep so that, with blank set, a string isNonEmptyString rejects is dropped too.
+export const createTrimPredicate = (
+  options: TrimOptions,
+  fallback: TrimPredicate,
+): TrimPredicate => {
+  const keep = options.keep ?? fallback
+
+  if (!options.blank) {
+    return keep
+  }
+
+  return (value) => (isNonEmptyString(value) || !isString(value)) && keep(value)
+}
+
 // Drops the fields whose value fails the keep predicate, by default the null and undefined ones.
 // Returns undefined when nothing survives, and the input object itself when everything does, so
 // the fully-present case allocates nothing.
-export const trimObject = <T extends Record<string, unknown>>(
+export const trimObject: TrimObject = <T extends Record<string, unknown>>(
   object: T,
-  keep: (value: unknown) => boolean = isPresent,
+  options: TrimOptions | TrimPredicate = {},
 ): AnyOf<T> | undefined => {
+  const keep = createTrimPredicate(isFunction(options) ? { keep: options } : options, isPresent)
+
   let hasKept = false
   let hasDropped = false
 

@@ -84,13 +84,16 @@ export const isAnyOf = (
 
 // Compares two values the way isAnyOf compares a value with a string pattern, so a missing side
 // never equals anything.
-export const isSameText = (value: Nullish<string>, other: Nullish<string>): boolean => {
+export const isLooseMatch = (value: Nullish<string>, other: Nullish<string>): boolean => {
   if (isNullish(value) || isNullish(other)) {
     return false
   }
 
   return value.toLowerCase().trim() === other.toLowerCase().trim()
 }
+
+/** @deprecated Use `isLooseMatch` instead. */
+export const isSameText = isLooseMatch
 
 // Returns the list entry the value matches, so a caller can emit the entry's own spelling.
 export const getAnyOf = <T extends string>(

@@ -6,6 +6,7 @@ import {
   getAnyOf,
   includesAnyOf,
   isAnyOf,
+  isLooseMatch,
   isSameText,
   startsWithAnyOf,
 } from './matching.js'
@@ -205,61 +206,67 @@ describe('isAnyOf', () => {
   })
 })
 
-describe('isSameText', () => {
+describe('isLooseMatch', () => {
   it('should return true for values differing only in case', () => {
     const value = 'PressRoom42'
     const other = 'pressroom42'
 
-    expect(isSameText(value, other)).toBe(true)
+    expect(isLooseMatch(value, other)).toBe(true)
   })
 
   it('should return true for values differing only in surrounding whitespace', () => {
     const value = ' webcomic '
     const other = 'webcomic'
 
-    expect(isSameText(value, other)).toBe(true)
+    expect(isLooseMatch(value, other)).toBe(true)
   })
 
   it('should return false for different values', () => {
     const value = 'pinterest'
     const other = 'pintrest'
 
-    expect(isSameText(value, other)).toBe(false)
+    expect(isLooseMatch(value, other)).toBe(false)
   })
 
   it('should return false when value is undefined', () => {
     const other = 'pinterest'
 
-    expect(isSameText(undefined, other)).toBe(false)
+    expect(isLooseMatch(undefined, other)).toBe(false)
   })
 
   it('should return false when other is undefined', () => {
     const value = 'pinterest'
 
-    expect(isSameText(value, undefined)).toBe(false)
+    expect(isLooseMatch(value, undefined)).toBe(false)
   })
 
   it('should return false when value is null', () => {
     const other = 'pinterest'
 
-    expect(isSameText(null, other)).toBe(false)
+    expect(isLooseMatch(null, other)).toBe(false)
   })
 
   it('should return false when other is null', () => {
     const value = 'pinterest'
 
-    expect(isSameText(value, null)).toBe(false)
+    expect(isLooseMatch(value, null)).toBe(false)
   })
 
   it('should return false when both values are undefined', () => {
-    expect(isSameText(undefined, undefined)).toBe(false)
+    expect(isLooseMatch(undefined, undefined)).toBe(false)
   })
 
   it('should return true for two empty strings', () => {
     const value = ''
     const other = ''
 
-    expect(isSameText(value, other)).toBe(true)
+    expect(isLooseMatch(value, other)).toBe(true)
+  })
+})
+
+describe('isSameText', () => {
+  it('should be the same function as isLooseMatch', () => {
+    expect(isSameText).toBe(isLooseMatch)
   })
 })
 

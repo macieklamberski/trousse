@@ -54,6 +54,7 @@ export {
   getAnyOf,
   includesAnyOf,
   isAnyOf,
+  isLooseMatch,
   isSameText,
   startsWithAnyOf,
 } from './matching.js'
@@ -82,6 +83,8 @@ export type {
   Pattern,
   QueryParamPredicate,
   RegistrableDomainOptions,
+  TrimOptions,
+  TrimPredicate,
   WeightedMimeType,
 } from './types.js'
 export {

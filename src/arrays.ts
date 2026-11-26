@@ -1,13 +1,22 @@
 import { isPresent } from './is.js'
-import type { Nullish } from './types.js'
+import { createTrimPredicate } from './objects.js'
+import type { Nullish, TrimOptions } from './types.js'
 
-export const trimArray = <T>(array: Array<Nullish<T>>): Array<T> | undefined => {
+const isPresentAndFilled = (value: unknown): boolean => {
+  // biome-ignore lint/plugin/noEmptyStringTest: value is unknown, so a bare test would also drop 0 and false.
+  return isPresent(value) && value !== ''
+}
+
+export const trimArray = <T>(
+  array: Array<Nullish<T>>,
+  options: TrimOptions = {},
+): Array<T> | undefined => {
+  const keep = createTrimPredicate(options, isPresentAndFilled)
   const result: Array<T> = []
 
   for (const item of array) {
-    // biome-ignore lint/plugin/noEmptyStringTest: item is a generic T, so a bare test would also drop 0 and false.
-    if (isPresent(item) && item !== '') {
-      result.push(item)
+    if (keep(item)) {
+      result.push(item as T)
     }
   }
 

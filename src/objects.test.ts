@@ -236,7 +236,22 @@ describe('trimObject', () => {
     expect(trimObject(value)).toEqual(expected)
   })
 
-  it('should drop the fields a custom predicate rejects', () => {
+  it('should drop the fields the keep option rejects', () => {
+    const value = {
+      id: 1,
+      label: '',
+      count: 0,
+      title: 'Post',
+    }
+    const expected = {
+      id: 1,
+      title: 'Post',
+    }
+
+    expect(trimObject(value, { keep: Boolean })).toEqual(expected)
+  })
+
+  it('should accept the keep predicate as the second argument', () => {
     const value = {
       id: 1,
       label: '',
@@ -249,6 +264,41 @@ describe('trimObject', () => {
     }
 
     expect(trimObject(value, Boolean)).toEqual(expected)
+  })
+
+  it('should drop blank strings with the blank option', () => {
+    const value = {
+      id: 1,
+      label: '',
+      summary: ' \t\u0085',
+      count: 0,
+      isDraft: false,
+      title: ' Post ',
+      author: undefined,
+    }
+    const expected = {
+      id: 1,
+      count: 0,
+      isDraft: false,
+      title: ' Post ',
+    }
+
+    expect(trimObject(value, { blank: true })).toEqual(expected)
+  })
+
+  it('should drop the fields either the keep or the blank option rejects', () => {
+    const value = {
+      id: 1,
+      label: '  ',
+      count: 0,
+      title: 'Post',
+    }
+    const expected = {
+      id: 1,
+      title: 'Post',
+    }
+
+    expect(trimObject(value, { keep: Boolean, blank: true })).toEqual(expected)
   })
 
   it('should return undefined when no field passes', () => {
