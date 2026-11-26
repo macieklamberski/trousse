@@ -1,7 +1,7 @@
 import { isPresent } from './is.js'
 import type { Nullish } from './types.js'
 
-export const omitEmpty = <T>(array: Array<Nullish<T>>): Array<T> | undefined => {
+export const trimArray = <T>(array: Array<Nullish<T>>): Array<T> | undefined => {
   const result: Array<T> = []
 
   for (const item of array) {
@@ -17,3 +17,6 @@ export const omitEmpty = <T>(array: Array<Nullish<T>>): Array<T> | undefined => 
 
   return result
 }
+
+/** @deprecated Use `trimArray` instead. */
+export const omitEmpty = trimArray
