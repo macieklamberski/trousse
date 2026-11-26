@@ -1,3 +1,4 @@
+import { toPatternList } from './internal.js'
 import { isNullish, isString } from './is.js'
 import type { Nullish, Pattern } from './types.js'
 
@@ -19,12 +20,6 @@ const testRegex = (regex: RegExp, value: string): boolean => {
 // so `/^Foo$/` matches `Foo` while `/\/rss\//` still matches `/RSS/`.
 const testRegexAnyCase = (regex: RegExp, lowerValue: string, value: string): boolean => {
   return testRegex(regex, lowerValue) || (lowerValue !== value && testRegex(regex, value))
-}
-
-export const toPatternList = (
-  patterns: Pattern | ReadonlyArray<Pattern>,
-): ReadonlyArray<Pattern> => {
-  return isString(patterns) || patterns instanceof RegExp ? [patterns] : patterns
 }
 
 // Escapes a literal for a regex source string, valid inside and outside a character class under

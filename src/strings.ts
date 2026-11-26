@@ -1,4 +1,5 @@
-import { blankCharacterClass, isString } from './is.js'
+import { blankCharacterClass } from './internal.js'
+import { isString } from './is.js'
 
 // String#trim strips every blank character except U+0085, so the edges are stripped with the
 // blank set and a string trimString empties is one isNonEmptyString rejects.

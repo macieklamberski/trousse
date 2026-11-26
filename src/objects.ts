@@ -1,4 +1,5 @@
-import { isFunction, isNonEmptyString, isNullish, isPresent, isString } from './is.js'
+import { createTrimPredicate } from './internal.js'
+import { isFunction, isPresent } from './is.js'
 import type { AnyOf, TrimOptions, TrimPredicate } from './types.js'
 
 // Assigning to `__proto__` replaces the prototype, so an own `__proto__` key from JSON.parse would
@@ -54,28 +55,6 @@ type TrimObject = {
   <T extends Record<string, unknown>>(object: T, options?: TrimOptions): AnyOf<T> | undefined
   /** @deprecated Pass `{ keep }` instead. */
   <T extends Record<string, unknown>>(object: T, keep: TrimPredicate): AnyOf<T> | undefined
-}
-
-// Wraps keep so that null and undefined are always dropped, and with blank set, a string
-// isNonEmptyString rejects is dropped too.
-export const createTrimPredicate = (
-  options: TrimOptions,
-  fallback: TrimPredicate,
-): TrimPredicate => {
-  const keep = options.keep ?? fallback
-  const isBlankDropped = options.blank
-
-  return (value) => {
-    if (isNullish(value)) {
-      return false
-    }
-
-    if (isBlankDropped && isString(value) && !isNonEmptyString(value)) {
-      return false
-    }
-
-    return keep(value)
-  }
 }
 
 // Drops the null and undefined fields, and those whose value fails the keep predicate.

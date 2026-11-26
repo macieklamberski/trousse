@@ -1,5 +1,5 @@
+import { createTrimPredicate } from './internal.js'
 import { isPresent } from './is.js'
-import { createTrimPredicate } from './objects.js'
 import type { Nullish, TrimOptions } from './types.js'
 
 const isFilled = (value: unknown): boolean => {

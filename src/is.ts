@@ -1,3 +1,6 @@
+// internal.ts imports this module, so the blank set comes from the file it re-exports.
+import { blankCharacterClass } from './internal/blank.js'
+
 export const isString = (value: unknown): value is string => {
   // biome-ignore lint/plugin/useTypeofGuard: This is isString.
   return typeof value === 'string'
@@ -60,11 +63,6 @@ export const isObject = (value: unknown): value is object => {
 export const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   return isObject(value) && Object.getPrototypeOf(value) === Object.prototype
 }
-
-// The characters that count as blank. U+FEFF, the byte order mark, is not White_Space, but `trim`
-// strips it and it is never text.
-// See: https://www.unicode.org/reports/tr44/#White_Space.
-export const blankCharacterClass = '[\\p{White_Space}\\uFEFF]'
 
 const whitespaceOnlyRegex = new RegExp(`^${blankCharacterClass}*$`, 'u')
 
