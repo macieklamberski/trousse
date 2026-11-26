@@ -282,6 +282,33 @@ describe('isHostOf', () => {
     expect(isHostOf(value, globalRegex)).toBe(true)
     expect(isHostOf(value, globalRegex)).toBe(true)
   })
+
+  it('should match by a cached pattern as by a fresh one', () => {
+    const value = 'https://example.net/feed'
+
+    expect(isHostOf(value, 'Example.net')).toBe(true)
+    expect(isHostOf(value, 'Example.net')).toBe(true)
+  })
+
+  it('should not match another host by a cached pattern', () => {
+    expect(isHostOf('https://example.net/feed', 'example.net')).toBe(true)
+    expect(isHostOf('https://example.org/feed', 'example.net')).toBe(false)
+  })
+
+  it('should match by a pattern after the cache empties at its limit', () => {
+    const value = 'https://example.net/feed'
+    const otherHosts = Array.from({ length: 1000 }, (_, index) => `host-${index}.example.org`)
+
+    expect(isHostOf(value, 'example.net')).toBe(true)
+    expect(isHostOf(value, otherHosts)).toBe(false)
+    expect(isHostOf(value, 'example.net')).toBe(true)
+  })
+
+  it('should match an uppercase pattern with a trailing dot', () => {
+    const value = 'https://example.com/feed'
+
+    expect(isHostOf(value, 'EXAMPLE.COM.')).toBe(true)
+  })
 })
 
 describe('isSubdomainOf', () => {
@@ -416,6 +443,33 @@ describe('isSubdomainOf', () => {
 
     expect(isSubdomainOf(value, globalRegex)).toBe(true)
     expect(isSubdomainOf(value, globalRegex)).toBe(true)
+  })
+
+  it('should match by a cached pattern as by a fresh one', () => {
+    const value = 'https://shop.example.net/feed'
+
+    expect(isSubdomainOf(value, 'Example.net')).toBe(true)
+    expect(isSubdomainOf(value, 'Example.net')).toBe(true)
+  })
+
+  it('should not match another domain by a cached pattern', () => {
+    expect(isSubdomainOf('https://shop.example.net/feed', 'example.net')).toBe(true)
+    expect(isSubdomainOf('https://shop.example.org/feed', 'example.net')).toBe(false)
+  })
+
+  it('should match by a pattern after the cache empties at its limit', () => {
+    const value = 'https://shop.example.net/feed'
+    const otherDomains = Array.from({ length: 1000 }, (_, index) => `domain-${index}.example.org`)
+
+    expect(isSubdomainOf(value, 'example.net')).toBe(true)
+    expect(isSubdomainOf(value, otherDomains)).toBe(false)
+    expect(isSubdomainOf(value, 'example.net')).toBe(true)
+  })
+
+  it('should match an uppercase pattern with a trailing dot', () => {
+    const value = 'https://shop.example.com/feed'
+
+    expect(isSubdomainOf(value, 'EXAMPLE.COM.')).toBe(true)
   })
 })
 
