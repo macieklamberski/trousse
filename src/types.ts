@@ -90,3 +90,10 @@ export type WeightedMimeType = {
   mime: string
   quality: number // Accept header q value, from 0 to 1
 }
+
+export type TrimPredicate = (value: unknown) => boolean
+
+export type TrimOptions = {
+  keep?: TrimPredicate // Keeps a value when it returns true, after null and undefined are dropped
+  blank?: boolean // Also drops a string that is empty or only whitespace
+}

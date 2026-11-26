@@ -1,12 +1,21 @@
+import { createTrimPredicate } from './internal.js'
 import { isPresent } from './is.js'
-import type { Nullish } from './types.js'
+import type { Nullish, TrimOptions } from './types.js'
 
-export const omitEmpty = <T>(array: Array<Nullish<T>>): Array<T> | undefined => {
+const isFilled = (value: unknown): boolean => {
+  // biome-ignore lint/plugin/noEmptyStringTest: value is unknown, so a bare test would also drop 0 and false.
+  return value !== ''
+}
+
+export const trimArray = <T>(
+  array: Array<Nullish<T>>,
+  options: TrimOptions = {},
+): Array<T> | undefined => {
+  const keep = createTrimPredicate(options, isFilled)
   const result: Array<T> = []
 
   for (const item of array) {
-    // biome-ignore lint/plugin/noEmptyStringTest: item is a generic T, so a bare test would also drop 0 and false.
-    if (isPresent(item) && item !== '') {
+    if (isPresent(item) && keep(item)) {
       result.push(item)
     }
   }
@@ -17,3 +26,6 @@ export const omitEmpty = <T>(array: Array<Nullish<T>>): Array<T> | undefined => 
 
   return result
 }
+
+/** @deprecated Use `trimArray` instead. */
+export const omitEmpty = trimArray

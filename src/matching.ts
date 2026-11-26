@@ -1,3 +1,4 @@
+import { toPatternList } from './internal.js'
 import { isNullish, isString } from './is.js'
 import type { Nullish, Pattern } from './types.js'
 
@@ -19,12 +20,6 @@ const testRegex = (regex: RegExp, value: string): boolean => {
 // so `/^Foo$/` matches `Foo` while `/\/rss\//` still matches `/RSS/`.
 const testRegexAnyCase = (regex: RegExp, lowerValue: string, value: string): boolean => {
   return testRegex(regex, lowerValue) || (lowerValue !== value && testRegex(regex, value))
-}
-
-export const toPatternList = (
-  patterns: Pattern | ReadonlyArray<Pattern>,
-): ReadonlyArray<Pattern> => {
-  return isString(patterns) || patterns instanceof RegExp ? [patterns] : patterns
 }
 
 // Escapes a literal for a regex source string, valid inside and outside a character class under
@@ -84,13 +79,16 @@ export const isAnyOf = (
 
 // Compares two values the way isAnyOf compares a value with a string pattern, so a missing side
 // never equals anything.
-export const isSameText = (value: Nullish<string>, other: Nullish<string>): boolean => {
+export const isLooseMatch = (value: Nullish<string>, other: Nullish<string>): boolean => {
   if (isNullish(value) || isNullish(other)) {
     return false
   }
 
   return value.toLowerCase().trim() === other.toLowerCase().trim()
 }
+
+/** @deprecated Use `isLooseMatch` instead. */
+export const isSameText = isLooseMatch
 
 // Returns the list entry the value matches, so a caller can emit the entry's own spelling.
 export const getAnyOf = <T extends string>(

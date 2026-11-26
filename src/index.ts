@@ -1,4 +1,4 @@
-export { omitEmpty } from './arrays.js'
+export { omitEmpty, trimArray } from './arrays.js'
 export {
   coerceArray,
   coerceBoolean,
@@ -54,6 +54,7 @@ export {
   getAnyOf,
   includesAnyOf,
   isAnyOf,
+  isLooseMatch,
   isSameText,
   startsWithAnyOf,
 } from './matching.js'
@@ -65,6 +66,7 @@ export {
   htmlMimeTypes,
 } from './mimes.js'
 export { omit, pick, toMap, trimObject } from './objects.js'
+export { trimString } from './strings.js'
 export { sleep } from './timers.js'
 export type {
   AnyOf,
@@ -81,6 +83,8 @@ export type {
   Pattern,
   QueryParamPredicate,
   RegistrableDomainOptions,
+  TrimOptions,
+  TrimPredicate,
   WeightedMimeType,
 } from './types.js'
 export {

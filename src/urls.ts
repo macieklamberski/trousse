@@ -1,6 +1,7 @@
 import { decodeHTMLStrict } from 'entities'
+import { toPatternList } from './internal.js'
 import { isFunction, isNullish, isString } from './is.js'
-import { includesAnyOf, isAnyOf, toPatternList } from './matching.js'
+import { includesAnyOf, isAnyOf } from './matching.js'
 import type {
   NormalizeOptions,
   Nullish,
