@@ -83,6 +83,14 @@ describe('trimArray', () => {
     expect(trimArray(value, { keep: Boolean })).toEqual(expected)
   })
 
+  it('should drop null and undefined when the keep option accepts them', () => {
+    const value = ['a', null, '', undefined]
+    const expected = ['a', '']
+    const keep = () => true
+
+    expect(trimArray(value, { keep })).toEqual(expected)
+  })
+
   it('should drop the values either the keep or the blank option rejects', () => {
     const value = ['a', '  ', 'draft', 'b']
     const expected = ['a', 'b']

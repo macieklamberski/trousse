@@ -251,6 +251,34 @@ describe('trimObject', () => {
     expect(trimObject(value, { keep: Boolean })).toEqual(expected)
   })
 
+  it('should drop null and undefined when the keep option accepts them', () => {
+    const value = {
+      id: 1,
+      label: null,
+      author: undefined,
+    }
+    const expected = {
+      id: 1,
+    }
+    const keep = () => true
+
+    expect(trimObject(value, { keep })).toEqual(expected)
+  })
+
+  it('should drop null and undefined when the positional keep accepts them', () => {
+    const value = {
+      id: 1,
+      label: null,
+      author: undefined,
+    }
+    const expected = {
+      id: 1,
+    }
+    const keep = () => true
+
+    expect(trimObject(value, keep)).toEqual(expected)
+  })
+
   it('should accept the keep predicate as the second argument', () => {
     const value = {
       id: 1,

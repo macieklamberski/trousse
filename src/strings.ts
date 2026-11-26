@@ -1,8 +1,8 @@
-import { isString } from './is.js'
+import { blankCharacterClass, isString } from './is.js'
 
-// The blank set of isNonEmptyString. String#trim strips all of it except U+0085, so the edges are
-// stripped with this set and a string trimString empties is one isNonEmptyString rejects.
-const blankCharRegex = /[\p{White_Space}\uFEFF]/u
+// String#trim strips every blank character except U+0085, so the edges are stripped with the
+// blank set and a string trimString empties is one isNonEmptyString rejects.
+const blankCharRegex = new RegExp(blankCharacterClass, 'u')
 
 export const trimString = (value: unknown): string | undefined => {
   if (!isString(value)) {

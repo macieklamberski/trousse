@@ -61,9 +61,12 @@ export const isPlainObject = (value: unknown): value is Record<string, unknown> 
   return isObject(value) && Object.getPrototypeOf(value) === Object.prototype
 }
 
-// U+FEFF, the byte order mark, is not White_Space, but `trim` strips it and it is never text.
+// The characters that count as blank. U+FEFF, the byte order mark, is not White_Space, but `trim`
+// strips it and it is never text.
 // See: https://www.unicode.org/reports/tr44/#White_Space.
-const whitespaceOnlyRegex = /^[\p{White_Space}\uFEFF]*$/u
+export const blankCharacterClass = '[\\p{White_Space}\\uFEFF]'
+
+const whitespaceOnlyRegex = new RegExp(`^${blankCharacterClass}*$`, 'u')
 
 export const isNonEmptyString = (value: unknown): value is string => {
   if (!isString(value) || !value) {

@@ -94,6 +94,6 @@ export type WeightedMimeType = {
 export type TrimPredicate = (value: unknown) => boolean
 
 export type TrimOptions = {
-  keep?: TrimPredicate // Keeps a value when it returns true
+  keep?: TrimPredicate // Keeps a value when it returns true, after null and undefined are dropped
   blank?: boolean // Also drops a string that is empty or only whitespace
 }
