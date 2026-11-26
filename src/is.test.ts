@@ -402,8 +402,9 @@ describe('isNonEmptyString', () => {
     expect(isNonEmptyString('\u00a0x')).toBe(true)
   })
 
-  it('should return true for BOM-only string, which is not Unicode White_Space', () => {
-    expect(isNonEmptyString('\ufeff')).toBe(true)
+  it('should return true for text next to a byte order mark', () => {
+    expect(isNonEmptyString('\ufeffx')).toBe(true)
+    expect(isNonEmptyString('x\ufeff')).toBe(true)
   })
 
   it('should handle edge cases', () => {
@@ -425,6 +426,14 @@ describe('isNonEmptyString', () => {
     expect(isNonEmptyString('\u0085')).toBe(false)
     expect(isNonEmptyString('\u00a0\u2028\u3000')).toBe(false)
     expect(isNonEmptyString(' ')).toBe(false)
+  })
+
+  it('should return false for a byte order mark alone', () => {
+    expect(isNonEmptyString('\ufeff')).toBe(false)
+  })
+
+  it('should return false for a byte order mark mixed with whitespace', () => {
+    expect(isNonEmptyString('\ufeff \t\u00a0')).toBe(false)
   })
 
   it('should return false for number', () => {
