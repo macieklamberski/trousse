@@ -817,6 +817,13 @@ describe('decodeBase64Binary', () => {
     expect(decodeBase64Binary(value)).toBe(expected)
   })
 
+  it('should read a space as the plus a form decoder replaced', () => {
+    const value = ' /8='
+    const expected = '\xfb\xff'
+
+    expect(decodeBase64Binary(value)).toBe(expected)
+  })
+
   it('should return undefined for invalid base64', () => {
     expect(decodeBase64Binary('!!!')).toBeUndefined()
   })
@@ -870,6 +877,13 @@ describe('decodeBase64', () => {
     expect(decodeBase64(value)).toBe(expected)
   })
 
+  it('should read a space as the plus a form decoder replaced', () => {
+    const value = 'aHR0cHM6Ly93d3cuZXhhbXBsZS5vcmcvIzp OnRleHQ9VGhl'
+    const expected = 'https://www.example.org/#:~:text=The'
+
+    expect(decodeBase64(value)).toBe(expected)
+  })
+
   it('should return undefined for invalid base64', () => {
     expect(decodeBase64('!!!')).toBeUndefined()
   })
@@ -890,6 +904,13 @@ describe('decodeBase64Url', () => {
     expect(decodeBase64Url(value)).toBe(expected)
   })
 
+  it('should read a space as the plus a form decoder replaced', () => {
+    const value = 'aHR0cHM6Ly93d3cuZXhhbXBsZS5vcmcvIzp OnRleHQ9VGhl'
+    const expected = 'https://www.example.org/#:~:text=The'
+
+    expect(decodeBase64Url(value)).toBe(expected)
+  })
+
   it('should return undefined for invalid input', () => {
     expect(decodeBase64Url('!!!')).toBeUndefined()
   })
@@ -899,6 +920,13 @@ describe('decodeBase64UrlBinary', () => {
   it('should decode base64url into a binary string', () => {
     const value = '_w'
     const expected = '\xff'
+
+    expect(decodeBase64UrlBinary(value)).toBe(expected)
+  })
+
+  it('should read a space as the plus a form decoder replaced', () => {
+    const value = ' w'
+    const expected = '\xfb'
 
     expect(decodeBase64UrlBinary(value)).toBe(expected)
   })
