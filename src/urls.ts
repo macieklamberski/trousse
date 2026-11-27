@@ -328,12 +328,12 @@ export const decodePercent = (value: string): string => {
   return value.replace(escapeRunRegex, decodeEscapeRun)
 }
 
-// Decode base64 into the raw binary string (one character per byte). atob
-// already implements forgiving decoding; this only turns errors into undefined.
+// Decode base64 into the raw binary string (one character per byte). A space is never base64: it
+// is a `+` a form decoder read as a space, which `atob` would drop and decode to the wrong bytes.
 export const decodeBase64Binary = (value: string): string | undefined => {
   try {
     // biome-ignore lint/plugin/useDecodeBase64: This is decodeBase64Binary.
-    return atob(value)
+    return atob(value.replaceAll(' ', '+'))
   } catch {}
 }
 
