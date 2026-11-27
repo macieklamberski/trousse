@@ -328,12 +328,13 @@ export const decodePercent = (value: string): string => {
   return value.replace(escapeRunRegex, decodeEscapeRun)
 }
 
-// Decode base64 into the raw binary string (one character per byte). A space is never base64: it
-// is a `+` a form decoder read as a space, which `atob` would drop and decode to the wrong bytes.
+// Decode base64 into the raw binary string (one character per byte). `atob` drops whitespace, so a
+// space a feed left in the value is skipped. A caller reading the value from a query keeps a raw
+// `+` as written, since a form decoder turns it into a space this cannot tell from whitespace.
 export const decodeBase64Binary = (value: string): string | undefined => {
   try {
     // biome-ignore lint/plugin/useDecodeBase64: This is decodeBase64Binary.
-    return atob(value.replaceAll(' ', '+'))
+    return atob(value)
   } catch {}
 }
 
