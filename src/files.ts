@@ -87,7 +87,6 @@ export const fontExtensions = ['eot', 'otf', 'ttf', 'woff', 'woff2']
 
 export const subtitleExtensions = ['srt', 'vtt']
 
-// Pages a web server renders, by the extension the server's script or template carries.
 export const pageExtensions = [
   'asp',
   'aspx',
@@ -102,5 +101,4 @@ export const pageExtensions = [
   'xhtml',
 ]
 
-// Feed documents: RSS, Atom, RDF and JSON Feed, and the generic `.xml` most RSS feeds use.
 export const feedExtensions = ['atom', 'json', 'rdf', 'rss', 'xml']
