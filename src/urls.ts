@@ -44,6 +44,7 @@ export const getPathSegments = (value: string | URL): Array<string> => {
 // The origin a url can be rebuilt on. A url with no host, such as `javascript:/@user/123`, or with
 // a scheme the URL standard does not know, has an opaque origin, which serializes as `null`.
 export const getOrigin = (value: Nullish<string | URL>): string | undefined => {
+  // biome-ignore lint/plugin/useGetOrigin: This is getOrigin.
   const origin = parseUrl(value)?.origin
 
   if (!origin || origin === 'null') {
@@ -331,6 +332,7 @@ export const decodePercent = (value: string): string => {
 // is a `+` a form decoder read as a space, which `atob` would drop and decode to the wrong bytes.
 export const decodeBase64Binary = (value: string): string | undefined => {
   try {
+    // biome-ignore lint/plugin/useDecodeBase64: This is decodeBase64Binary.
     return atob(value.replaceAll(' ', '+'))
   } catch {}
 }
@@ -364,7 +366,7 @@ export const decodeBase64 = (value: string): string | undefined => {
   for (let index = 0; index < binary.length; index++) {
     const byte = binary.charCodeAt(index)
 
-    if (byte < 0x80 && binary[index] !== '%') {
+    if (byte < 0x80 && !binary.startsWith('%', index)) {
       encoded += binary[index]
       continue
     }
