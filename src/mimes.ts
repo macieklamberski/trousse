@@ -1,6 +1,6 @@
 import type { WeightedMimeType } from './types.js'
 
-export const feedMimeTypes: ReadonlyArray<WeightedMimeType> = [
+export const feedMimeTypes: Array<WeightedMimeType> = [
   // The type each format's spec names: Atom (RFC 4287), RSS, JSON Feed 1.1, RDF (RFC 3870).
   { mime: 'application/atom+xml', quality: 1 },
   { mime: 'application/rss+xml', quality: 1 },
@@ -24,19 +24,19 @@ export const feedMimeTypes: ReadonlyArray<WeightedMimeType> = [
 
 // Containers a feed can be served as, which do not identify a feed alone. No */* here: Rails
 // reads any Accept with */* as a browser and answers an extensionless feed URL with HTML.
-export const genericFeedMimeTypes: ReadonlyArray<WeightedMimeType> = [
+export const genericFeedMimeTypes: Array<WeightedMimeType> = [
   { mime: 'application/xml', quality: 0.8 },
   { mime: 'text/xml', quality: 0.8 },
   { mime: 'application/json', quality: 0.8 },
   { mime: 'text/plain', quality: 0.1 }, // Any text is text/plain
 ]
 
-export const htmlMimeTypes: ReadonlyArray<WeightedMimeType> = [
+export const htmlMimeTypes: Array<WeightedMimeType> = [
   { mime: 'text/html', quality: 1 },
   { mime: 'application/xhtml+xml', quality: 1 },
 ]
 
-export const genericHtmlMimeTypes: ReadonlyArray<WeightedMimeType> = [
+export const genericHtmlMimeTypes: Array<WeightedMimeType> = [
   { mime: 'application/xml', quality: 0.9 },
   { mime: '*/*', quality: 0.8 },
 ]
