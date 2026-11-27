@@ -694,6 +694,7 @@ const leadingWhitespaceChars = [' ', '\t', '\n']
 const httpsLetter = 's'
 const relativeLeadChars = ['/', '.', '?', '#']
 const localhostRegex = /^localhost(?:[:/?#]|$)/i
+const portRegex = /^\d+(?:[/?#]|$)/
 const schemeColonRegex = /^[^/]*:/
 const missingColonSchemeRegex = /^https?[\s=.\\]*\/\//i
 
@@ -1081,14 +1082,15 @@ export const addMissingScheme = (url: string, scheme: 'http' | 'https' = 'https'
   }
 
   // Skip if URL already has a real scheme. A scheme may hold a dot, as the registered `z39.50r`
-  // does, but reading one as a host keeps `example.com:8080` from passing as a scheme.
+  // and app schemes such as `com.example.app` do, so a dotted name reads as a host only when a
+  // port follows the colon, as in `example.com:8080`.
   // See: https://www.rfc-editor.org/rfc/rfc3986#section-3.1.
   const colonIndex = url.indexOf(':')
 
   if (colonIndex > 0) {
     const beforeColon = url.slice(0, colonIndex)
-    const hasScheme =
-      !beforeColon.includes('.') && !beforeColon.includes('/') && !localhostRegex.test(url)
+    const isHostWithPort = beforeColon.includes('.') && portRegex.test(url.slice(colonIndex + 1))
+    const hasScheme = !isHostWithPort && !beforeColon.includes('/') && !localhostRegex.test(url)
 
     if (hasScheme) {
       return url

@@ -2815,6 +2815,25 @@ describe('addMissingScheme', () => {
     expect(addMissingScheme(value)).toBe(value)
   })
 
+  it('should leave an app scheme with dots unchanged', () => {
+    const value = 'com.example.app://open/x'
+
+    expect(addMissingScheme(value)).toBe(value)
+  })
+
+  it('should leave a registered scheme with a dot unchanged', () => {
+    const value = 'z39.50r://example.com/db'
+
+    expect(addMissingScheme(value)).toBe(value)
+  })
+
+  it('should add scheme to a host followed by a port', () => {
+    const value = 'example.com:8080/feed'
+    const expected = 'https://example.com:8080/feed'
+
+    expect(addMissingScheme(value)).toBe(expected)
+  })
+
   describe('scheme-relative URLs', () => {
     const schemeRelativeCases: Array<[string, string]> = [
       ['//example.com/feed', 'https://example.com/feed'],
