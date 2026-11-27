@@ -86,3 +86,19 @@ export const codeExtensions = ['css', 'js', 'mjs']
 export const fontExtensions = ['eot', 'otf', 'ttf', 'woff', 'woff2']
 
 export const subtitleExtensions = ['srt', 'vtt']
+
+export const pageExtensions = [
+  'asp',
+  'aspx',
+  'cfm',
+  'cgi',
+  'htm',
+  'html',
+  'jsp',
+  'jspa',
+  'php',
+  'shtml',
+  'xhtml',
+]
+
+export const feedExtensions = ['atom', 'json', 'rdf', 'rss', 'xml']
