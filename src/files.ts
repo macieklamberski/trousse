@@ -1,4 +1,4 @@
-export const audioExtensions: ReadonlyArray<string> = [
+export const audioExtensions = [
   'aac',
   'aif',
   'aiff',
@@ -18,7 +18,7 @@ export const audioExtensions: ReadonlyArray<string> = [
   'wma',
 ]
 
-export const videoExtensions: ReadonlyArray<string> = [
+export const videoExtensions = [
   '3gp',
   'avi',
   'flv',
@@ -33,7 +33,7 @@ export const videoExtensions: ReadonlyArray<string> = [
   'wmv',
 ]
 
-export const imageExtensions: ReadonlyArray<string> = [
+export const imageExtensions = [
   'avif',
   'bmp',
   'gif',
@@ -51,33 +51,15 @@ export const imageExtensions: ReadonlyArray<string> = [
 ]
 
 // Image formats every browser displays in an `<img>`.
-export const webImageExtensions: ReadonlyArray<string> = [
-  'avif',
-  'gif',
-  'jpeg',
-  'jpg',
-  'png',
-  'svg',
-  'webp',
-]
+export const webImageExtensions = ['avif', 'gif', 'jpeg', 'jpg', 'png', 'svg', 'webp']
 
 // Video formats every browser plays in a `<video>`.
-export const webVideoExtensions: ReadonlyArray<string> = ['m4v', 'mov', 'mp4', 'ogv', 'webm']
+export const webVideoExtensions = ['m4v', 'mov', 'mp4', 'ogv', 'webm']
 
 // Audio formats every browser plays in an `<audio>`.
-export const webAudioExtensions: ReadonlyArray<string> = [
-  'aac',
-  'flac',
-  'm4a',
-  'mp3',
-  'oga',
-  'ogg',
-  'opus',
-  'wav',
-  'weba',
-]
+export const webAudioExtensions = ['aac', 'flac', 'm4a', 'mp3', 'oga', 'ogg', 'opus', 'wav', 'weba']
 
-export const documentExtensions: ReadonlyArray<string> = [
+export const documentExtensions = [
   'doc',
   'docx',
   'epub',
@@ -93,37 +75,19 @@ export const documentExtensions: ReadonlyArray<string> = [
   'xlsx',
 ]
 
-export const archiveExtensions: ReadonlyArray<string> = [
-  '7z',
-  'bz2',
-  'gz',
-  'rar',
-  'tar',
-  'tgz',
-  'xz',
-  'zip',
-]
+export const archiveExtensions = ['7z', 'bz2', 'gz', 'rar', 'tar', 'tgz', 'xz', 'zip']
 
-export const installerExtensions: ReadonlyArray<string> = [
-  'apk',
-  'deb',
-  'dmg',
-  'exe',
-  'iso',
-  'msi',
-  'pkg',
-  'rpm',
-]
+export const installerExtensions = ['apk', 'deb', 'dmg', 'exe', 'iso', 'msi', 'pkg', 'rpm']
 
-export const flashExtensions: ReadonlyArray<string> = ['swf']
+export const flashExtensions = ['swf']
 
-export const codeExtensions: ReadonlyArray<string> = ['css', 'js', 'mjs']
+export const codeExtensions = ['css', 'js', 'mjs']
 
-export const fontExtensions: ReadonlyArray<string> = ['eot', 'otf', 'ttf', 'woff', 'woff2']
+export const fontExtensions = ['eot', 'otf', 'ttf', 'woff', 'woff2']
 
-export const subtitleExtensions: ReadonlyArray<string> = ['srt', 'vtt']
+export const subtitleExtensions = ['srt', 'vtt']
 
-export const pageExtensions: ReadonlyArray<string> = [
+export const pageExtensions = [
   'asp',
   'aspx',
   'cfm',
@@ -137,4 +101,4 @@ export const pageExtensions: ReadonlyArray<string> = [
   'xhtml',
 ]
 
-export const feedExtensions: ReadonlyArray<string> = ['atom', 'json', 'rdf', 'rss', 'xml']
+export const feedExtensions = ['atom', 'json', 'rdf', 'rss', 'xml']
