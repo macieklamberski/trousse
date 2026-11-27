@@ -1092,6 +1092,41 @@ describe('getQueryParamValues', () => {
     expect(getQueryParamValues('q=rust&q=wasm', 'q')).toEqual(['rust', 'wasm'])
   })
 
+  it('should decode a UTF-8 escape', () => {
+    const value = new URL('https://example.com/search?q=caf%C3%A9')
+    const expected = ['café']
+
+    expect(getQueryParamValues(value, 'q')).toEqual(expected)
+  })
+
+  it('should keep a byte of a legacy charset as written', () => {
+    const value = new URL('https://example.com/search?q=caf%E9')
+    const expected = ['caf%E9']
+
+    expect(getQueryParamValues(value, 'q')).toEqual(expected)
+  })
+
+  it('should keep an escape cut short as written', () => {
+    const value = new URL('https://example.com/search?q=%E0%A4%A8%E0%A4')
+    const expected = ['न%E0%A4']
+
+    expect(getQueryParamValues(value, 'q')).toEqual(expected)
+  })
+
+  it('should read a plus as a space in a value of a legacy charset', () => {
+    const value = new URL('https://example.com/search?q=cr%E8me+br%FBl%E9e')
+    const expected = ['cr%E8me br%FBl%E9e']
+
+    expect(getQueryParamValues(value, 'q')).toEqual(expected)
+  })
+
+  it('should keep a byte of a legacy charset as written in bare query text', () => {
+    const value = 'q=caf%E9'
+    const expected = ['caf%E9']
+
+    expect(getQueryParamValues(value, 'q')).toEqual(expected)
+  })
+
   it('should trim each value and leave out an empty one', () => {
     const value = new URLSearchParams('q=%20rust&q=&q=wasm%20')
 
@@ -1348,6 +1383,20 @@ describe('getFragmentParamValues', () => {
     const value = new URL('https://example.com/watch#t=30&t=60')
 
     expect(getFragmentParamValues(value, 't')).toEqual(['30', '60'])
+  })
+
+  it('should keep a byte of a legacy charset as written', () => {
+    const value = new URL('https://example.com/search#q=caf%E9')
+    const expected = ['caf%E9']
+
+    expect(getFragmentParamValues(value, 'q')).toEqual(expected)
+  })
+
+  it('should keep a byte of a legacy charset as written in bare fragment text', () => {
+    const value = '#q=caf%E9'
+    const expected = ['caf%E9']
+
+    expect(getFragmentParamValues(value, 'q')).toEqual(expected)
   })
 
   it('should return an empty array for an undefined source', () => {

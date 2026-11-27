@@ -398,7 +398,15 @@ export const encodePathSegment = (value: string): string => {
 
 type ParamPairs = Iterable<[string, string]>
 
-const readRawPairs = (text: string | undefined, prefix: string): ParamPairs | undefined => {
+const decodeFormPart = (part: string): string => {
+  return decodePercent(part.replaceAll('+', ' '))
+}
+
+const readPairs = (
+  text: string | undefined,
+  prefix: string,
+  options?: ParamOptions,
+): ParamPairs | undefined => {
   if (text === undefined) {
     return
   }
@@ -415,13 +423,14 @@ const readRawPairs = (text: string | undefined, prefix: string): ParamPairs | un
 
     // A valueless flag such as `?live` reads as an empty value, as URLSearchParams reads it.
     if (separator === -1) {
-      pairs.push([decodePercent(pair.replaceAll('+', ' ')), ''])
+      pairs.push([decodeFormPart(pair), ''])
       continue
     }
 
-    const name = decodePercent(pair.slice(0, separator).replaceAll('+', ' '))
+    const name = decodeFormPart(pair.slice(0, separator))
+    const value = pair.slice(separator + 1)
 
-    pairs.push([name, pair.slice(separator + 1)])
+    pairs.push([name, options?.decodeValues === false ? value : decodeFormPart(value)])
   }
 
   return pairs
@@ -432,15 +441,15 @@ const readQuerySource = (
   options?: ParamOptions,
 ): ParamPairs | undefined => {
   if (options?.decodeValues === false) {
-    return readRawPairs(source instanceof URL ? source.search : source?.toString(), '?')
+    return readPairs(source instanceof URL ? source.search : source?.toString(), '?', options)
   }
 
   if (source instanceof URL) {
-    return source.searchParams
+    return readPairs(source.search, '?', options)
   }
 
   if (isString(source)) {
-    return new URLSearchParams(source)
+    return readPairs(source, '?', options)
   }
 
   return source
@@ -451,15 +460,16 @@ const readFragmentSource = (
   options?: ParamOptions,
 ): ParamPairs | undefined => {
   if (options?.decodeValues === false) {
-    return readRawPairs(source instanceof URL ? source.hash : source?.toString(), '#')
+    return readPairs(source instanceof URL ? source.hash : source?.toString(), '#', options)
   }
 
+  // A `?` opening the fragment is dropped, as URLSearchParams drops one opening its text.
   if (source instanceof URL) {
-    return new URLSearchParams(source.hash.slice(1))
+    return readPairs(source.hash.slice(1), '?', options)
   }
 
   if (isString(source)) {
-    return new URLSearchParams(source.startsWith('#') ? source.slice(1) : source)
+    return readPairs(source.startsWith('#') ? source.slice(1) : source, '?', options)
   }
 
   return source
