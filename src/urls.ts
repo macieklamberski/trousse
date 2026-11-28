@@ -2,6 +2,7 @@ import { decodeHTMLStrict } from 'entities'
 import { toPatternList } from './internal.js'
 import { isFunction, isNullish, isString } from './is.js'
 import { includesAnyOf, isAnyOf } from './matching.js'
+import { trimString } from './strings.js'
 import type {
   NormalizeOptions,
   Nullish,
@@ -1182,9 +1183,9 @@ export const upgradeScheme = (url: string, scheme: 'http' | 'https' = 'https'): 
 // response URL or a Location header, goes through parseUrl instead.
 export const resolveUrl = (url: string, base?: string): string | undefined => {
   // The repair steps below match from the start of the string, so surrounding whitespace goes
-  // first. `trim` also strips NBSP and U+FEFF, which the URL parser keeps as part of the URL.
-  // See: https://url.spec.whatwg.org/#concept-basic-url-parser.
-  const trimmedUrl = url.trim()
+  // first. `trimString` also strips NBSP, U+FEFF and U+0085, which the URL parser keeps as part
+  // of the URL. See: https://url.spec.whatwg.org/#concept-basic-url-parser.
+  const trimmedUrl = trimString(url)
 
   // An empty href would resolve to the base itself.
   if (!trimmedUrl) {
