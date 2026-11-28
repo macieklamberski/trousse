@@ -3715,6 +3715,29 @@ describe('resolveUrl', () => {
       expect(resolveUrl('https://example.com/feed  ')).toBe('https://example.com/feed')
     })
 
+    it('should trim a leading U+0085', () => {
+      const value = '\u0085https://example.org/feed'
+      const base = 'https://example.com/'
+      const expected = 'https://example.org/feed'
+
+      expect(resolveUrl(value, base)).toBe(expected)
+    })
+
+    it('should trim a trailing U+0085', () => {
+      const value = 'https://example.org/feed\u0085'
+      const base = 'https://example.com/'
+      const expected = 'https://example.org/feed'
+
+      expect(resolveUrl(value, base)).toBe(expected)
+    })
+
+    it('should return undefined for a lone U+0085', () => {
+      const value = '\u0085'
+      const base = 'https://example.com/'
+
+      expect(resolveUrl(value, base)).toBeUndefined()
+    })
+
     it('should handle tabs and carriage returns in URL', () => {
       expect(resolveUrl('https://example.com/\tfeed')).toBe('https://example.com/feed')
       expect(resolveUrl('https://example.com/\rfeed')).toBe('https://example.com/feed')
